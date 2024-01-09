@@ -276,6 +276,7 @@
     { "opcode": "0xf6", "command": "OR A, d8",       "mnemonic": "OR",    "operands": ["A"],            "bytes": 2,  "cycles": 2,  "flagsZNHC": ["Z","0","0","0"]   },
     { "opcode": "0xf7", "command": "RST 6",          "mnemonic": "RST", "aux_args": [6], "operands": [],"bytes": 1,  "cycles": 4,  "flagsZNHC": ["-","-","-","-"]  },
     
+    { "opcode": "0xf9", "command": "LD SP, HL",      "mnemonic": "LD",    "operands": ["SP", "HL"],      "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0xfa", "command": "LD A, (a16)",    "mnemonic": "LDaff16","operands": ["A"],            "bytes": 3,  "cycles": 4,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0xfb", "command": "EI",             "mnemonic": "EI",     "operands": [],               "bytes": 1,  "cycles": 1,  "flagsZNHC": ["-","-","-","-"]   },
 
