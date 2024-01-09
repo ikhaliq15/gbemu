@@ -1322,7 +1322,11 @@ namespace gbemu {
 
         if (std::holds_alternative<FullRegister>(destOperand))
         {
-            const auto stackValue = popFromStack();
+            auto stackValue = popFromStack();
+
+            if (std::get<FullRegister>(destOperand) == FullRegister::AF)
+                stackValue &= 0xFFF0;
+
             setOperand(destOperand, stackValue);
             return;
         }
