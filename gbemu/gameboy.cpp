@@ -15,8 +15,10 @@ namespace gbemu {
     void Gameboy::loadCartridge(const Cartridge& cartridge)
     {
         // TODO
-        for (int i = 0; i < std::max(cartridge.size(), 0x8000ul); i++)
-            ram_->set(i, cartridge[i]);
+        // for (int i = 0; i < std::max(cartridge.size(), 0x8000ul); i++)
+        //     ram_->set(i, cartridge[i]);
+
+        ram_->loadCartridge(cartridge);
 
         cartridgeLoaded_ = true;
     }

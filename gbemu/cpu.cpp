@@ -79,6 +79,11 @@ namespace gbemu {
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
+            std::string("DAA"), 
+            [this](uint16_t pc, const OPCode& opcode) { DAA(pc, opcode); }
+        ));
+
+        opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
             std::string("CPL"), 
             [this](uint16_t pc, const OPCode& opcode) { CPL(pc, opcode); }
         ));
@@ -927,6 +932,38 @@ namespace gbemu {
         }
 
         throw std::runtime_error("load+increment not implemented for opcode " + toHexString(opcode.opcode()));
+    }
+
+    void CPU::DAA(uint16_t pc, const OPCode& opcode)
+    {
+        // TODO: move adjustment logic to ALU and respect Flag values from opcode data.
+
+        auto value = A();
+
+        auto correction = 0;
+
+        uint8_t newFlagC = 0;
+
+        if (FlagH() == 1 || (FlagN() != 1 && (value & 0x0f) > 0x09))
+            correction |= 0x06;
+
+        if (FlagC() == 1 || (FlagN() != 1 && value > 0x99))
+        {
+            correction |= 0x60;
+            newFlagC = 1;
+        }
+
+        if (FlagN() == 1)
+            value -= correction;
+        else
+            value += correction;
+
+        const uint8_t newFlagZ = (value == 0) ? 1 : 0;
+
+        setFlags(newFlagZ, FlagN(), 0, newFlagC);
+        setA(value);
+
+        // throw std::runtime_error("DAA not implemented for opcode " + toHexString(opcode.opcode()));
     }
 
     void CPU::CPL(uint16_t pc, const OPCode& opcode)

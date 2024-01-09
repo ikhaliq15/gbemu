@@ -10,6 +10,9 @@ namespace gbemu {
     #define WINDOW_WIDTH 160
     #define WINDOW_HEIGHT 144
 
+    // TODO: should technically be ~59.7.
+    #define DEVICE_FPS (60.0)
+
     class PPU
     {
     public:
@@ -33,6 +36,8 @@ namespace gbemu {
         size_t cycleCount_ = 0;
 
         size_t frameCount_ = 0;
+
+        uint64_t lastFrameTickCount_ = 0;
 
         void drawScanLine();
     };

@@ -61,6 +61,12 @@ namespace gbemu {
         return os;
     }
 
+    void RAM::loadCartridge(const Cartridge& cartridge)
+    {
+        for (int i = 0; i < std::max(cartridge.size(), 0x8000ul); i++)
+            memory_[i] = cartridge[i];
+    }
+
     uint16_t RAM::getImmediate16(uint16_t i) const
     {
         const auto lower = get(i);
@@ -79,11 +85,33 @@ namespace gbemu {
 
     void RAM::set(uint16_t address, uint8_t value)
     {
+        if (
+            (address == 0x02dd && value != 0x28) 
+            || (address == 0x0040 && value != 0xc3) 
+            // || (address == 0x2000 && value != 0x20) // Set ROM bank to 0?
+        )
+        {
+            std::cout << "ahhhh help" << std::endl;
+            exit(1);
+        }
+
+        // TODO: temp: should we block all write attempts to ROM?
+        if (address == 0x2000)
+            return;
+
         if (address == RAM::JOYP)
         {
             // TODO: remove when joypad is working correctly
             memory_[address] = 0xff;
             return;
+        }
+
+        // TODO: OAM DMA transfer (should make rest of RAM inaccessible and take ~160 microseconds)
+        if (address == RAM::DMA)
+        {
+            const uint16_t startAddress = concatBytes(value, 0x00);
+            for (int i = 0; i < 160; i++)
+                set(RAM::OAM + i, get(startAddress + i));
         }
 
         memory_[address] = value;

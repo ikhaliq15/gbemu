@@ -145,6 +145,7 @@ namespace gbemu {
         void JR(uint16_t pc, const OPCode& opcode);
         void RRA(uint16_t pc, const OPCode& opcode);
         void LDI(uint16_t pc, const OPCode& opcode);
+        void DAA(uint16_t pc, const OPCode& opcode);
         void CPL(uint16_t pc, const OPCode& opcode);
         void LDD(uint16_t pc, const OPCode& opcode);
         void SCF(uint16_t pc, const OPCode& opcode);

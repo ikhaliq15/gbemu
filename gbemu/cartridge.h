@@ -1,8 +1,7 @@
 #ifndef GBEMU_CARTRIDGE
 #define GBEMU_CARTRIDGE
 
-#include "cpu.h"
-#include "ram.h"
+#include <vector>
 
 namespace gbemu {
 

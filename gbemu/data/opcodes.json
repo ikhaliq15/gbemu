@@ -41,6 +41,7 @@
     { "opcode": "0x24", "command": "INC H",          "mnemonic": "INC",   "operands": ["H"],            "bytes": 1,  "cycles": 1,  "flagsZNHC": ["Z","0","H","-"]   },
     { "opcode": "0x25", "command": "DEC H",          "mnemonic": "DEC",   "operands": ["H"],            "bytes": 1,  "cycles": 1,  "flagsZNHC": ["Z","1","H","-"]   },
     { "opcode": "0x26", "command": "LD H, d8",       "mnemonic": "LD",    "operands": ["H"],            "bytes": 2,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
+    { "opcode": "0x27", "command": "DAA",            "mnemonic": "DAA",   "operands": [],               "bytes": 1,  "cycles": 1,  "flagsZNHC": ["Z","-","0","CY"]  },
     { "opcode": "0x28", "command": "JR Z, s8",       "mnemonic": "JR",    "operands": [],               "bytes": 2,  "cycles": 2,  "additionalCycles": 1, "jumpCondition": "Z", "flagsZNHC": ["-","-","-","-"]  },
     { "opcode": "0x29", "command": "ADD HL, HL",     "mnemonic": "ADD",   "operands": ["HL", "HL"],     "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","0","H","CY"]  },
     { "opcode": "0x2a", "command": "LD A, (HL+)",    "mnemonic": "LDI",   "operands": ["A", "(HL)"],    "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
