@@ -71,7 +71,7 @@ namespace gbemu {
                     // TODO: add warning once we keep a moving average of the FPS (otherwise errors are too jiterry)
                     // if (timeToSleepUntil < now)
                     //     std::cout << "[WARNING] Rendering unable to keep up with desired framerate." << std::endl;
-                    
+
                     const auto delayAmount = (timeToSleepUntil > now) ? timeToSleepUntil - now : 0ull;
                     SDL_Delay(delayAmount);
                 }
@@ -151,6 +151,7 @@ namespace gbemu {
                 if (tile_data == 0x8000) {
                     tile = tile_data + 16 * cpu_->ram()->get(bg_tile_map + tile_index);
                 } else {
+                    // TODO: does cast to signed value need to happen after multiply by 16?
                     tile = tile_data + 16 * (int8_t) cpu_->ram()->get(bg_tile_map + tile_index);
                 }
 

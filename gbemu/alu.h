@@ -75,6 +75,7 @@ namespace alu {
     AluResult<uint8_t> bit_set(uint8_t a, uint8_t i, uint8_t b);
     AluResult<uint8_t> bit_get(uint8_t a, uint8_t i);
     AluResult<uint8_t> bit_sla(uint8_t a);
+    AluResult<uint8_t> bit_sra(uint8_t a);
     AluResult<uint8_t> bit_srl(uint8_t a);
 
 } // alu

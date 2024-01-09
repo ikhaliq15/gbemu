@@ -171,8 +171,12 @@ namespace gbemu {
         void LDaff16(uint16_t pc, const OPCode& opcode);
         void EI(uint16_t pc, const OPCode& opcode);
 
+        void RLC(uint16_t pc, const OPCode& opcode);
+        void RRC(uint16_t pc, const OPCode& opcode);
+        void RL(uint16_t pc, const OPCode& opcode);
         void RR(uint16_t pc, const OPCode& opcode);
         void SLA(uint16_t pc, const OPCode& opcode);
+        void SRA(uint16_t pc, const OPCode& opcode);
         void SWAP(uint16_t pc, const OPCode& opcode);
         void SRL(uint16_t pc, const OPCode& opcode);
         void BIT_GET(uint16_t pc, const OPCode& opcode);

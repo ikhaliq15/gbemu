@@ -197,6 +197,19 @@ namespace alu {
         return result;
     }
 
+    AluResult<uint8_t> bit_sra(uint8_t a)
+    {
+        AluResult<uint8_t> result;
+        result.result = (a >> 1) | (a & 0x80);
+        result.flags.isZero = result.result == 0;
+        result.flags.operationIsSubtraction = false;
+        result.flags.hadHalfCarry = false;
+        result.flags.hadCarry = false;
+        result.flags.bit0Set = getBit(a, 0) == 1;
+        result.flags.bit7Set = getBit(a, 7) == 1;
+        return result;
+    }
+
     AluResult<uint8_t> bit_srl(uint8_t a)
     {
         AluResult<uint8_t> result;

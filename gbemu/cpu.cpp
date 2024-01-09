@@ -19,217 +19,237 @@ namespace gbemu {
         std::tie(opcodes_, prefixedOpcodes_) = OPCode::constructOpcodes(opcodeDataFile);
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("NOP"), 
+            std::string("NOP"),
             [this](uint16_t pc, const OPCode& opcode) { NOP(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("LD"), 
+            std::string("LD"),
             [this](uint16_t pc, const OPCode& opcode) { LD(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("INC"), 
+            std::string("INC"),
             [this](uint16_t pc, const OPCode& opcode) { INC(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("DEC"), 
+            std::string("DEC"),
             [this](uint16_t pc, const OPCode& opcode) { DEC(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("RLCA"), 
+            std::string("RLCA"),
             [this](uint16_t pc, const OPCode& opcode) { RLCA(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("LD_SP"), 
+            std::string("LD_SP"),
             [this](uint16_t pc, const OPCode& opcode) { LD_SP(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("ADD"), 
+            std::string("ADD"),
             [this](uint16_t pc, const OPCode& opcode) { ADD(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("RRCA"), 
+            std::string("RRCA"),
             [this](uint16_t pc, const OPCode& opcode) { RRCA(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("RLA"), 
+            std::string("RLA"),
             [this](uint16_t pc, const OPCode& opcode) { RLA(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("JR"), 
+            std::string("JR"),
             [this](uint16_t pc, const OPCode& opcode) { JR(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("RRA"), 
+            std::string("RRA"),
             [this](uint16_t pc, const OPCode& opcode) { RRA(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("LDI"), 
+            std::string("LDI"),
             [this](uint16_t pc, const OPCode& opcode) { LDI(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("DAA"), 
+            std::string("DAA"),
             [this](uint16_t pc, const OPCode& opcode) { DAA(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("CPL"), 
+            std::string("CPL"),
             [this](uint16_t pc, const OPCode& opcode) { CPL(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("LDD"), 
+            std::string("LDD"),
             [this](uint16_t pc, const OPCode& opcode) { LDD(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("SCF"), 
+            std::string("SCF"),
             [this](uint16_t pc, const OPCode& opcode) { SCF(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("CCF"), 
+            std::string("CCF"),
             [this](uint16_t pc, const OPCode& opcode) { CCF(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("ADC"), 
+            std::string("ADC"),
             [this](uint16_t pc, const OPCode& opcode) { ADC(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("SUB"), 
+            std::string("SUB"),
             [this](uint16_t pc, const OPCode& opcode) { SUB(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("SBC"), 
+            std::string("SBC"),
             [this](uint16_t pc, const OPCode& opcode) { SBC(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("AND"), 
+            std::string("AND"),
             [this](uint16_t pc, const OPCode& opcode) { AND(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("XOR"), 
+            std::string("XOR"),
             [this](uint16_t pc, const OPCode& opcode) { XOR(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("OR"), 
+            std::string("OR"),
             [this](uint16_t pc, const OPCode& opcode) { OR(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("CP"), 
+            std::string("CP"),
             [this](uint16_t pc, const OPCode& opcode) { CP(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("RET"), 
+            std::string("RET"),
             [this](uint16_t pc, const OPCode& opcode) { RET(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("POP"), 
+            std::string("POP"),
             [this](uint16_t pc, const OPCode& opcode) { POP(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("JP"), 
+            std::string("JP"),
             [this](uint16_t pc, const OPCode& opcode) { JP(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("CALL"), 
+            std::string("CALL"),
             [this](uint16_t pc, const OPCode& opcode) { CALL(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("PUSH"), 
+            std::string("PUSH"),
             [this](uint16_t pc, const OPCode& opcode) { PUSH(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("RST"), 
+            std::string("RST"),
             [this](uint16_t pc, const OPCode& opcode) { RST(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("RETI"), 
+            std::string("RETI"),
             [this](uint16_t pc, const OPCode& opcode) { RETI(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("LDff8"), 
+            std::string("LDff8"),
             [this](uint16_t pc, const OPCode& opcode) { LDff8(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("LDa16"), 
+            std::string("LDa16"),
             [this](uint16_t pc, const OPCode& opcode) { LDa16(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("LDaff8"), 
+            std::string("LDaff8"),
             [this](uint16_t pc, const OPCode& opcode) { LDaff8(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("DI"), 
+            std::string("DI"),
             [this](uint16_t pc, const OPCode& opcode) { DI(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("EI"), 
+            std::string("EI"),
             [this](uint16_t pc, const OPCode& opcode) { EI(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("LDaff16"), 
+            std::string("LDaff16"),
             [this](uint16_t pc, const OPCode& opcode) { LDaff16(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("RR"), 
+            std::string("RLC"),
+            [this](uint16_t pc, const OPCode& opcode) { RLC(pc, opcode); }
+        ));
+
+        opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
+            std::string("RRC"),
+            [this](uint16_t pc, const OPCode& opcode) { RRC(pc, opcode); }
+        ));
+
+        opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
+            std::string("RL"),
+            [this](uint16_t pc, const OPCode& opcode) { RL(pc, opcode); }
+        ));
+
+        opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
+            std::string("RR"),
             [this](uint16_t pc, const OPCode& opcode) { RR(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("SLA"), 
+            std::string("SLA"),
             [this](uint16_t pc, const OPCode& opcode) { SLA(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("SWAP"), 
+            std::string("SRA"),
+            [this](uint16_t pc, const OPCode& opcode) { SRA(pc, opcode); }
+        ));
+
+        opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
+            std::string("SWAP"),
             [this](uint16_t pc, const OPCode& opcode) { SWAP(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("SRL"), 
+            std::string("SRL"),
             [this](uint16_t pc, const OPCode& opcode) { SRL(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("BIT_GET"), 
-            [this](uint16_t pc, const OPCode& opcode) { BIT_SET(pc, opcode); }
+            std::string("BIT_GET"),
+            [this](uint16_t pc, const OPCode& opcode) { BIT_GET(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-            std::string("BIT_SET"), 
+            std::string("BIT_SET"),
             [this](uint16_t pc, const OPCode& opcode) { BIT_SET(pc, opcode); }
         ));
     }
@@ -1491,6 +1511,60 @@ namespace gbemu {
         IME_ = true;
     }
 
+    void CPU::RLC(uint16_t pc, const OPCode& opcode)
+    {
+        const auto operand = opcode.operands()[0];
+
+        if (std::holds_alternative<Register>(operand))
+        {
+            const auto currentValue = std::get<uint8_t>(getOperand(operand));
+            const auto result = alu::rlc(currentValue);
+
+            setOperand(operand, result.result);
+            setFlagsFromResult(result.flags, opcode);
+
+            return;
+        }
+
+        throw std::runtime_error("rlc not implemented for opcode " + toHexString(opcode.opcode()));
+    }
+
+    void CPU::RRC(uint16_t pc, const OPCode& opcode)
+    {
+        const auto operand = opcode.operands()[0];
+
+        if (std::holds_alternative<Register>(operand))
+        {
+            const auto currentValue = std::get<uint8_t>(getOperand(operand));
+            const auto result = alu::rrc(currentValue);
+
+            setOperand(operand, result.result);
+            setFlagsFromResult(result.flags, opcode);
+
+            return;
+        }
+
+        throw std::runtime_error("rrc not implemented for opcode " + toHexString(opcode.opcode()));
+    }
+
+    void CPU::RL(uint16_t pc, const OPCode& opcode)
+    {
+        const auto operand = opcode.operands()[0];
+
+        if (std::holds_alternative<Register>(operand))
+        {
+            const auto currentValue = std::get<uint8_t>(getOperand(operand));
+            const auto result = alu::rl(currentValue, FlagC());
+
+            setOperand(operand, result.result);
+            setFlagsFromResult(result.flags, opcode);
+
+            return;
+        }
+
+        throw std::runtime_error("rl not implemented for opcode " + toHexString(opcode.opcode()));
+    }
+
     void CPU::RR(uint16_t pc, const OPCode& opcode)
     {
         const auto operand = opcode.operands()[0];
@@ -1525,6 +1599,24 @@ namespace gbemu {
         }
 
         throw std::runtime_error("sla not implemented for opcode " + toHexString(opcode.opcode()));
+    }
+
+    void CPU::SRA(uint16_t pc, const OPCode& opcode)
+    {
+        const auto operand = opcode.operands()[0];
+
+        if (std::holds_alternative<Register>(operand))
+        {
+            const auto currentValue = std::get<uint8_t>(getOperand(operand));
+            const auto result = alu::bit_sra(currentValue);
+
+            setOperand(operand, result.result);
+            setFlagsFromResult(result.flags, opcode);
+
+            return;
+        }
+
+        throw std::runtime_error("sra not implemented for opcode " + toHexString(opcode.opcode()));
     }
 
     void CPU::SWAP(uint16_t pc, const OPCode& opcode)
