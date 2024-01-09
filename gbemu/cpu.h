@@ -169,6 +169,7 @@ namespace gbemu {
         void LDaff8(uint16_t pc, const OPCode& opcode);
         void DI(uint16_t pc, const OPCode& opcode);
         void LDaff16(uint16_t pc, const OPCode& opcode);
+        void LDs8(uint16_t pc, const OPCode& opcode);
         void EI(uint16_t pc, const OPCode& opcode);
 
         void RLC(uint16_t pc, const OPCode& opcode);

@@ -199,6 +199,11 @@ namespace gbemu {
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
+            std::string("LDs8"),
+            [this](uint16_t pc, const OPCode& opcode) { LDs8(pc, opcode); }
+        ));
+
+        opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
             std::string("LDaff16"),
             [this](uint16_t pc, const OPCode& opcode) { LDaff16(pc, opcode); }
         ));
@@ -838,13 +843,9 @@ namespace gbemu {
                 const auto secondValue = (int8_t) ram_->get(pc + 1);
 
                 // TODO: check how half-carry and carry are working for mixed signed and unsigned addition.
-                alu::AluResult<uint16_t> result;
-                if (secondValue >= 0)
-                    result = alu::add(firstValue, secondValue);
-                else
-                    result = alu::sub(firstValue, -secondValue);
+                const auto result = alu::add((uint8_t) (0x00FF & firstValue), (uint8_t) secondValue);
 
-                setOperand(destOperand, result.result);
+                setOperand(destOperand, (uint16_t) (firstValue + secondValue));
                 setFlagsFromResult(result.flags, opcode);
             
                 return;
@@ -1508,6 +1509,31 @@ namespace gbemu {
         }
 
         throw std::runtime_error("ldaff16 not implemented for opcode " + toHexString(opcode.opcode()));
+    }
+
+    void CPU::LDs8(uint16_t pc, const OPCode& opcode)
+    {
+        if (opcode.operands().size() == 2)
+        {
+            const auto destOperand = opcode.operands()[0];
+            const auto srcOperand = opcode.operands()[1];
+
+            if ((std::holds_alternative<FullRegister>(destOperand) || std::holds_alternative<SpecialRegister>(destOperand))
+                && (std::holds_alternative<FullRegister>(srcOperand) || std::holds_alternative<SpecialRegister>(srcOperand)))
+            {
+                const auto srcValue = std::get<uint16_t>(getOperand(srcOperand));
+                const auto offset = (int8_t) ram_->get(pc + 1);
+
+                const auto result = alu::add((uint8_t) (0x00FF & srcValue), (uint8_t) offset);
+
+                setOperand(destOperand, (uint16_t) (srcValue + offset));
+                setFlagsFromResult(result.flags, opcode);
+
+                return;
+            }
+        }
+
+        throw std::runtime_error("LDs8 not implemented for opcode " + toHexString(opcode.opcode()));
     }
 
     void CPU::EI(uint16_t pc, const OPCode& opcode)
