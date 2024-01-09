@@ -1515,7 +1515,7 @@ namespace gbemu {
     {
         const auto operand = opcode.operands()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::rlc(currentValue);
@@ -1533,7 +1533,7 @@ namespace gbemu {
     {
         const auto operand = opcode.operands()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::rrc(currentValue);
@@ -1551,7 +1551,7 @@ namespace gbemu {
     {
         const auto operand = opcode.operands()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::rl(currentValue, FlagC());
@@ -1569,7 +1569,7 @@ namespace gbemu {
     {
         const auto operand = opcode.operands()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::rr(currentValue, FlagC());
@@ -1587,7 +1587,7 @@ namespace gbemu {
     {
         const auto operand = opcode.operands()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::bit_sla(currentValue);
@@ -1605,7 +1605,7 @@ namespace gbemu {
     {
         const auto operand = opcode.operands()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::bit_sra(currentValue);
@@ -1623,7 +1623,7 @@ namespace gbemu {
     {
         const auto operand = opcode.operands()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::bit_swap(currentValue);
@@ -1641,7 +1641,7 @@ namespace gbemu {
     {
         const auto operand = opcode.operands()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::bit_srl(currentValue);
@@ -1660,7 +1660,7 @@ namespace gbemu {
         const auto operand = opcode.operands()[0];
         const auto bitIndex = opcode.auxiliaryArguments()[0];
 
-        if (std::holds_alternative<Register>(operand))
+        if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
         {
             const auto currentValue = std::get<uint8_t>(getOperand(operand));
             const auto result = alu::bit_get(currentValue, bitIndex);
