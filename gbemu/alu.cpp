@@ -11,8 +11,8 @@ namespace alu {
         result.flags.operationIsSubtraction = false;
 
         // TODO: double check correctness of detecting carry's for 3 way addition
-        result.flags.hadHalfCarry = addHadHalfCarry(a, b + carry) || addHadHalfCarry(b, carry);
-        result.flags.hadCarry = addHadCarry(a, b + carry) || addHadCarry(b, carry);
+        result.flags.hadHalfCarry = addHadHalfCarry(a, b, carry);
+        result.flags.hadCarry = addHadCarry(a, b, carry);
 
         result.flags.bit0Set = getBit(result.result, 0) == 1;
         result.flags.bit7Set = getBit(result.result, 7) == 1;
@@ -27,8 +27,8 @@ namespace alu {
         result.flags.operationIsSubtraction = true;
 
         // TODO: double check correctness of detecting carry's for 3 way subtraction
-        result.flags.hadHalfCarry = subHadHalfCarry(a, b + carry) || subHadHalfCarry(b, carry);
-        result.flags.hadCarry = subHadCarry(a, b + carry) || subHadCarry(b, carry);
+        result.flags.hadHalfCarry = subHadHalfCarry(a, b, carry);
+        result.flags.hadCarry = subHadCarry(a, b, carry);
 
         result.flags.bit0Set = getBit(result.result, 0) == 1;
         result.flags.bit7Set = getBit(result.result, 7) == 1;

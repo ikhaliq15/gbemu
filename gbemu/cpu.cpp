@@ -403,8 +403,8 @@ namespace gbemu {
 
     void CPU::executeInstruction(bool verbose)
     {
-        // if (verbose)
-        //     std::cout << *this << std::endl;
+        if (verbose)
+            std::cout << *this << std::endl;
 
         auto opcodeValue = ram_->get(PC());
         auto opcodeMap = &opcodes_;
@@ -439,24 +439,24 @@ namespace gbemu {
 
         cycles_ += opcode.cycles();
 
-        if (verbose)
-        {
-            std::cout 
-                    << std::setw(20) << std::left << opcode.command()
-                    << std::setw(17) << ("Opcode=" + opcodeString) << "   "
-                    << std::setw(9) << ("PC=" + toHexString(PC())) << "   "
-                    << std::setw(9) << ("SP=" + toHexString(SP())) << "   "
-                    << std::setw(9) << ("AF=" + toHexString(AF())) << "   "
-                    << std::setw(9)<<  ("BC=" + toHexString(BC())) << "   "
-                    << std::setw(9) << ("DE=" + toHexString(DE())) << "   "
-                    << std::setw(9) << ("HL=" + toHexString(HL())) << "   "
-                    << std::setw(9) << ("LY=" + std::to_string(ram_->get(RAM::LY))) << "   "
-                    << std::setw(11) << ("LCDC=" + toHexString(ram_->get(RAM::LCDC))) << "   "
-                    << std::setw(9) << ("IF=" + toHexString(ram_->get(RAM::IF))) << "   "
-                    << std::setw(9) << ("IE=" + toHexString (ram_->get(RAM::IE))) << "   "
-                    << std::setw(9) << ("IME=" + (IME_ ? std::string("true") : std::string("false"))) << "   "
-                    << std::endl;
-        }
+        // if (verbose)
+        // {
+        //     std::cout
+        //             << std::setw(20) << std::left << opcode.command()
+        //             << std::setw(17) << ("Opcode=" + opcodeString) << "   "
+        //             << std::setw(9) << ("PC=" + toHexString(PC())) << "   "
+        //             << std::setw(9) << ("SP=" + toHexString(SP())) << "   "
+        //             << std::setw(9) << ("AF=" + toHexString(AF())) << "   "
+        //             << std::setw(9)<<  ("BC=" + toHexString(BC())) << "   "
+        //             << std::setw(9) << ("DE=" + toHexString(DE())) << "   "
+        //             << std::setw(9) << ("HL=" + toHexString(HL())) << "   "
+        //             << std::setw(9) << ("LY=" + std::to_string(ram_->get(RAM::LY))) << "   "
+        //             << std::setw(11) << ("LCDC=" + toHexString(ram_->get(RAM::LCDC))) << "   "
+        //             << std::setw(9) << ("IF=" + toHexString(ram_->get(RAM::IF))) << "   "
+        //             << std::setw(9) << ("IE=" + toHexString (ram_->get(RAM::IE))) << "   "
+        //             << std::setw(9) << ("IME=" + (IME_ ? std::string("true") : std::string("false"))) << "   "
+        //             << std::endl;
+        // }
     }
 
     bool CPU::operator ==(const CPU& rhs) const
@@ -480,22 +480,21 @@ namespace gbemu {
     std::ostream& operator<<(std::ostream& os, const CPU& cpu)
     {
         os
-            << "A: " << toHexString(cpu.A(), false) << " "
-            << "F: " << toHexString(lowerByte(cpu.AF()), false) << " "
-            << "B: " << toHexString(cpu.B(), false) << " " 
-            << "C: " << toHexString(cpu.C(), false) << " " 
-            << "D: " << toHexString(cpu.D(), false) << " " 
-            << "E: " << toHexString(cpu.E(), false) << " " 
-            << "H: " << toHexString(cpu.H(), false) << " " 
-            << "L: " << toHexString(cpu.L(), false) << " " 
-            << "SP: " << toHexString(cpu.SP(), false) << " " 
-            << "PC: 00:" << toHexString(cpu.PC(), false) << " "  // TODO: what is the number before the colon supposed to be?
-            << "(" 
-                << toHexString(cpu.ram()->get(cpu.PC()), false) << " "
-                << toHexString(cpu.ram()->get(cpu.PC() + 1), false) << " "
-                << toHexString(cpu.ram()->get(cpu.PC() + 2), false) << " "
-                << toHexString(cpu.ram()->get(cpu.PC() + 3), false)
-            << ")";
+            << "A:" << toHexString(cpu.A(), false) << " "
+            << "F:" << toHexString(lowerByte(cpu.AF()), false) << " "
+            << "B:" << toHexString(cpu.B(), false) << " "
+            << "C:" << toHexString(cpu.C(), false) << " "
+            << "D:" << toHexString(cpu.D(), false) << " "
+            << "E:" << toHexString(cpu.E(), false) << " "
+            << "H:" << toHexString(cpu.H(), false) << " "
+            << "L:" << toHexString(cpu.L(), false) << " "
+            << "SP:" << toHexString(cpu.SP(), false) << " "
+            << "PC:" << toHexString(cpu.PC(), false) << " "
+            << "PCMEM:"
+                << toHexString(cpu.ram()->get(cpu.PC()), false) << ","
+                << toHexString(cpu.ram()->get(cpu.PC() + 1), false) << ","
+                << toHexString(cpu.ram()->get(cpu.PC() + 2), false) << ","
+                << toHexString(cpu.ram()->get(cpu.PC() + 3), false);
 
         return os;
     }
@@ -861,8 +860,6 @@ namespace gbemu {
 
                 return;
             }
-
-            throw std::runtime_error("add not implemented for opcode " + toHexString(opcode.opcode()));
         }
 
         throw std::runtime_error("add not implemented for opcode " + toHexString(opcode.opcode()));

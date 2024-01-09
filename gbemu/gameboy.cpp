@@ -41,26 +41,26 @@ namespace gbemu {
         size_t numSteps = 0;
         while (!quit)
         {
-            std::cout << "> ";
+            // std::cout << "> ";
 
-            std::string command;
+            // std::string command;
             // std::getline(std::cin, command);
 
-            if (command == "q")
-                quit = true;
-            else if (command == "n")
-                numSteps = 1;
-            else if (command.starts_with("n "))
-                numSteps = std::stol(command.substr(2));
-            else if (command.starts_with("b "))
-            {
-                runTillBreak = true;
-                breakInstruction = std::stoul(command.substr(2), nullptr, 0);
-            }
-            else if (command == "c")
-                runForever = true;
-            else
-                std::cout << "Unrecognized command." << std::endl;
+            // if (command == "q")
+            //     quit = true;
+            // else if (command == "n")
+            //     numSteps = 1;
+            // else if (command.starts_with("n "))
+            //     numSteps = std::stol(command.substr(2));
+            // else if (command.starts_with("b "))
+            // {
+            //     runTillBreak = true;
+            //     breakInstruction = std::stoul(command.substr(2), nullptr, 0);
+            // }
+            // else if (command == "c")
+            //     runForever = true;
+            // else
+            //     std::cout << "Unrecognized command." << std::endl;
 
             for (size_t i = 0; !quit && (i < numSteps || runForever || runTillBreak); i++)
             {

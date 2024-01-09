@@ -94,10 +94,10 @@ namespace gbemu {
 
     private:
         // TODO: find proper starting values for registers (and fix tests to be agnostic to starting values).
-        static constexpr uint16_t STARTING_AF = 0x0000;
-        static constexpr uint16_t STARTING_BC = 0x0000;
-        static constexpr uint16_t STARTING_DE = 0x0000;
-        static constexpr uint16_t STARTING_HL = 0x0000;
+        static constexpr uint16_t STARTING_AF = 0x01B0;
+        static constexpr uint16_t STARTING_BC = 0x0013;
+        static constexpr uint16_t STARTING_DE = 0x00D8;
+        static constexpr uint16_t STARTING_HL = 0x014D;
 
         static constexpr uint16_t STARTING_PC = 0x0100;
         static constexpr uint16_t STARTING_SP = 0xFFFE;

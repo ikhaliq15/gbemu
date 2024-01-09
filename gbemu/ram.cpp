@@ -85,16 +85,6 @@ namespace gbemu {
 
     void RAM::set(uint16_t address, uint8_t value)
     {
-        if (
-            (address == 0x02dd && value != 0x28) 
-            || (address == 0x0040 && value != 0xc3) 
-            // || (address == 0x2000 && value != 0x20) // Set ROM bank to 0?
-        )
-        {
-            std::cout << "ahhhh help" << std::endl;
-            exit(1);
-        }
-
         // TODO: temp: should we block all write attempts to ROM?
         if (address == 0x2000)
             return;
@@ -119,6 +109,10 @@ namespace gbemu {
 
     uint8_t RAM::get(uint16_t address) const
     {
+        // temp: for GB Doctor log comparison testing.
+        // if (address == RAM::LY)
+        //     return 0x90;
+
         return memory_[address];
     }
 

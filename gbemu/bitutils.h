@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string>
 #include <sstream>
-#include <iomanip> 
+#include <iomanip>
 
 namespace gbemu {
     // TODO: test these methods!
@@ -49,6 +49,14 @@ namespace gbemu {
         return ((promotedA + promotedB) & 0x00000100) == 0x00000100;
     }
 
+    inline bool addHadCarry(uint8_t a, uint8_t b, uint8_t c)
+    {
+        uint32_t promotedA = (uint32_t) a;
+        uint32_t promotedB = (uint32_t) b;
+        uint32_t promotedC = (uint32_t) c;
+        return ((promotedA + promotedB + promotedC) & 0x00000100) == 0x00000100;
+    }
+
     inline bool addHadCarry(uint16_t a, uint16_t b)
     {
         uint32_t promotedA = (uint32_t) a;
@@ -61,15 +69,26 @@ namespace gbemu {
         return (((0x0F & a) + (0x0F & b)) & 0x10) == 0x10;
     }
 
+    inline bool addHadHalfCarry(uint8_t a, uint8_t b, uint8_t c)
+    {
+        return (((0x0F & a) + (0x0F & b)) + (0x0F & c) & 0x10) == 0x10;
+    }
+
     inline bool addHadHalfCarry(uint16_t a, uint16_t b)
     {
-        return (((0x00FF & a) + (0x00FF & b)) & 0x0100) == 0x0100;
+        return (((0x0FFF & a) + (0x0FFF & b)) & 0x1000) == 0x1000;
     }
 
     inline bool subHadCarry(uint8_t a, uint8_t b)
     {
         // TODO: test correctness
         return (int32_t)(a & 0xFF) - (int32_t)(b & 0xFF) < 0;
+    }
+
+    inline bool subHadCarry(uint8_t a, uint8_t b, uint8_t c)
+    {
+        // TODO: test correctness
+        return (int32_t)(a & 0xFF) - (int32_t)(b & 0xFF) - (int32_t)(c & 0xFF) < 0;
     }
 
     inline bool subHadCarry(uint16_t a, uint16_t b)
@@ -83,9 +102,14 @@ namespace gbemu {
         return (int32_t)(a & 0x0F) - (int32_t)(b & 0x0F) < 0;
     }
 
+    inline bool subHadHalfCarry(uint8_t a, uint8_t b, uint8_t c)
+    {
+        return (int32_t)(a & 0x0F) - (int32_t)(b & 0x0F) - (int32_t)(c & 0x0F) < 0;
+    }
+
     inline bool subHadHalfCarry(uint16_t a, uint16_t b)
     {
-        return (int32_t)(a & 0x00FF) - (int32_t)(b & 0x00FF) < 0;
+        return (int32_t)(a & 0x0FFF) - (int32_t)(b & 0x0FFF) < 0;
     }
 
 } // gbemu

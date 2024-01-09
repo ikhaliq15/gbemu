@@ -223,7 +223,7 @@ TEST_F(CPUTest, OpcodeTest_0x02_LD_DEREF_BC_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setBC(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -452,47 +452,59 @@ TEST_F(CPUTest, OpcodeTest_0x09_ADD_HL_BC) {
         {0x21, 0x00, 0x80},     // LD HL, 0x8000
         {0x01, 0x00, 0x80},     // LD BC, 0x8000
         {0x09},                 // ADD HL, BC
+        {0x21, 0x02, 0x4c},     // LD HL, 0x4c02
+        {0x01, 0x05, 0x5b},     // LD BC, 0x5b05
+        {0x09},                 // ADD HL, BC
     });
 
     loadSimpleProgram(program);
 
-    ExpectedCPUs expectedCPUs(program.size(), *cpu_);
-    expectedCPUs[0]->setHL(0x0105);
+    auto expectedCPU = *cpu_;
+    ExpectedCPUs expectedCPUs;
 
-    expectedCPUs[1]->setHL(0x0105);
-    expectedCPUs[1]->setBC(0xa365);
+    expectedCPU.setHL(0x0105);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[2]->setHL(0xa46a);
-    expectedCPUs[2]->setBC(0xa365);
-    expectedCPUs[2]->setFlags(expectedCPUs[1]->FlagZ(), 0, 0, 0);
+    expectedCPU.setBC(0xa365);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[3]->setHL(0x47cf);
-    expectedCPUs[3]->setBC(0xa365);
-    expectedCPUs[3]->setFlags(expectedCPUs[2]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0xa46a);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 0);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[4]->setHL(0x15e4);
-    expectedCPUs[4]->setBC(0xa365);
-    expectedCPUs[4]->setFlags(expectedCPUs[3]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0x47cf);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[5]->setHL(0x15e4);
-    expectedCPUs[5]->setBC(0xa3e5);
-    expectedCPUs[5]->setFlags(expectedCPUs[4]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0x15e4);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[6]->setHL(0xb9c9);
-    expectedCPUs[6]->setBC(0xa3e5);
-    expectedCPUs[6]->setFlags(expectedCPUs[5]->FlagZ(), 0, 1, 0);
+    expectedCPU.setBC(0xa3e5);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[7]->setHL(0x8000);
-    expectedCPUs[7]->setBC(0xa3e5);
-    expectedCPUs[7]->setFlags(expectedCPUs[6]->FlagZ(), 0, 1, 0);
+    expectedCPU.setHL(0xb9c9);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 0);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[8]->setHL(0x8000);
-    expectedCPUs[8]->setBC(0x8000);
-    expectedCPUs[8]->setFlags(expectedCPUs[7]->FlagZ(), 0, 1, 0);
+    expectedCPU.setHL(0x8000);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[9]->setHL(0x0000);
-    expectedCPUs[9]->setBC(0x8000);
-    expectedCPUs[9]->setFlags(expectedCPUs[8]->FlagZ(), 0, 0, 1);
+    expectedCPU.setBC(0x8000);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0x0000);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0x4c02);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setBC(0x5b05);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0xa707);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 1, 0);
+    expectedCPUs.push_back(expectedCPU);
 
     runProgramAndCompareRegistersAndRam(program, expectedCPUs);
 }
@@ -511,7 +523,7 @@ TEST_F(CPUTest, OpcodeTest_0x0A_LD_A_DEREF_BC) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setBC(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -576,7 +588,7 @@ TEST_F(CPUTest, OpcodeTest_0x0C_INC_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x3b);
     expectedCPU.setFlags(cpu_->FlagZ(), cpu_->FlagN(), cpu_->FlagH(), cpu_->FlagC());
     expectedCPUs.push_back(expectedCPU);
@@ -635,7 +647,7 @@ TEST_F(CPUTest, OpcodeTest_0x0D_DEC_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0xb3);
     expectedCPU.setFlags(cpu_->FlagZ(), cpu_->FlagN(), cpu_->FlagH(), cpu_->FlagC());
     expectedCPUs.push_back(expectedCPU);
@@ -770,7 +782,7 @@ TEST_F(CPUTest, OpcodeTest_0x12_LD_DEREF_DE_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setDE(0xc306);
     expectedCPUs.push_back(expectedCPU);
 
@@ -1011,47 +1023,59 @@ TEST_F(CPUTest, OpcodeTest_0x19_ADD_HL_DE) {
         {0x21, 0x00, 0x80},     // LD HL, 0x8000
         {0x11, 0x00, 0x80},     // LD DE, 0x8000
         {0x19},                 // ADD HL, DE
+        {0x21, 0x02, 0x4c},     // LD HL, 0x4c02
+        {0x11, 0x05, 0x5b},     // LD DE, 0x5b05
+        {0x19},                 // ADD HL, DE
     });
 
     loadSimpleProgram(program);
 
-    ExpectedCPUs expectedCPUs(program.size(), *cpu_);
-    expectedCPUs[0]->setHL(0x0105);
+    auto expectedCPU = *cpu_;
+    ExpectedCPUs expectedCPUs;
 
-    expectedCPUs[1]->setHL(0x0105);
-    expectedCPUs[1]->setDE(0xa365);
+    expectedCPU.setHL(0x0105);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[2]->setHL(0xa46a);
-    expectedCPUs[2]->setDE(0xa365);
-    expectedCPUs[2]->setFlags(expectedCPUs[1]->FlagZ(), 0, 0, 0);
+    expectedCPU.setDE(0xa365);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[3]->setHL(0x47cf);
-    expectedCPUs[3]->setDE(0xa365);
-    expectedCPUs[3]->setFlags(expectedCPUs[2]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0xa46a);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 0);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[4]->setHL(0x15e4);
-    expectedCPUs[4]->setDE(0xa365);
-    expectedCPUs[4]->setFlags(expectedCPUs[3]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0x47cf);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[5]->setHL(0x15e4);
-    expectedCPUs[5]->setDE(0xa3e5);
-    expectedCPUs[5]->setFlags(expectedCPUs[4]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0x15e4);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[6]->setHL(0xb9c9);
-    expectedCPUs[6]->setDE(0xa3e5);
-    expectedCPUs[6]->setFlags(expectedCPUs[5]->FlagZ(), 0, 1, 0);
+    expectedCPU.setDE(0xa3e5);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[7]->setHL(0x8000);
-    expectedCPUs[7]->setDE(0xa3e5);
-    expectedCPUs[7]->setFlags(expectedCPUs[6]->FlagZ(), 0, 1, 0);
+    expectedCPU.setHL(0xb9c9);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 0);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[8]->setHL(0x8000);
-    expectedCPUs[8]->setDE(0x8000);
-    expectedCPUs[8]->setFlags(expectedCPUs[7]->FlagZ(), 0, 1, 0);
+    expectedCPU.setHL(0x8000);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[9]->setHL(0x0000);
-    expectedCPUs[9]->setDE(0x8000);
-    expectedCPUs[9]->setFlags(expectedCPUs[8]->FlagZ(), 0, 0, 1);
+    expectedCPU.setDE(0x8000);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0x0000);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0x4c02);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setDE(0x5b05);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0xa707);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 1, 0);
+    expectedCPUs.push_back(expectedCPU);
 
     runProgramAndCompareRegistersAndRam(program, expectedCPUs);
 }
@@ -1070,7 +1094,7 @@ TEST_F(CPUTest, OpcodeTest_0x1A_LD_A_DEREF_DE) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setDE(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -1135,7 +1159,7 @@ TEST_F(CPUTest, OpcodeTest_0x1C_INC_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x3b);
     expectedCPU.setFlags(cpu_->FlagZ(), cpu_->FlagN(), cpu_->FlagH(), cpu_->FlagC());
     expectedCPUs.push_back(expectedCPU);
@@ -1194,7 +1218,7 @@ TEST_F(CPUTest, OpcodeTest_0x1D_DEC_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0xb3);
     expectedCPU.setFlags(cpu_->FlagZ(), cpu_->FlagN(), cpu_->FlagH(), cpu_->FlagC());
     expectedCPUs.push_back(expectedCPU);
@@ -1391,7 +1415,7 @@ TEST_F(CPUTest, OpcodeTest_0x22_LDI_DEREF_HL_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc306);
     expectedCPUs.push_back(expectedCPU);
 
@@ -1646,6 +1670,8 @@ TEST_F(CPUTest, OpcodeTest_0x29_ADD_HL_HL) {
         {0x29},                 // ADD HL, HL
         {0x21, 0x00, 0x80},     // LD HL, 0x8000
         {0x29},                 // ADD HL, HL
+        {0x21, 0x00, 0x4c},     // LD HL, 0x4c00
+        {0x29},                 // ADD HL
     });
 
     loadSimpleProgram(program);
@@ -1663,7 +1689,7 @@ TEST_F(CPUTest, OpcodeTest_0x29_ADD_HL_HL) {
     expectedCPUs[3]->setFlags(expectedCPUs[2]->FlagZ(), expectedCPUs[2]->FlagN(), expectedCPUs[2]->FlagH(), expectedCPUs[2]->FlagC());
 
     expectedCPUs[4]->setHL(0x2bc8);
-    expectedCPUs[4]->setFlags(expectedCPUs[3]->FlagZ(), 0, 1, 0);
+    expectedCPUs[4]->setFlags(expectedCPUs[3]->FlagZ(), 0, 0, 0);
 
     expectedCPUs[5]->setHL(0xffff);
     expectedCPUs[5]->setFlags(expectedCPUs[4]->FlagZ(), expectedCPUs[4]->FlagN(), expectedCPUs[4]->FlagH(), expectedCPUs[4]->FlagC());
@@ -1676,6 +1702,12 @@ TEST_F(CPUTest, OpcodeTest_0x29_ADD_HL_HL) {
 
     expectedCPUs[8]->setHL(0x0000);
     expectedCPUs[8]->setFlags(expectedCPUs[7]->FlagZ(), 0, 0, 1);
+
+    expectedCPUs[9]->setHL(0x4c00);
+    expectedCPUs[9]->setFlags(expectedCPUs[8]->FlagZ(), expectedCPUs[8]->FlagN(), expectedCPUs[8]->FlagH(), expectedCPUs[8]->FlagC());
+
+    expectedCPUs[10]->setHL(0x9800);
+    expectedCPUs[10]->setFlags(expectedCPUs[7]->FlagZ(), 0, 1, 0);
 
     runProgramAndCompareRegistersAndRam(program, expectedCPUs);
 }
@@ -1695,7 +1727,7 @@ TEST_F(CPUTest, OpcodeTest_0x2A_LDI_A_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -1765,7 +1797,7 @@ TEST_F(CPUTest, OpcodeTest_0x2C_INC_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x3b);
     expectedCPU.setFlags(cpu_->FlagZ(), cpu_->FlagN(), cpu_->FlagH(), cpu_->FlagC());
     expectedCPUs.push_back(expectedCPU);
@@ -1824,7 +1856,7 @@ TEST_F(CPUTest, OpcodeTest_0x2D_DEC_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0xb3);
     expectedCPU.setFlags(cpu_->FlagZ(), cpu_->FlagN(), cpu_->FlagH(), cpu_->FlagC());
     expectedCPUs.push_back(expectedCPU);
@@ -2040,7 +2072,7 @@ TEST_F(CPUTest, OpcodeTest_0x32_LDD_DEREF_HL_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc306);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2109,7 +2141,7 @@ TEST_F(CPUTest, OpcodeTest_0x34_INC_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2171,7 +2203,7 @@ TEST_F(CPUTest, OpcodeTest_0x35_DEC_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2226,7 +2258,7 @@ TEST_F(CPUTest, OpcodeTest_0x36_LD_DEREF_HL_d8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2263,7 +2295,7 @@ TEST_F(CPUTest, OpcodeTest_0x37_SCF) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2359,47 +2391,59 @@ TEST_F(CPUTest, OpcodeTest_0x39_ADD_HL_SP) {
         {0x21, 0x00, 0x80},     // LD HL, 0x8000
         {0x31, 0x00, 0x80},     // LD SP, 0x8000
         {0x39},                 // ADD HL, SP
+        {0x21, 0x02, 0x4c},     // LD HL, 0x4c02
+        {0x31, 0x05, 0x5b},     // LD SP, 0x5b05
+        {0x39},                 // ADD HL, SP
     });
 
     loadSimpleProgram(program);
 
-    ExpectedCPUs expectedCPUs(program.size(), *cpu_);
-    expectedCPUs[0]->setHL(0x0105);
+    auto expectedCPU = *cpu_;
+    ExpectedCPUs expectedCPUs;
 
-    expectedCPUs[1]->setHL(0x0105);
-    expectedCPUs[1]->setSP(0xa365);
+    expectedCPU.setHL(0x0105);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[2]->setHL(0xa46a);
-    expectedCPUs[2]->setSP(0xa365);
-    expectedCPUs[2]->setFlags(expectedCPUs[1]->FlagZ(), 0, 0, 0);
+    expectedCPU.setSP(0xa365);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[3]->setHL(0x47cf);
-    expectedCPUs[3]->setSP(0xa365);
-    expectedCPUs[3]->setFlags(expectedCPUs[2]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0xa46a);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 0);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[4]->setHL(0x15e4);
-    expectedCPUs[4]->setSP(0xa365);
-    expectedCPUs[4]->setFlags(expectedCPUs[3]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0x47cf);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[5]->setHL(0x15e4);
-    expectedCPUs[5]->setSP(0xa3e5);
-    expectedCPUs[5]->setFlags(expectedCPUs[4]->FlagZ(), 0, 0, 1);
+    expectedCPU.setHL(0x15e4);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[6]->setHL(0xb9c9);
-    expectedCPUs[6]->setSP(0xa3e5);
-    expectedCPUs[6]->setFlags(expectedCPUs[5]->FlagZ(), 0, 1, 0);
+    expectedCPU.setSP(0xa3e5);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[7]->setHL(0x8000);
-    expectedCPUs[7]->setSP(0xa3e5);
-    expectedCPUs[7]->setFlags(expectedCPUs[6]->FlagZ(), 0, 1, 0);
+    expectedCPU.setHL(0xb9c9);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 0);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[8]->setHL(0x8000);
-    expectedCPUs[8]->setSP(0x8000);
-    expectedCPUs[8]->setFlags(expectedCPUs[7]->FlagZ(), 0, 1, 0);
+    expectedCPU.setHL(0x8000);
+    expectedCPUs.push_back(expectedCPU);
 
-    expectedCPUs[9]->setHL(0x0000);
-    expectedCPUs[9]->setSP(0x8000);
-    expectedCPUs[9]->setFlags(expectedCPUs[8]->FlagZ(), 0, 0, 1);
+    expectedCPU.setSP(0x8000);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0x0000);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0x4c02);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setSP(0x5b05);
+    expectedCPUs.push_back(expectedCPU);
+
+    expectedCPU.setHL(0xa707);
+    expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 1, 0);
+    expectedCPUs.push_back(expectedCPU);
 
     runProgramAndCompareRegistersAndRam(program, expectedCPUs);
 }
@@ -2419,7 +2463,7 @@ TEST_F(CPUTest, OpcodeTest_0x3A_LDD_A_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2489,7 +2533,7 @@ TEST_F(CPUTest, OpcodeTest_0x3C_INC_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x3b);
     expectedCPU.setFlags(cpu_->FlagZ(), cpu_->FlagN(), cpu_->FlagH(), cpu_->FlagC());
     expectedCPUs.push_back(expectedCPU);
@@ -2548,7 +2592,7 @@ TEST_F(CPUTest, OpcodeTest_0x3D_DEC_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0xb3);
     expectedCPU.setFlags(cpu_->FlagZ(), cpu_->FlagN(), cpu_->FlagH(), cpu_->FlagC());
     expectedCPUs.push_back(expectedCPU);
@@ -2625,7 +2669,7 @@ TEST_F(CPUTest, OpcodeTest_0x3F_CCF) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, (expectedCPU.FlagC() == 1) ? 0 : 1);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2653,7 +2697,7 @@ TEST_F(CPUTest, OpcodeTest_0x40_LD_B_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2675,7 +2719,7 @@ TEST_F(CPUTest, OpcodeTest_0x41_LD_B_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2700,7 +2744,7 @@ TEST_F(CPUTest, OpcodeTest_0x42_LD_B_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2725,7 +2769,7 @@ TEST_F(CPUTest, OpcodeTest_0x43_LD_B_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2750,7 +2794,7 @@ TEST_F(CPUTest, OpcodeTest_0x44_LD_B_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2775,7 +2819,7 @@ TEST_F(CPUTest, OpcodeTest_0x45_LD_B_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2801,7 +2845,7 @@ TEST_F(CPUTest, OpcodeTest_0x46_LD_B_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2829,7 +2873,7 @@ TEST_F(CPUTest, OpcodeTest_0x47_LD_B_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2854,7 +2898,7 @@ TEST_F(CPUTest, OpcodeTest_0x48_LD_C_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2878,7 +2922,7 @@ TEST_F(CPUTest, OpcodeTest_0x49_LD_C_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2900,7 +2944,7 @@ TEST_F(CPUTest, OpcodeTest_0x4A_LD_C_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2925,7 +2969,7 @@ TEST_F(CPUTest, OpcodeTest_0x4B_LD_C_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2950,7 +2994,7 @@ TEST_F(CPUTest, OpcodeTest_0x4C_LD_C_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -2975,7 +3019,7 @@ TEST_F(CPUTest, OpcodeTest_0x4D_LD_C_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3001,7 +3045,7 @@ TEST_F(CPUTest, OpcodeTest_0x4E_LD_C_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3029,7 +3073,7 @@ TEST_F(CPUTest, OpcodeTest_0x4F_LD_C_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setC(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3054,7 +3098,7 @@ TEST_F(CPUTest, OpcodeTest_0x50_LD_D_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setD(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3079,7 +3123,7 @@ TEST_F(CPUTest, OpcodeTest_0x51_LD_D_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setD(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3103,7 +3147,7 @@ TEST_F(CPUTest, OpcodeTest_0x52_LD_D_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setD(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3125,7 +3169,7 @@ TEST_F(CPUTest, OpcodeTest_0x53_LD_D_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setD(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3150,7 +3194,7 @@ TEST_F(CPUTest, OpcodeTest_0x54_LD_D_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setD(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3175,7 +3219,7 @@ TEST_F(CPUTest, OpcodeTest_0x55_LD_D_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setD(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3201,7 +3245,7 @@ TEST_F(CPUTest, OpcodeTest_0x56_LD_D_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setD(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3229,7 +3273,7 @@ TEST_F(CPUTest, OpcodeTest_0x57_LD_D_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setD(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3254,7 +3298,7 @@ TEST_F(CPUTest, OpcodeTest_0x58_LD_E_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3279,7 +3323,7 @@ TEST_F(CPUTest, OpcodeTest_0x59_LD_E_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3304,7 +3348,7 @@ TEST_F(CPUTest, OpcodeTest_0x5A_LD_E_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3328,7 +3372,7 @@ TEST_F(CPUTest, OpcodeTest_0x5B_LD_E_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3350,7 +3394,7 @@ TEST_F(CPUTest, OpcodeTest_0x5C_LD_E_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3375,7 +3419,7 @@ TEST_F(CPUTest, OpcodeTest_0x5D_LD_E_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3401,7 +3445,7 @@ TEST_F(CPUTest, OpcodeTest_0x5E_LD_E_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3429,7 +3473,7 @@ TEST_F(CPUTest, OpcodeTest_0x5F_LD_E_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setE(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3454,7 +3498,7 @@ TEST_F(CPUTest, OpcodeTest_0x60_LD_H_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setH(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3479,7 +3523,7 @@ TEST_F(CPUTest, OpcodeTest_0x61_LD_H_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setH(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3504,7 +3548,7 @@ TEST_F(CPUTest, OpcodeTest_0x62_LD_H_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setH(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3529,7 +3573,7 @@ TEST_F(CPUTest, OpcodeTest_0x63_LD_H_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setH(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3553,7 +3597,7 @@ TEST_F(CPUTest, OpcodeTest_0x64_LD_H_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setH(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3575,7 +3619,7 @@ TEST_F(CPUTest, OpcodeTest_0x65_LD_H_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setH(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3601,7 +3645,7 @@ TEST_F(CPUTest, OpcodeTest_0x66_LD_H_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setH(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3629,7 +3673,7 @@ TEST_F(CPUTest, OpcodeTest_0x67_LD_H_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setH(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3654,7 +3698,7 @@ TEST_F(CPUTest, OpcodeTest_0x68_LD_L_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3679,7 +3723,7 @@ TEST_F(CPUTest, OpcodeTest_0x69_LD_L_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3704,7 +3748,7 @@ TEST_F(CPUTest, OpcodeTest_0x6A_LD_L_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3729,7 +3773,7 @@ TEST_F(CPUTest, OpcodeTest_0x6B_LD_L_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3754,7 +3798,7 @@ TEST_F(CPUTest, OpcodeTest_0x6C_LD_L_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3778,7 +3822,7 @@ TEST_F(CPUTest, OpcodeTest_0x6D_LD_L_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3801,7 +3845,7 @@ TEST_F(CPUTest, OpcodeTest_0x6E_LD_L_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3829,7 +3873,7 @@ TEST_F(CPUTest, OpcodeTest_0x6F_LD_L_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setL(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3855,7 +3899,7 @@ TEST_F(CPUTest, OpcodeTest_0x70_LD_DEREF_HL_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3884,7 +3928,7 @@ TEST_F(CPUTest, OpcodeTest_0x71_LD_DEREF_HL_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3913,7 +3957,7 @@ TEST_F(CPUTest, OpcodeTest_0x72_LD_DEREF_HL_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3942,7 +3986,7 @@ TEST_F(CPUTest, OpcodeTest_0x73_LD_DEREF_HL_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3970,7 +4014,7 @@ TEST_F(CPUTest, OpcodeTest_0x74_LD_DEREF_HL_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -3995,7 +4039,7 @@ TEST_F(CPUTest, OpcodeTest_0x75_LD_DEREF_HL_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4027,7 +4071,7 @@ TEST_F(CPUTest, OpcodeTest_0x77_LD_DEREF_HL_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4055,7 +4099,7 @@ TEST_F(CPUTest, OpcodeTest_0x78_LD_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4080,7 +4124,7 @@ TEST_F(CPUTest, OpcodeTest_0x79_LD_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4105,7 +4149,7 @@ TEST_F(CPUTest, OpcodeTest_0x7A_LD_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4130,7 +4174,7 @@ TEST_F(CPUTest, OpcodeTest_0x7B_LD_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4155,7 +4199,7 @@ TEST_F(CPUTest, OpcodeTest_0x7C_LD_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4180,7 +4224,7 @@ TEST_F(CPUTest, OpcodeTest_0x7D_LD_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4206,7 +4250,7 @@ TEST_F(CPUTest, OpcodeTest_0x7E_LD_A_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4233,7 +4277,7 @@ TEST_F(CPUTest, OpcodeTest_0x7F_LD_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4262,7 +4306,7 @@ TEST_F(CPUTest, OpcodeTest_0x80_ADD_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4319,7 +4363,7 @@ TEST_F(CPUTest, OpcodeTest_0x81_ADD_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4376,7 +4420,7 @@ TEST_F(CPUTest, OpcodeTest_0x82_ADD_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4433,7 +4477,7 @@ TEST_F(CPUTest, OpcodeTest_0x83_ADD_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4490,7 +4534,7 @@ TEST_F(CPUTest, OpcodeTest_0x84_ADD_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4547,7 +4591,7 @@ TEST_F(CPUTest, OpcodeTest_0x85_ADD_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4605,7 +4649,7 @@ TEST_F(CPUTest, OpcodeTest_0x86_ADD_A_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4663,7 +4707,7 @@ TEST_F(CPUTest, OpcodeTest_0x87_ADD_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x07);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4722,7 +4766,7 @@ TEST_F(CPUTest, OpcodeTest_0x88_ADC_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4813,7 +4857,7 @@ TEST_F(CPUTest, OpcodeTest_0x89_ADC_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4904,7 +4948,7 @@ TEST_F(CPUTest, OpcodeTest_0x8A_ADC_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -4995,7 +5039,7 @@ TEST_F(CPUTest, OpcodeTest_0x8B_ADC_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5086,7 +5130,7 @@ TEST_F(CPUTest, OpcodeTest_0x8C_ADC_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5177,7 +5221,7 @@ TEST_F(CPUTest, OpcodeTest_0x8D_ADC_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5269,7 +5313,7 @@ TEST_F(CPUTest, OpcodeTest_0x8E_ADC_A_DEREF_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5352,7 +5396,7 @@ TEST_F(CPUTest, OpcodeTest_0x8F_ADC_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5401,7 +5445,7 @@ TEST_F(CPUTest, OpcodeTest_0x90_SUB_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5463,7 +5507,7 @@ TEST_F(CPUTest, OpcodeTest_0x91_SUB_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5525,7 +5569,7 @@ TEST_F(CPUTest, OpcodeTest_0x92_SUB_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5587,7 +5631,7 @@ TEST_F(CPUTest, OpcodeTest_0x93_SUB_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5649,7 +5693,7 @@ TEST_F(CPUTest, OpcodeTest_0x94_SUB_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5711,7 +5755,7 @@ TEST_F(CPUTest, OpcodeTest_0x95_SUB_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5777,7 +5821,7 @@ TEST_F(CPUTest, OpcodeTest_0x96_SUB_A_DEREF_HL) {
 
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5835,7 +5879,7 @@ TEST_F(CPUTest, OpcodeTest_0x97_SUB_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5892,7 +5936,7 @@ TEST_F(CPUTest, OpcodeTest_0x98_SBC_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -5988,7 +6032,7 @@ TEST_F(CPUTest, OpcodeTest_0x99_SBC_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6084,7 +6128,7 @@ TEST_F(CPUTest, OpcodeTest_0x9A_SBC_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6180,7 +6224,7 @@ TEST_F(CPUTest, OpcodeTest_0x9B_SBC_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6276,7 +6320,7 @@ TEST_F(CPUTest, OpcodeTest_0x9C_SBC_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6372,7 +6416,7 @@ TEST_F(CPUTest, OpcodeTest_0x9D_SBC_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6472,7 +6516,7 @@ TEST_F(CPUTest, OpcodeTest_0x9E_SBC_A_DEREF_HL) {
 
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6562,7 +6606,7 @@ TEST_F(CPUTest, OpcodeTest_0x9F_SBC_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6636,7 +6680,7 @@ TEST_F(CPUTest, OpcodeTest_0xA0_AND_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6719,7 +6763,7 @@ TEST_F(CPUTest, OpcodeTest_0xA1_AND_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6802,7 +6846,7 @@ TEST_F(CPUTest, OpcodeTest_0xA2_AND_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6885,7 +6929,7 @@ TEST_F(CPUTest, OpcodeTest_0xA3_AND_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -6968,7 +7012,7 @@ TEST_F(CPUTest, OpcodeTest_0xA4_AND_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7051,7 +7095,7 @@ TEST_F(CPUTest, OpcodeTest_0xA5_AND_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7138,7 +7182,7 @@ TEST_F(CPUTest, OpcodeTest_0xA6_AND_A_DEREF_HL) {
 
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7216,7 +7260,7 @@ TEST_F(CPUTest, OpcodeTest_0xA7_AND_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7287,7 +7331,7 @@ TEST_F(CPUTest, OpcodeTest_0xA8_XOR_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7383,7 +7427,7 @@ TEST_F(CPUTest, OpcodeTest_0xA9_XOR_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7479,7 +7523,7 @@ TEST_F(CPUTest, OpcodeTest_0xAA_XOR_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7575,7 +7619,7 @@ TEST_F(CPUTest, OpcodeTest_0xAB_XOR_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7671,7 +7715,7 @@ TEST_F(CPUTest, OpcodeTest_0xAC_XOR_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7767,7 +7811,7 @@ TEST_F(CPUTest, OpcodeTest_0xAD_XOR_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7867,7 +7911,7 @@ TEST_F(CPUTest, OpcodeTest_0xAE_XOR_A_DEREF_HL) {
 
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -7957,7 +8001,7 @@ TEST_F(CPUTest, OpcodeTest_0xAF_XOR_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8038,7 +8082,7 @@ TEST_F(CPUTest, OpcodeTest_0xB0_OR_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8147,7 +8191,7 @@ TEST_F(CPUTest, OpcodeTest_0xB1_OR_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8256,7 +8300,7 @@ TEST_F(CPUTest, OpcodeTest_0xB2_OR_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8365,7 +8409,7 @@ TEST_F(CPUTest, OpcodeTest_0xB3_OR_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8474,7 +8518,7 @@ TEST_F(CPUTest, OpcodeTest_0xB4_OR_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8583,7 +8627,7 @@ TEST_F(CPUTest, OpcodeTest_0xB5_OR_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8696,7 +8740,7 @@ TEST_F(CPUTest, OpcodeTest_0xB6_OR_A_DEREF_HL) {
 
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8798,7 +8842,7 @@ TEST_F(CPUTest, OpcodeTest_0xB7_OR_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8881,7 +8925,7 @@ TEST_F(CPUTest, OpcodeTest_0xB8_CP_A_B) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -8969,7 +9013,7 @@ TEST_F(CPUTest, OpcodeTest_0xB9_CP_A_C) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9057,7 +9101,7 @@ TEST_F(CPUTest, OpcodeTest_0xBA_CP_A_D) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9145,7 +9189,7 @@ TEST_F(CPUTest, OpcodeTest_0xBB_CP_A_E) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9233,7 +9277,7 @@ TEST_F(CPUTest, OpcodeTest_0xBC_CP_A_H) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9321,7 +9365,7 @@ TEST_F(CPUTest, OpcodeTest_0xBD_CP_A_L) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9413,7 +9457,7 @@ TEST_F(CPUTest, OpcodeTest_0xBE_CP_A_DEREF_HL) {
 
     expectedCPU.setHL(0xc307);
     expectedCPUs.push_back(expectedCPU);
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9496,7 +9540,7 @@ TEST_F(CPUTest, OpcodeTest_0xBF_CP_A_A) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9558,7 +9602,7 @@ TEST_F(CPUTest, OpcodeTest_0xC0_RET_NZ_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -9602,7 +9646,7 @@ TEST_F(CPUTest, OpcodeTest_0xC0_RET_NZ_NO_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -9649,7 +9693,7 @@ TEST_F(CPUTest, OpcodeTest_0xC1_POP_BC) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9707,7 +9751,7 @@ TEST_F(CPUTest, OpcodeTest_0xC2_JP_NZ_a16_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x00);
     expectedCPU.setPC(0x0102);
     expectedCPUs.push_back(expectedCPU);
@@ -9774,7 +9818,7 @@ TEST_F(CPUTest, OpcodeTest_0xC4_CALL_NZ_a16_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setB(0x00);
     expectedCPU.setPC(0x0102);
     expectedCPUs.push_back(expectedCPU);
@@ -9835,7 +9879,7 @@ TEST_F(CPUTest, OpcodeTest_0xC5_PUSH_BC) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9897,7 +9941,7 @@ TEST_F(CPUTest, OpcodeTest_0xC6_ADD_A_d8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -9941,7 +9985,7 @@ TEST_F(CPUTest, OpcodeTest_0xC7_RST_0) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -9981,7 +10025,7 @@ TEST_F(CPUTest, OpcodeTest_0xC8_RET_Z_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10022,7 +10066,7 @@ TEST_F(CPUTest, OpcodeTest_0xC8_RET_Z_NO_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10067,7 +10111,7 @@ TEST_F(CPUTest, OpcodeTest_0xC9_RET_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10105,7 +10149,7 @@ TEST_F(CPUTest, OpcodeTest_0xCA_JP_Z_a16_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x00);
     expectedCPU.setFlags(1, 0, 0, 0);
     expectedCPU.setPC(0x0101);
@@ -10239,7 +10283,7 @@ TEST_F(CPUTest, OpcodeTest_0xCE_ADC_A_d8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -10303,7 +10347,7 @@ TEST_F(CPUTest, OpcodeTest_0xCF_RST_1) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10344,7 +10388,7 @@ TEST_F(CPUTest, OpcodeTest_0xD0_RET_NC_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10387,7 +10431,7 @@ TEST_F(CPUTest, OpcodeTest_0xD0_RET_NC_NO_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10433,7 +10477,7 @@ TEST_F(CPUTest, OpcodeTest_0xD1_POP_DE) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPUs.push_back(expectedCPU);
 
@@ -10491,7 +10535,7 @@ TEST_F(CPUTest, OpcodeTest_0xD2_JP_NC_a16_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
     expectedCPU.setPC(0x0101);
     expectedCPUs.push_back(expectedCPU);
@@ -10539,7 +10583,7 @@ TEST_F(CPUTest, OpcodeTest_0xD4_CALL_NC_a16_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
     expectedCPU.setPC(0x0101);
     expectedCPUs.push_back(expectedCPU);
@@ -10598,7 +10642,7 @@ TEST_F(CPUTest, OpcodeTest_0xD5_PUSH_DE) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPUs.push_back(expectedCPU);
 
@@ -10661,7 +10705,7 @@ TEST_F(CPUTest, OpcodeTest_0xD6_SUB_A_d8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -10709,7 +10753,7 @@ TEST_F(CPUTest, OpcodeTest_0xD7_RST_2) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10749,7 +10793,7 @@ TEST_F(CPUTest, OpcodeTest_0xD8_RET_C_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10789,7 +10833,7 @@ TEST_F(CPUTest, OpcodeTest_0xD8_RET_C_NO_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10832,7 +10876,7 @@ TEST_F(CPUTest, OpcodeTest_0xD9_RETI_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -10866,7 +10910,7 @@ TEST_F(CPUTest, OpcodeTest_0xDA_JP_C_a16_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
     expectedCPU.setPC(0x0101);
     expectedCPUs.push_back(expectedCPU);
@@ -10914,7 +10958,7 @@ TEST_F(CPUTest, OpcodeTest_0xDC_CALL_C_a16_JUMP) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setFlags(expectedCPU.FlagZ(), 0, 0, 1);
     expectedCPU.setPC(0x0101);
     expectedCPUs.push_back(expectedCPU);
@@ -10977,7 +11021,7 @@ TEST_F(CPUTest, OpcodeTest_0xDE_SBC_A_d8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -11045,7 +11089,7 @@ TEST_F(CPUTest, OpcodeTest_0xDF_RST_3) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -11120,7 +11164,7 @@ TEST_F(CPUTest, OpcodeTest_0xE1_POP_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPUs.push_back(expectedCPU);
 
@@ -11227,7 +11271,7 @@ TEST_F(CPUTest, OpcodeTest_0xE5_PUSH_HL) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPUs.push_back(expectedCPU);
 
@@ -11293,7 +11337,7 @@ TEST_F(CPUTest, OpcodeTest_0xE6_AND_A_d8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -11351,7 +11395,7 @@ TEST_F(CPUTest, OpcodeTest_0xE7_RST_4) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -11394,7 +11438,7 @@ TEST_F(CPUTest, OpcodeTest_0xE8_ADD_SP_s8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0x0105);
     expectedCPUs.push_back(expectedCPU);
 
@@ -11503,7 +11547,7 @@ TEST_F(CPUTest, OpcodeTest_0xEE_XOR_A_d8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -11575,7 +11619,7 @@ TEST_F(CPUTest, OpcodeTest_0xEF_RST_5) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -11676,7 +11720,7 @@ TEST_F(CPUTest, OpcodeTest_0xF1_POP_AF) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPUs.push_back(expectedCPU);
 
@@ -11864,7 +11908,7 @@ TEST_F(CPUTest, OpcodeTest_0xF5_PUSH_AF) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPUs.push_back(expectedCPU);
 
@@ -11940,7 +11984,7 @@ TEST_F(CPUTest, OpcodeTest_0xF6_OR_A_d8) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setA(0x5a);
     expectedCPUs.push_back(expectedCPU);
 
@@ -12012,7 +12056,7 @@ TEST_F(CPUTest, OpcodeTest_0xF7_RST_6) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);
@@ -12223,7 +12267,7 @@ TEST_F(CPUTest, OpcodeTest_0xFF_RST_7) {
 
     auto expectedCPU = *cpu_;
     ExpectedCPUs expectedCPUs;
-    
+
     expectedCPU.setSP(0xfffe);
     expectedCPU.setPC(0x0103);
     expectedCPUs.push_back(expectedCPU);

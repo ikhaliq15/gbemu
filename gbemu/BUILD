@@ -47,6 +47,8 @@ cc_test(
     "alu.cpp",
     "alu.h",
     "bitutils.h",
+    "cartridge.h",
+    "cartridge.cpp",
     "cpu.h",
     "cpu.cpp",
     "opcode.h",
