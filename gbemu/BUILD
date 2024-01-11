@@ -28,13 +28,18 @@ cc_binary(
           "Metal",
           "-framework",
           "CoreVideo",
-          "-liconv"
+          "-liconv",
+          "-framework",
+          "UniformTypeIdentifiers",
+          "-framework",
+          "AppKit"
       ],
   }),
   deps = [
     "@json//:json",
     "@com_github_libsdl_sdl2//:SDL",
     "@com_github_libsdl_sdl2//:include",
+    "@nativefiledialog_git//:nfd",
     ]
 )
 
