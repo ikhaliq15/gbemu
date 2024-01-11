@@ -9,7 +9,7 @@ namespace gbemu {
     : cartridgeLoaded_(false)
     , quit_(false)
     , joypad_(std::make_shared<Joypad>())
-    , ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE, joypad_))
+    , ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE))
     , cpu_(std::make_shared<CPU>(ram_, opcodeDataFile))
     , ppu_(PPU(cpu_))
     {}
@@ -32,6 +32,8 @@ namespace gbemu {
             std::cerr << "No cartridge loaded in gameboy." << std::endl;
             exit(EXIT_FAILURE);
         }
+
+        ram_->addOwner(RAM::JOYP, joypad_);
 
         ppu_.init();
         ppu_.subscribeToCompleteFrames(shared_from_this());

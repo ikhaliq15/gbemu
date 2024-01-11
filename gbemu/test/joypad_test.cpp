@@ -17,14 +17,16 @@ class JoypadTest : public testing::Test {
 
     uint8_t getButtonsNibble() const
     {
-        const auto joyp = joypad_->getJoypadRegister(0x10);
+        joypad_->onWriteOwnedByte(gbemu::RAM::JOYP, 0x10, 0x00);
+        const auto joyp = joypad_->onReadOwnedByte(gbemu::RAM::JOYP);
         EXPECT_EQ(joyp & 0xf0, 0x10);
         return joyp & 0x0f;
     }
 
     uint8_t getDpadNibble() const
     {
-        const auto joyp = joypad_->getJoypadRegister(0x20);
+        joypad_->onWriteOwnedByte(gbemu::RAM::JOYP, 0x20, 0x00);
+        const auto joyp = joypad_->onReadOwnedByte(gbemu::RAM::JOYP);
         EXPECT_EQ(joyp & 0xf0, 0x20);
         return joyp & 0x0f;
     }
@@ -62,10 +64,13 @@ class JoypadTest : public testing::Test {
 TEST_F(JoypadTest, NoButtonsPressed)
 {
     // Neither dpad or buttons selected defaults to all buttons not pressed.
-    ASSERT_EQ(joypad_->getJoypadRegister(0x30), 0x3f);
+    ASSERT_EQ(joypad_->onReadOwnedByte(gbemu::RAM::JOYP), 0x3f);
 
-    ASSERT_EQ(joypad_->getJoypadRegister(0x10), 0x1f);
-    ASSERT_EQ(joypad_->getJoypadRegister(0x20), 0x2f);
+    joypad_->onWriteOwnedByte(gbemu::RAM::JOYP, 0x10, 0x00);
+    ASSERT_EQ(joypad_->onReadOwnedByte(gbemu::RAM::JOYP), 0x1f);
+
+    joypad_->onWriteOwnedByte(gbemu::RAM::JOYP, 0x20, 0x00);
+    ASSERT_EQ(joypad_->onReadOwnedByte(gbemu::RAM::JOYP), 0x2f);
 }
 
 SINGLE_BUTTON_TEST(Down, gbemu::Joypad::DOWN_BUTTON, 3, true);

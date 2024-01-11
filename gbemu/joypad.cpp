@@ -6,7 +6,8 @@
 namespace gbemu {
 
     Joypad::Joypad()
-    : buttonStates_(0x0f)
+    : selectedStates_(0x30)
+    , buttonStates_(0x0f)
     , dpadStates_(0x0f)
     {
     }
@@ -21,18 +22,24 @@ namespace gbemu {
         handleKeyEvent(event.keysym.sym, BUTTON_UP);
     }
 
-    uint8_t Joypad::getJoypadRegister(uint8_t joyp) const
+    uint8_t Joypad::getJoypadRegister() const
     {
-        const auto buttonState = getBit(joyp, BUTTONS_STATE_BIT);
-        const auto dpadState = getBit(joyp, DPAD_STATE_BIT);
+        uint8_t lowerNibble = 0x0f;
+        if (getBit(selectedStates_, DPAD_STATE_BIT) == SELECTED)
+            lowerNibble = dpadStates_;
+        if (getBit(selectedStates_, BUTTONS_STATE_BIT) == SELECTED)
+            lowerNibble = buttonStates_;
+        return interpolateNibbles(selectedStates_, lowerNibble);
+    }
 
-        if (buttonState == 0)
-            return interpolateNibbles(joyp, buttonStates_);
+    uint8_t Joypad::onReadOwnedByte(uint16_t address)
+    {
+        return getJoypadRegister();
+    }
 
-        if (dpadState == 0)
-            return interpolateNibbles(joyp, dpadStates_);
-
-        return interpolateNibbles(joyp, 0x0F);
+    void Joypad::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue)
+    {
+        selectedStates_ = 0xf0 & newValue;
     }
 
     void Joypad::handleKeyEvent(SDL_Keycode keyCode, uint8_t newButtonState)

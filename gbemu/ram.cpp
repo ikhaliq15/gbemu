@@ -3,8 +3,7 @@
 
 namespace gbemu {
 
-    RAM::RAM(uint32_t ramSize, std::shared_ptr<Joypad> joypad, uint8_t defaultValue)
-    : joypad_(joypad)
+    RAM::RAM(uint32_t ramSize, uint8_t defaultValue)
     {
         memory_ = std::vector<uint8_t>(ramSize, defaultValue);
     }
@@ -12,7 +11,6 @@ namespace gbemu {
     RAM::RAM(const RAM& ram)
     {
         memory_ = ram.memory_;
-        joypad_ = ram.joypad_;
     }
 
     // uint8_t RAM::operator [](int i) const
@@ -88,18 +86,20 @@ namespace gbemu {
         if (address == 0x2000)
             return;
 
-        if (address == RAM::JOYP)
-        {
-            // TODO: remove when joypad is working correctly
-            value = (value & 0xf0);
-        }
-
         // TODO: OAM DMA transfer (should make rest of RAM inaccessible and take ~160 microseconds)
+        // TODO: turn into a R/W Owner?
         if (address == RAM::DMA)
         {
             const uint16_t startAddress = concatBytes(value, 0x00);
             for (int i = 0; i < 160; i++)
                 set(RAM::OAM + i, get(startAddress + i));
+        }
+
+        const auto it = writeOwners_.find(address);
+        if (it != writeOwners_.end())
+        {
+            it->second->onWriteOwnedByte(address, value, get(address));
+            return;
         }
 
         memory_[address] = value;
@@ -111,15 +111,30 @@ namespace gbemu {
         // if (address == RAM::LY)
         //     return 0x90;
 
-        if (address == RAM::JOYP)
-        {
-            const auto joyp = memory_[RAM::JOYP];
-            const auto completeJoyp = joypad_->getJoypadRegister(joyp);
-            // std::cout << "Start Joyp = " << toHexString(joyp) << ", End JOYP = " << toHexString(completeJoyp) << std::endl;
-            return completeJoyp;
-        }
-
+        const auto it = readOwners_.find(address);
+        if (it != readOwners_.end())
+            return it->second->onReadOwnedByte(address);
         return memory_[address];
+    }
+
+    void RAM::addReadOwner(uint16_t address, std::shared_ptr<ReadOwner> owner)
+    {
+        if (readOwners_.find(address) != readOwners_.end())
+            throw std::runtime_error("The address " + toHexString(address) + " cannot have multiple read owners.");
+        readOwners_.insert({address, owner});
+    }
+
+    void RAM::addWriteOwner(uint16_t address, std::shared_ptr<WriteOwner> owner)
+    {
+        if (writeOwners_.find(address) != writeOwners_.end())
+            throw std::runtime_error("The address " + toHexString(address) + " cannot have multiple write owners.");
+        writeOwners_.insert({address, owner});
+    }
+
+    void RAM::addOwner(uint16_t address, std::shared_ptr<Owner> owner)
+    {
+        addReadOwner(address, owner);
+        addWriteOwner(address, owner);
     }
 
 } // gbemu

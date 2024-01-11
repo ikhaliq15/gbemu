@@ -1,12 +1,14 @@
 #ifndef GBEMU_JOYPAD
 #define GBEMU_JOYPAD
 
+#include "ram.h"
+
 #include <SDL2/SDL.h>
 #include <map>
 
 namespace gbemu {
 
-    class Joypad
+    class Joypad: public RAM::Owner
     {
     public:
         static constexpr SDL_Keycode START_BUTTON   = SDLK_RETURN;
@@ -22,11 +24,18 @@ namespace gbemu {
 
         void handleKeyDownEvent(const SDL_KeyboardEvent& event);
         void handleKeyUpEvent(const SDL_KeyboardEvent& event);
-        uint8_t getJoypadRegister(uint8_t joyp) const;
+
+        uint8_t getJoypadRegister() const;
+
+        uint8_t onReadOwnedByte(uint16_t address);
+        void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue);
 
     private:
         static constexpr uint8_t BUTTON_DOWN = 0;
         static constexpr uint8_t BUTTON_UP = 1;
+
+        static constexpr uint8_t SELECTED = 0;
+        static constexpr uint8_t UNSELECTED = 1;
 
         static constexpr uint8_t START_BUTTON_BIT  = 3;
         static constexpr uint8_t SELECT_BUTTON_BIT = 2;
@@ -50,6 +59,8 @@ namespace gbemu {
             {LEFT_BUTTON, LEFT_BUTTON_BIT},
             {RIGHT_BUTTON, RIGHT_BUTTON_BIT},
         };
+
+        uint8_t selectedStates_;
 
         uint8_t buttonStates_;
         uint8_t dpadStates_;

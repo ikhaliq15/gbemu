@@ -2,9 +2,9 @@
 #define GBEMU_RAM
 
 #include "cartridge.h"
-#include "joypad.h"
 
 #include <vector>
+#include <map>
 #include <iostream>
 
 namespace gbemu {
@@ -12,6 +12,25 @@ namespace gbemu {
     class RAM
     {
     public:
+        class ReadOwner
+        {
+        public:
+            ReadOwner(){}
+            virtual ~ReadOwner(){}
+            virtual uint8_t onReadOwnedByte(uint16_t address) = 0;
+        };
+
+        class WriteOwner
+        {
+        public:
+            WriteOwner(){}
+            virtual ~WriteOwner(){}
+            virtual void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) = 0;
+        };
+
+        class Owner: public WriteOwner, public ReadOwner
+        {};
+
         static constexpr uint16_t OAM  = 0xfe00;
         static constexpr uint16_t JOYP = 0xff00;
         static constexpr uint16_t TIMA = 0xff05;
@@ -26,11 +45,8 @@ namespace gbemu {
         static constexpr uint16_t OBP1 = 0xff49;
         static constexpr uint16_t IE   = 0xffff;
 
-        RAM(uint32_t ramSize, std::shared_ptr<Joypad> joypad, uint8_t defaultValue = 0);
+        RAM(uint32_t ramSize, uint8_t defaultValue = 0);
         RAM(const RAM& ram);
-
-        // uint8_t operator [](int i) const;
-        // uint8_t& operator [](int i);
 
         bool operator ==(const RAM& rhs) const;
         bool operator !=(const RAM& rhs) const;
@@ -43,13 +59,18 @@ namespace gbemu {
         void setImmediate16(uint16_t i, uint16_t newVal);
 
         void set(uint16_t address, uint8_t value);
-
         uint8_t get(uint16_t address) const;
 
-    private:
-        std::shared_ptr<Joypad> joypad_;
+        void addReadOwner(uint16_t address, std::shared_ptr<ReadOwner> owner);
+        void addWriteOwner(uint16_t address, std::shared_ptr<WriteOwner> owner);
+        void addOwner(uint16_t address, std::shared_ptr<Owner> owner);
 
+    private:
         std::vector<uint8_t> memory_;
+
+        // TODO: make unordered maps?
+        std::map<uint16_t, std::shared_ptr<ReadOwner>> readOwners_;
+        std::map<uint16_t, std::shared_ptr<WriteOwner>> writeOwners_;
     };
 
 } // gbemu
