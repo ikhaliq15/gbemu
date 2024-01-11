@@ -18,6 +18,18 @@ namespace gbemu {
             virtual void cycleTriggerHandler(uint64_t cycleCount) = 0;
         };
 
+        template<typename T>
+        class Accumulator: public CycleListener
+        {
+        public:
+            Accumulator<T>(T startValue): accumulator_(startValue) {}
+            void cycleTriggerHandler(uint64_t cycleCount) { accumulator_ += 1; }
+            T value() const { return accumulator_; }
+            void reset() { accumulator_ = 0; }
+        private:
+            T accumulator_;
+        };
+
         Timer();
 
         void init();
@@ -49,12 +61,17 @@ namespace gbemu {
         public:
             bool operator() (CycleListenerInfo a, CycleListenerInfo b)
             {
-                return a.nextCycleCountTrigger_ < b.nextCycleCountTrigger_;
+                return a.nextCycleCountTrigger_ > b.nextCycleCountTrigger_;
             }
         };
 
+        static constexpr uint64_t DIV_REGISTER_MODULO  = 64;
+        static constexpr uint8_t DIV_REGISTER_START_VALUE  = 0xab;
+
         bool initialized_;
         uint64_t framesSinceLaunch_;
+
+        std::shared_ptr<Accumulator<uint8_t>> divAccumulator_;
 
         std::priority_queue<CycleListenerInfo, std::vector<CycleListenerInfo>, CycleListenerInfoCompare> cycleListeners_;
     };
