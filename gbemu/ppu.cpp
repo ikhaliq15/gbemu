@@ -41,7 +41,8 @@ namespace gbemu {
         else if (ly_ == 144)
         {
             // TODO: render frame
-            SDL_UpdateTexture(texture_, NULL, pixels_.data(), WINDOW_WIDTH * sizeof(uint32_t));
+            const auto scaledPixels = scalePixels(WINDOW_SCALE);
+            SDL_UpdateTexture(texture_, NULL, scaledPixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
             SDL_RenderCopy(renderer_, texture_, NULL, NULL);
             SDL_RenderPresent(renderer_);
 
@@ -137,7 +138,7 @@ namespace gbemu {
         /* Draw background for current scan line, if background is enabled. */
         if (bg_enabled)
         {
-            for (int x = 0; x < WINDOW_WIDTH; x++) {
+            for (int x = 0; x < LCD_WIDTH; x++) {
                 int tile_x = x / 8;
                 int tile_y = y / 8;
                 int tile_index = tile_y * 32 + tile_x;
@@ -156,7 +157,7 @@ namespace gbemu {
                 uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
                 uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
 
-                pixels_[y * WINDOW_WIDTH + x] = bg_palette[(msb << 1) | lsb];
+                pixels_[y * LCD_WIDTH + x] = bg_palette[(msb << 1) | lsb];
             }
         }
 
@@ -224,10 +225,32 @@ namespace gbemu {
                     if (colorId == 0)
                         continue;
 
-                    pixels_[y * WINDOW_WIDTH + x] = palette[colorId];
+                    pixels_[y * LCD_WIDTH + x] = palette[colorId];
                 }
             }
         }
+    }
+
+    std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> PPU::scalePixels(uint32_t scaleFactor) const
+    {
+        // TODO: optimze this function.
+        std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scaledPixels;
+        for (size_t i = 0; i < LCD_WIDTH; i++)
+        {
+            for (size_t j = 0; j < LCD_HEIGHT; j++)
+            {
+                const auto pixelValue = pixels_[j * LCD_WIDTH + i];
+                for (int scaledI = i * scaleFactor; scaledI < (i + 1) * scaleFactor; scaledI++)
+                {
+                    for (int scaledJ = j * scaleFactor; scaledJ < (j + 1) * scaleFactor; scaledJ++)
+                    {
+                        scaledPixels[scaledJ * WINDOW_WIDTH + scaledI] = pixelValue;
+                    }
+                }
+
+            }
+        }
+        return scaledPixels;
     }
 
 } // gbemu

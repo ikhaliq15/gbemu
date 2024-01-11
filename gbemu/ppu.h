@@ -8,8 +8,11 @@
 
 namespace gbemu {
 
-    #define WINDOW_WIDTH 160
-    #define WINDOW_HEIGHT 144
+    #define LCD_WIDTH 160
+    #define LCD_HEIGHT 144
+    #define WINDOW_SCALE 3
+    #define WINDOW_WIDTH (LCD_WIDTH * WINDOW_SCALE)
+    #define WINDOW_HEIGHT (LCD_HEIGHT * WINDOW_SCALE)
 
     // TODO: should technically be ~59.7.
     #define DEVICE_FPS (60.0)
@@ -46,7 +49,7 @@ namespace gbemu {
         SDL_Window *window_;
         SDL_Texture *texture_;
 
-        std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> pixels_;
+        std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> pixels_;
 
         uint8_t ly_;
 
@@ -59,6 +62,7 @@ namespace gbemu {
         std::vector<std::shared_ptr<FrameCompleteListener>> frameCompleteListeners_;
 
         void drawScanLine();
+        std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scalePixels(uint32_t scaleFactor) const;
     };
 
 } // gbemu
