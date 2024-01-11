@@ -29,7 +29,7 @@ def internal_deps():
 
     http_archive(
         name = "com_github_libsdl_sdl2",
-        build_file = "//extern:sdl2.BUILD",
+        build_file = "//rules:sdl2.BUILD",
         sha256 = "e2ac043bd2b67be328f875043617b904a0bb7d277ba239fe8ac6b9c94b85cbac",
         strip_prefix = "SDL-dca3fd8307c2c9ebda8d8ea623bbbf19649f5e22",
         urls = ["https://github.com/libsdl-org/SDL/archive/dca3fd8307c2c9ebda8d8ea623bbbf19649f5e22.zip"],
