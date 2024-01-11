@@ -2,6 +2,7 @@
 #define GBEMU_GAMEBOY
 
 #include "cpu.h"
+#include "timer.h"
 #include "ram.h"
 #include "cartridge.h"
 #include "ppu.h"
@@ -26,10 +27,11 @@ namespace gbemu {
         bool cartridgeLoaded_;
         bool quit_;
 
+        std::shared_ptr<Timer> timer_;
         std::shared_ptr<Joypad> joypad_;
         std::shared_ptr<RAM> ram_;
         std::shared_ptr<CPU> cpu_;
-        PPU ppu_;
+        std::shared_ptr<PPU> ppu_;
 
         SDL_Event event_;
     };

@@ -45,7 +45,7 @@ namespace gbemu {
 
         std::shared_ptr<RAM> ram() const;
 
-        size_t cycles() const;
+        uint64_t cycles() const;
 
         void setIME(bool newIME);
 
@@ -120,7 +120,7 @@ namespace gbemu {
 
         std::shared_ptr<RAM> ram_;
 
-        size_t cycles_;
+        uint64_t cycles_;
 
         using OPCodeHandler = std::function<void(uint16_t, const OPCode&)>;
         std::map<uint8_t, OPCode> opcodes_;

@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 #include "cpu.h"
+#include "timer.h"
 
 namespace gbemu {
 
@@ -13,7 +14,7 @@ namespace gbemu {
     // TODO: should technically be ~59.7.
     #define DEVICE_FPS (60.0)
 
-    class PPU
+    class PPU: public Timer::CycleListener
     {
     public:
         class FrameCompleteListener
@@ -24,10 +25,13 @@ namespace gbemu {
             virtual void onFrameComplete() = 0;
         };
 
+        static constexpr uint64_t CYCLES_PER_SCANLINE = 114;
+
         PPU(std::shared_ptr<CPU> cpu);
         ~PPU();
         void init();
-        void update();
+
+        void cycleTriggerHandler(uint64_t cycleCount);
 
         void subscribeToCompleteFrames(const std::shared_ptr<FrameCompleteListener> frameCompleteListener)
         {
@@ -42,7 +46,6 @@ namespace gbemu {
         std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> pixels_;
 
         std::shared_ptr<CPU> cpu_;
-        size_t cycleCount_ = 0;
 
         size_t frameCount_ = 0;
 

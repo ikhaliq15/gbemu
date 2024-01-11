@@ -8,18 +8,15 @@ namespace gbemu {
     Gameboy::Gameboy(const std::string& opcodeDataFile)
     : cartridgeLoaded_(false)
     , quit_(false)
+    , timer_(std::make_shared<Timer>())
     , joypad_(std::make_shared<Joypad>())
     , ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE))
     , cpu_(std::make_shared<CPU>(ram_, opcodeDataFile))
-    , ppu_(PPU(cpu_))
+    , ppu_(std::make_shared<PPU>(cpu_))
     {}
 
     void Gameboy::loadCartridge(const Cartridge& cartridge)
     {
-        // TODO
-        // for (int i = 0; i < std::max(cartridge.size(), 0x8000ul); i++)
-        //     ram_->set(i, cartridge[i]);
-
         ram_->loadCartridge(cartridge);
         cartridgeLoaded_ = true;
     }
@@ -33,19 +30,26 @@ namespace gbemu {
             exit(EXIT_FAILURE);
         }
 
+        /* Setup RAM address owners. */
         ram_->addOwner(RAM::JOYP, joypad_);
 
-        ppu_.init();
-        ppu_.subscribeToCompleteFrames(shared_from_this());
+        /* Setup timer cycle listeners. */
+        timer_->addCycleListener(ppu_, PPU::CYCLES_PER_SCANLINE);
 
-        // bool runForever = true;
-        // bool runTillBreak = false;
-        // uint16_t breakInstruction = 0xffff;
-        // size_t numSteps = 0;
+        /* Setup up PPU frame completion listeners. */
+        ppu_->subscribeToCompleteFrames(shared_from_this());
+
+        /* Initialize subcomponents of the gameboy. */
+        ppu_->init();
+        timer_->init();
+
         while (!quit_)
         {
+            const auto beforeCycleCount = cpu_->cycles();
             cpu_->executeInstruction(false);
-            ppu_.update();
+            const auto afterCycleCount = cpu_->cycles();
+
+            timer_->incrementTimer(afterCycleCount - beforeCycleCount);
 
             if (cpu_->IME())
             {
@@ -58,53 +62,6 @@ namespace gbemu {
                     cpu_->setPC(0x0040);
                 }
             }
-
-            // std::cout << "> ";
-
-            // std::string command;
-            // std::getline(std::cin, command);
-
-            // if (command == "q")
-            //     quit = true;
-            // else if (command == "n")
-            //     numSteps = 1;
-            // else if (command.starts_with("n "))
-            //     numSteps = std::stol(command.substr(2));
-            // else if (command.starts_with("b "))
-            // {
-            //     runTillBreak = true;
-            //     breakInstruction = std::stoul(command.substr(2), nullptr, 0);
-            // }
-            // else if (command == "c")
-            //     runForever = true;
-            // else
-            //     std::cout << "Unrecognized command." << std::endl;
-
-            // for (size_t i = 0; !quit && (i < numSteps || runForever || runTillBreak); i++)
-            // {
-            //     cpu_->executeInstruction(false);
-            //     ppu_.update();
-            //     quit = ppu_.hasQuit();
-
-            //     if (cpu_->IME())
-            //     {
-            //         const auto interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
-            //         if ((interruptsFired & 0x01) != 0x00)
-            //         {
-            //             cpu_->setIME(false);
-            //             cpu_->pushToStack(cpu_->PC());
-            //             ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 0, 0));
-            //             cpu_->setPC(0x0040);
-            //         }
-            //     }
-
-            //     if (cpu_->PC() == breakInstruction)
-            //         runTillBreak = false;
-            // }
-
-            // runTillBreak = false;
-            // runForever = false;
-            // numSteps = 0;
         }
     }
 

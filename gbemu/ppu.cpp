@@ -4,7 +4,6 @@ namespace gbemu {
 
     PPU::PPU(std::shared_ptr<CPU> cpu)
     : cpu_(cpu)
-    , cycleCount_(0)
     {
     }
 
@@ -30,57 +29,52 @@ namespace gbemu {
             pixels_[i] = 0x00000000;
     }
 
-    void PPU::update()
+    void PPU::cycleTriggerHandler(uint64_t cycleCount)
     {
-        if (cpu_->cycles() - cycleCount_ >= 114)
-        {
-            cpu_->ram()->set(RAM::LY, cpu_->ram()->get(RAM::LY) + 1);
-            const auto scanLine = cpu_->ram()->get(RAM::LY);
+        cpu_->ram()->set(RAM::LY, cpu_->ram()->get(RAM::LY) + 1);
+        const auto scanLine = cpu_->ram()->get(RAM::LY);
             
-            if (scanLine < 144)
+        if (scanLine < 144)
+        {
+            drawScanLine();
+        }
+        else if (scanLine == 144)
+        {
+            // TODO: render frame
+            SDL_UpdateTexture(texture_, NULL, pixels_.data(), WINDOW_WIDTH * sizeof(uint32_t));
+            SDL_RenderCopy(renderer_, texture_, NULL, NULL);
+            SDL_RenderPresent(renderer_);
+
+            for (const auto& frameCompleteListener: frameCompleteListeners_)
+                frameCompleteListener->onFrameComplete();
+
+            /* Sleep to achieve desired FPS. */
+            // TODO: this mechanism is causing actual FPS to be a bit lower than desired FPS
+            //       probably due to some overhead from SDL_Delay and the thread sleeping and restarting.
+            //       from a quick test, i was getting approx 56.9 FPS when desired FPS was 60.
+            const auto now = SDL_GetTicks64();
+            if (lastFrameTickCount_ > 0)
             {
-                drawScanLine();
-            } 
-            else if (scanLine == 144)
-            {
-                // TODO: render frame
-                SDL_UpdateTexture(texture_, NULL, pixels_.data(), WINDOW_WIDTH * sizeof(uint32_t));
-                SDL_RenderCopy(renderer_, texture_, NULL, NULL);
-                SDL_RenderPresent(renderer_);
+                constexpr auto timeBetweenFramesMs = (Uint64) ((1.0 / DEVICE_FPS) * 1000);
+                const auto timeToSleepUntil = lastFrameTickCount_ + timeBetweenFramesMs;
 
-                for (const auto& frameCompleteListener: frameCompleteListeners_)
-                    frameCompleteListener->onFrameComplete();
+                // TODO: add warning once we keep a moving average of the FPS (otherwise errors are too jiterry)
+                // if (timeToSleepUntil < now)
+                //     std::cout << "[WARNING] Rendering unable to keep up with desired framerate." << std::endl;
 
-                /* Sleep to achieve desired FPS. */
-                // TODO: this mechanism is causing actual FPS to be a bit lower than desired FPS
-                //       probably due to some overhead from SDL_Delay and the thread sleeping and restarting.
-                //       from a quick test, i was getting approx 56.9 FPS when desired FPS was 60.
-                const auto now = SDL_GetTicks64();
-                if (lastFrameTickCount_ > 0)
-                {
-                    constexpr auto timeBetweenFramesMs = (Uint64) ((1.0 / DEVICE_FPS) * 1000);
-                    const auto timeToSleepUntil = lastFrameTickCount_ + timeBetweenFramesMs;
-
-                    // TODO: add warning once we keep a moving average of the FPS (otherwise errors are too jiterry)
-                    // if (timeToSleepUntil < now)
-                    //     std::cout << "[WARNING] Rendering unable to keep up with desired framerate." << std::endl;
-
-                    const auto delayAmount = (timeToSleepUntil > now) ? timeToSleepUntil - now : 0ull;
-                    SDL_Delay(delayAmount);
-                }
-                lastFrameTickCount_ = SDL_GetTicks64();
-
-                // std::cout << "Drew frame #" << ++frameCount_ << std::endl;
-
-                // TODO: request VBLANK interrupt
-                cpu_->requestInterupt(CPU::Interrupt::VBLANK);
+                const auto delayAmount = (timeToSleepUntil > now) ? timeToSleepUntil - now : 0ull;
+                SDL_Delay(delayAmount);
             }
-            else if (scanLine > 153) // TODO: check if 153 is correct value here.
-            {
-                cpu_->ram()->set(RAM::LY, 0);
-            } 
+            lastFrameTickCount_ = SDL_GetTicks64();
 
-            cycleCount_ = cpu_->cycles();
+            // std::cout << "Drew frame #" << ++frameCount_ << std::endl;
+
+            // TODO: request VBLANK interrupt
+            cpu_->requestInterupt(CPU::Interrupt::VBLANK);
+        }
+        else if (scanLine > 153) // TODO: check if 153 is correct value here.
+        {
+            cpu_->ram()->set(RAM::LY, 0);
         }
     }
 

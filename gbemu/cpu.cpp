@@ -297,7 +297,7 @@ namespace gbemu {
 
     std::shared_ptr<RAM> CPU::ram() const { return ram_; }
 
-    size_t CPU::cycles() const { return cycles_; }
+    uint64_t CPU::cycles() const { return cycles_; }
 
     void CPU::setIME(bool newIME) { IME_ = newIME; }
 
