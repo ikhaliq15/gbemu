@@ -431,6 +431,8 @@ namespace gbemu {
         if (verbose)
             std::cout << *this << std::endl;
 
+        const auto enableInteruptsAfterInstruction = interuptsEnabledQueued_;
+
         auto opcodeValue = ram_->get(PC());
         auto opcodeMap = &opcodes_;
         auto prefixedOpcode = false;
@@ -463,6 +465,12 @@ namespace gbemu {
         opcodeHandler(oldPC, opcode);
 
         cycles_ += opcode.cycles();
+
+        if (enableInteruptsAfterInstruction)
+        {
+            IME_ = true;
+            interuptsEnabledQueued_ = false;
+        }
 
         // if (verbose)
         // {
@@ -1538,7 +1546,7 @@ namespace gbemu {
 
     void CPU::EI(uint16_t pc, const OPCode& opcode)
     {
-        IME_ = true;
+        interuptsEnabledQueued_ = true;
     }
 
     void CPU::RLC(uint16_t pc, const OPCode& opcode)

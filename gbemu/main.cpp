@@ -16,12 +16,12 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    gbemu::Gameboy gameboy(argv[2]);
+    const auto gameboy = std::make_shared<gbemu::Gameboy>(argv[2]);
 
     gbemu::Cartridge catridge(argv[1]);
-    gameboy.loadCartridge(catridge);
+    gameboy->loadCartridge(catridge);
 
-    gameboy.start();
+    gameboy->start();
 
     return 0;
 }

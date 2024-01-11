@@ -3,17 +3,16 @@
 
 namespace gbemu {
 
-    RAM::RAM(uint32_t ramSize, uint8_t defaultValue)
+    RAM::RAM(uint32_t ramSize, std::shared_ptr<Joypad> joypad, uint8_t defaultValue)
+    : joypad_(joypad)
     {
         memory_ = std::vector<uint8_t>(ramSize, defaultValue);
-
-        // TODO: remove when joypad is working correctly
-        memory_[RAM::JOYP] = 0xff;
     }
 
     RAM::RAM(const RAM& ram)
     {
         memory_ = ram.memory_;
+        joypad_ = ram.joypad_;
     }
 
     // uint8_t RAM::operator [](int i) const
@@ -92,8 +91,7 @@ namespace gbemu {
         if (address == RAM::JOYP)
         {
             // TODO: remove when joypad is working correctly
-            memory_[address] = 0xff;
-            return;
+            value = (value & 0xf0);
         }
 
         // TODO: OAM DMA transfer (should make rest of RAM inaccessible and take ~160 microseconds)
@@ -112,6 +110,14 @@ namespace gbemu {
         // temp: for GB Doctor log comparison testing.
         // if (address == RAM::LY)
         //     return 0x90;
+
+        if (address == RAM::JOYP)
+        {
+            const auto joyp = memory_[RAM::JOYP];
+            const auto completeJoyp = joypad_->getJoypadRegister(joyp);
+            // std::cout << "Start Joyp = " << toHexString(joyp) << ", End JOYP = " << toHexString(completeJoyp) << std::endl;
+            return completeJoyp;
+        }
 
         return memory_[address];
     }

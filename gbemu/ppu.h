@@ -16,21 +16,30 @@ namespace gbemu {
     class PPU
     {
     public:
+        class FrameCompleteListener
+        {
+        public:
+            FrameCompleteListener(){}
+            virtual ~FrameCompleteListener(){}
+            virtual void onFrameComplete() = 0;
+        };
+
         PPU(std::shared_ptr<CPU> cpu);
         ~PPU();
         void init();
         void update();
-        bool hasQuit();
+
+        void subscribeToCompleteFrames(const std::shared_ptr<FrameCompleteListener> frameCompleteListener)
+        {
+            frameCompleteListeners_.push_back(frameCompleteListener);
+        }
 
     private:
-        SDL_Event event_;
         SDL_Renderer *renderer_;
         SDL_Window *window_;
         SDL_Texture *texture_;
 
         std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> pixels_;
-
-        bool quit_;
 
         std::shared_ptr<CPU> cpu_;
         size_t cycleCount_ = 0;
@@ -38,6 +47,8 @@ namespace gbemu {
         size_t frameCount_ = 0;
 
         uint64_t lastFrameTickCount_ = 0;
+
+        std::vector<std::shared_ptr<FrameCompleteListener>> frameCompleteListeners_;
 
         void drawScanLine();
     };

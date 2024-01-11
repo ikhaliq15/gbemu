@@ -15,7 +15,8 @@ namespace gbemu {
     inline uint16_t setUpperByte(uint16_t n, uint8_t b) { return (n & 0x00FF) | (b << 8); }
     inline uint16_t setLowerByte(uint16_t n, uint8_t b) { return (n & 0xFF00) | b; }
     inline uint16_t concatBytes(uint8_t upper, uint8_t lower) { return (upper << 8) | lower; }
-    inline uint16_t swapNibbles(uint8_t n) { return ((n & 0x0f) << 4) | ((n & 0xf0) >> 4); }
+    inline uint8_t swapNibbles(uint8_t n) { return ((n & 0x0f) << 4) | ((n & 0xf0) >> 4); }
+    inline uint8_t interpolateNibbles(uint8_t upper, uint8_t lower) { return (upper & 0xF0) | (lower & 0x0F); }
 
     // Note: least significant bit is the zero-th bit
     template <typename T>

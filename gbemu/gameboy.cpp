@@ -7,7 +7,9 @@ namespace gbemu {
 
     Gameboy::Gameboy(const std::string& opcodeDataFile)
     : cartridgeLoaded_(false)
-    , ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE))
+    , quit_(false)
+    , joypad_(std::make_shared<Joypad>())
+    , ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE, joypad_))
     , cpu_(std::make_shared<CPU>(ram_, opcodeDataFile))
     , ppu_(PPU(cpu_))
     {}
@@ -19,7 +21,6 @@ namespace gbemu {
         //     ram_->set(i, cartridge[i]);
 
         ram_->loadCartridge(cartridge);
-
         cartridgeLoaded_ = true;
     }
 
@@ -33,14 +34,29 @@ namespace gbemu {
         }
 
         ppu_.init();
+        ppu_.subscribeToCompleteFrames(shared_from_this());
 
-        bool quit = false;
-        bool runForever = true;
-        bool runTillBreak = false;
-        uint16_t breakInstruction = 0xffff;
-        size_t numSteps = 0;
-        while (!quit)
+        // bool runForever = true;
+        // bool runTillBreak = false;
+        // uint16_t breakInstruction = 0xffff;
+        // size_t numSteps = 0;
+        while (!quit_)
         {
+            cpu_->executeInstruction(false);
+            ppu_.update();
+
+            if (cpu_->IME())
+            {
+                const auto interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
+                if ((interruptsFired & 0x01) != 0x00)
+                {
+                    cpu_->setIME(false);
+                    cpu_->pushToStack(cpu_->PC());
+                    ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 0, 0));
+                    cpu_->setPC(0x0040);
+                }
+            }
+
             // std::cout << "> ";
 
             // std::string command;
@@ -62,37 +78,55 @@ namespace gbemu {
             // else
             //     std::cout << "Unrecognized command." << std::endl;
 
-            for (size_t i = 0; !quit && (i < numSteps || runForever || runTillBreak); i++)
-            {
-                cpu_->executeInstruction(false);
-                ppu_.update();
-                quit = ppu_.hasQuit();
+            // for (size_t i = 0; !quit && (i < numSteps || runForever || runTillBreak); i++)
+            // {
+            //     cpu_->executeInstruction(false);
+            //     ppu_.update();
+            //     quit = ppu_.hasQuit();
 
-                if (cpu_->IME())
-                {
-                    const auto interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
-                    if ((interruptsFired & 0x01) != 0x00)
-                    {
-                        cpu_->setIME(false);
-                        cpu_->pushToStack(cpu_->PC());
-                        ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 0, 0));
-                        cpu_->setPC(0x0040);
-                    }
-                }
+            //     if (cpu_->IME())
+            //     {
+            //         const auto interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
+            //         if ((interruptsFired & 0x01) != 0x00)
+            //         {
+            //             cpu_->setIME(false);
+            //             cpu_->pushToStack(cpu_->PC());
+            //             ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 0, 0));
+            //             cpu_->setPC(0x0040);
+            //         }
+            //     }
 
-                if (cpu_->PC() == breakInstruction)
-                    runTillBreak = false;
-            }
+            //     if (cpu_->PC() == breakInstruction)
+            //         runTillBreak = false;
+            // }
 
-            runTillBreak = false;
-            runForever = false;
-            numSteps = 0;
+            // runTillBreak = false;
+            // runForever = false;
+            // numSteps = 0;
         }
     }
 
     void Gameboy::reset()
     {
         // TODO
+    }
+
+    void Gameboy::onFrameComplete()
+    {
+        while (SDL_PollEvent(&event_) == 1) {
+            switch(event_.type)
+            {
+                case SDL_QUIT:
+                    quit_ = true;
+                    break;
+                case SDL_KEYDOWN:
+                    joypad_->handleKeyDownEvent(event_.key);
+                    break;
+                case SDL_KEYUP:
+                    joypad_->handleKeyUpEvent(event_.key);
+                    break;
+            }
+        }
     }
 
 } // gbemu

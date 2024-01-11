@@ -9,7 +9,8 @@ class CPUTest : public testing::Test {
     using ExpectedCPUs = std::vector<std::optional<gbemu::CPU>>;
 
     void SetUp() override {
-        ram_ = std::make_shared<gbemu::RAM>(1 << 16);
+        const auto joypad = std::make_shared<gbemu::Joypad>();
+        ram_ = std::make_shared<gbemu::RAM>(1 << 16, joypad);
         cpu_ = std::make_unique<gbemu::CPU>(ram_, "gbemu/data/opcodes.json");
     }
 

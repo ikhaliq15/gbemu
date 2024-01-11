@@ -44,6 +44,7 @@ cc_test(
   srcs = [
     "test/bitutils_test.cpp",
     "test/cpu_test.cpp",
+    "test/joypad_test.cpp",
     "alu.cpp",
     "alu.h",
     "bitutils.h",
@@ -51,6 +52,8 @@ cc_test(
     "cartridge.cpp",
     "cpu.h",
     "cpu.cpp",
+    "joypad.h",
+    "joypad.cpp",
     "opcode.h",
     "opcode.cpp",
     "operand.h",

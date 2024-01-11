@@ -3,8 +3,7 @@
 namespace gbemu {
 
     PPU::PPU(std::shared_ptr<CPU> cpu)
-    : quit_(false)
-    , cpu_(cpu)
+    : cpu_(cpu)
     , cycleCount_(0)
     {
     }
@@ -33,9 +32,6 @@ namespace gbemu {
 
     void PPU::update()
     {
-        if (quit_)
-            return;
-
         if (cpu_->cycles() - cycleCount_ >= 114)
         {
             cpu_->ram()->set(RAM::LY, cpu_->ram()->get(RAM::LY) + 1);
@@ -48,15 +44,12 @@ namespace gbemu {
             else if (scanLine == 144)
             {
                 // TODO: render frame
-                while (SDL_PollEvent(&event_) == 1) {
-                    if (event_.type == SDL_QUIT) {
-                        quit_ = true;
-                    }
-                }
-
                 SDL_UpdateTexture(texture_, NULL, pixels_.data(), WINDOW_WIDTH * sizeof(uint32_t));
                 SDL_RenderCopy(renderer_, texture_, NULL, NULL);
                 SDL_RenderPresent(renderer_);
+
+                for (const auto& frameCompleteListener: frameCompleteListeners_)
+                    frameCompleteListener->onFrameComplete();
 
                 /* Sleep to achieve desired FPS. */
                 // TODO: this mechanism is causing actual FPS to be a bit lower than desired FPS
@@ -91,15 +84,13 @@ namespace gbemu {
         }
     }
 
-    bool PPU::hasQuit() { return quit_; }
-
     void PPU::drawScanLine()
     {
         const auto lcdc = cpu_->ram()->get(RAM::LCDC);
         const auto lcd_enabled = getBit(lcdc, 7) == 1;
         const uint16_t window_tilemap = (getBit(lcdc, 6) == 1) ? 0x9C00 : 0x9800;
         const auto window_enabled = getBit(lcdc, 5) == 1;
-        const uint16_t tile_data = (getBit(lcdc, 4) == 1) ? 0x8000 : 0x8800;
+        const uint16_t tile_data = (getBit(lcdc, 4) == 1) ? 0x8000 : 0x9000;
         const uint16_t bg_tile_map = (getBit(lcdc, 3) == 1) ? 0x9C00 : 0x9800;
         const auto sprite_eight_by_eight_mode = getBit(lcdc, 2) == 0;
         const uint16_t sprite_height = (sprite_eight_by_eight_mode) ? 8 : 16;

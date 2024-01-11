@@ -108,6 +108,7 @@ namespace gbemu {
         static constexpr uint8_t FLAG_C_BIT = 4;
 
         bool IME_;
+        bool interuptsEnabledQueued_ = false;
 
         uint16_t PC_;
         uint16_t SP_;
