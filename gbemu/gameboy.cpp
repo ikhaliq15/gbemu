@@ -32,6 +32,7 @@ namespace gbemu {
 
         /* Setup RAM address owners. */
         ram_->addOwner(RAM::JOYP, joypad_);
+        ram_->addOwner(RAM::LY, ppu_);
 
         /* Setup timer cycle listeners. */
         timer_->addCycleListener(ppu_, PPU::CYCLES_PER_SCANLINE);

@@ -3,7 +3,8 @@
 namespace gbemu {
 
     PPU::PPU(std::shared_ptr<CPU> cpu)
-    : cpu_(cpu)
+    : ly_(0)
+    , cpu_(cpu)
     {
     }
 
@@ -31,14 +32,13 @@ namespace gbemu {
 
     void PPU::cycleTriggerHandler(uint64_t cycleCount)
     {
-        cpu_->ram()->set(RAM::LY, cpu_->ram()->get(RAM::LY) + 1);
-        const auto scanLine = cpu_->ram()->get(RAM::LY);
-            
-        if (scanLine < 144)
+        ly_ += 1;
+
+        if (ly_ < 144)
         {
             drawScanLine();
         }
-        else if (scanLine == 144)
+        else if (ly_ == 144)
         {
             // TODO: render frame
             SDL_UpdateTexture(texture_, NULL, pixels_.data(), WINDOW_WIDTH * sizeof(uint32_t));
@@ -72,10 +72,20 @@ namespace gbemu {
             // TODO: request VBLANK interrupt
             cpu_->requestInterupt(CPU::Interrupt::VBLANK);
         }
-        else if (scanLine > 153) // TODO: check if 153 is correct value here.
+        else if (ly_ > 153) // TODO: check if 153 is correct value here.
         {
-            cpu_->ram()->set(RAM::LY, 0);
+            ly_ = 0;
         }
+    }
+
+    uint8_t PPU::onReadOwnedByte(uint16_t address)
+    {
+        return ly_;
+    }
+
+    void PPU::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue)
+    {
+        return;
     }
 
     void PPU::drawScanLine()
@@ -122,7 +132,7 @@ namespace gbemu {
             bgp >>= 2;
         }
 
-        const uint8_t y = cpu_->ram()->get(RAM::LY);
+        const uint8_t y = ly_;
 
         /* Draw background for current scan line, if background is enabled. */
         if (bg_enabled)

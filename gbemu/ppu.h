@@ -14,7 +14,7 @@ namespace gbemu {
     // TODO: should technically be ~59.7.
     #define DEVICE_FPS (60.0)
 
-    class PPU: public Timer::CycleListener
+    class PPU: public Timer::CycleListener, public RAM::Owner
     {
     public:
         class FrameCompleteListener
@@ -33,6 +33,9 @@ namespace gbemu {
 
         void cycleTriggerHandler(uint64_t cycleCount);
 
+        uint8_t onReadOwnedByte(uint16_t address);
+        void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue);
+
         void subscribeToCompleteFrames(const std::shared_ptr<FrameCompleteListener> frameCompleteListener)
         {
             frameCompleteListeners_.push_back(frameCompleteListener);
@@ -44,6 +47,8 @@ namespace gbemu {
         SDL_Texture *texture_;
 
         std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> pixels_;
+
+        uint8_t ly_;
 
         std::shared_ptr<CPU> cpu_;
 
