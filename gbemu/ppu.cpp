@@ -248,6 +248,9 @@ namespace gbemu {
                     if (sprite_y_flip)
                         inner_tile_y = sprite_height - inner_tile_y - 1;
 
+                    if (x < 0 || x >= LCD_WIDTH)
+                        continue;
+
                     const uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
                     const uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
 
