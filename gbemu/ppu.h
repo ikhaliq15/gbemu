@@ -6,6 +6,7 @@
 #include "cpu.h"
 #include "timer.h"
 
+// TODO: explore why top of window looks cut off (like in blargg tests)
 namespace gbemu {
 
     #define LCD_WIDTH 160
@@ -33,6 +34,7 @@ namespace gbemu {
         PPU(std::shared_ptr<CPU> cpu);
         ~PPU();
         void init();
+        void update();
 
         void cycleTriggerHandler(uint64_t cycleCount);
 
@@ -52,6 +54,8 @@ namespace gbemu {
         std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> pixels_;
 
         uint8_t ly_;
+        uint8_t lyc_;
+        uint8_t lcdStatus_;
 
         std::shared_ptr<CPU> cpu_;
 

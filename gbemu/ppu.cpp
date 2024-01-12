@@ -3,7 +3,8 @@
 namespace gbemu {
 
     PPU::PPU(std::shared_ptr<CPU> cpu)
-    : ly_(0)
+    : ly_(0x00)
+    , lyc_(0x00)
     , cpu_(cpu)
     {
     }
@@ -28,6 +29,14 @@ namespace gbemu {
 
         for (int i = 0; i < pixels_.size(); i++)
             pixels_[i] = 0x00000000;
+    }
+
+    void PPU::update()
+    {
+        const auto lyLycMatch = ly_ == lyc_;
+        lcdStatus_ = setBit(lcdStatus_, 2, (lyLycMatch) ? 1 : 0);
+        if (lyLycMatch)
+            cpu_->requestInterupt(CPU::Interrupt::STAT);
     }
 
     void PPU::cycleTriggerHandler(uint64_t cycleCount)
@@ -81,12 +90,29 @@ namespace gbemu {
 
     uint8_t PPU::onReadOwnedByte(uint16_t address)
     {
-        return ly_;
+        switch (address) {
+            case RAM::LY:
+                return ly_;
+            case RAM::LYC:
+                return lyc_;
+            case RAM::STAT:
+                return lcdStatus_;
+        }
+        // TODO: exception?
+        return 0x00;
     }
 
     void PPU::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue)
     {
-        return;
+        switch (address) {
+            case RAM::LY:
+                return;
+            case RAM::LYC:
+                lyc_ = newValue;
+            case RAM::STAT:
+                lcdStatus_ = (newValue & 0xf8) | (lcdStatus_ & 0x03);
+        }
+        // TODO: exception?
     }
 
     void PPU::drawScanLine()
@@ -136,6 +162,7 @@ namespace gbemu {
         const uint8_t y = ly_;
 
         /* Draw background for current scan line, if background is enabled. */
+        // TODO: if not enabled, background is white
         if (bg_enabled)
         {
             for (int x = 0; x < LCD_WIDTH; x++) {
@@ -214,8 +241,12 @@ namespace gbemu {
 
                 for (int x = sprite_x; x < sprite_x + 8; x++)
                 {
-                    const int inner_tile_x = x % 8;
-                    const int inner_tile_y = y % 8;
+                    int inner_tile_x = (x - sprite_x) % 8;
+                    if (sprite_x_flip)
+                        inner_tile_x = 7 - inner_tile_x;
+                    int inner_tile_y = (y - sprite_y) % sprite_height; // TODO: is this 8 or sprite_height?
+                    if (sprite_y_flip)
+                        inner_tile_y = sprite_height - inner_tile_y - 1;
 
                     const uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
                     const uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);

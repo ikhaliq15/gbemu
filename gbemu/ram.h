@@ -39,7 +39,9 @@ namespace gbemu {
         static constexpr uint16_t TAC  = 0xff06;
         static constexpr uint16_t IF   = 0xff0f;
         static constexpr uint16_t LCDC = 0xff40;
+        static constexpr uint16_t STAT = 0xff41;
         static constexpr uint16_t LY   = 0xff44;
+        static constexpr uint16_t LYC  = 0xff45;
         static constexpr uint16_t DMA  = 0xff46;
         static constexpr uint16_t BGP  = 0xff47;
         static constexpr uint16_t OBP0 = 0xff48;

@@ -14,7 +14,8 @@ namespace gbemu {
     {
     public:
         enum class Interrupt{
-            VBLANK
+            VBLANK,
+            STAT,
         };
 
         CPU(std::shared_ptr<RAM> ram, const std::string& opcodeDataFile);

@@ -33,7 +33,9 @@ namespace gbemu {
         /* Setup RAM address owners. */
         ram_->addOwner(RAM::JOYP, joypad_);
         ram_->addOwner(RAM::DIV, timer_);
+        ram_->addOwner(RAM::STAT, ppu_);
         ram_->addOwner(RAM::LY, ppu_);
+        ram_->addOwner(RAM::LYC, ppu_);
 
         /* Setup timer cycle listeners. */
         timer_->addCycleListener(ppu_, PPU::CYCLES_PER_SCANLINE);
@@ -52,9 +54,11 @@ namespace gbemu {
             const auto afterCycleCount = cpu_->cycles();
 
             timer_->incrementTimer(afterCycleCount - beforeCycleCount);
+            ppu_->update();
 
             if (cpu_->IME())
             {
+                // TODO: what happens if mulitple interupts fired at same time?
                 const auto interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
                 if ((interruptsFired & 0x01) != 0x00)
                 {
@@ -62,6 +66,13 @@ namespace gbemu {
                     cpu_->pushToStack(cpu_->PC());
                     ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 0, 0));
                     cpu_->setPC(0x0040);
+                }
+                else if ((interruptsFired & 0x02) != 0x00)
+                {
+                    cpu_->setIME(false);
+                    cpu_->pushToStack(cpu_->PC());
+                    ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 1, 0));
+                    cpu_->setPC(0x0048);
                 }
             }
         }

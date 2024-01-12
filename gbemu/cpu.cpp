@@ -417,13 +417,18 @@ namespace gbemu {
 
     void CPU::requestInterupt(Interrupt interrupt)
     {
+        const auto currentIF = ram_->get(RAM::IF);
+        auto newIF = currentIF;
+
         switch (interrupt) {
             case Interrupt::VBLANK:
-                const auto currentIF = ram_->get(RAM::IF);
-                const auto newIF = setBit(currentIF, 0, 1);
-                ram_->set(RAM::IF, newIF);
-                return;
+                newIF = setBit(currentIF, 0, 1);
+                break;
+            case Interrupt::STAT:
+                newIF = setBit(currentIF, 1, 1);
+                break;
         }
+        ram_->set(RAM::IF, newIF);
     }
 
     void CPU::executeInstruction(bool verbose)
