@@ -2,37 +2,46 @@
 
 namespace gbemu {
 
-    Timer::Timer()
+    Timer::Timer(std::shared_ptr<CPU> cpu)
     : initialized_(false)
-    , launchTime_(Clock::now())
+    , cyclesSinceLaunch_(0)
     , divAccumulator_(std::make_shared<Accumulator<uint8_t>>(DIV_REGISTER_START_VALUE))
+    , cpu_(cpu)
+    , tima_(std::make_shared<uint8_t>(0x00))
+    , tma_(std::make_shared<uint8_t>(0x00))
+    , tac_(std::make_shared<uint8_t>(0x00))
     {
     }
 
     void Timer::init()
     {
-        addTimerListener(divAccumulator_, DIV_REGISTER_FREQUENCY);
-        launchTime_ = Clock::now();
+        addTimerListener(divAccumulator_, DIV_REGISTER_MODULO);
+
+        addTimerListener(std::make_shared<EnabledTimer>(TIMER_0_TAC_ID, tima_, tma_, tac_, cpu_), TIMER_0_MODULO);
+        addTimerListener(std::make_shared<EnabledTimer>(TIMER_1_TAC_ID, tima_, tma_, tac_, cpu_), TIMER_1_MODULO);
+        addTimerListener(std::make_shared<EnabledTimer>(TIMER_2_TAC_ID, tima_, tma_, tac_, cpu_), TIMER_2_MODULO);
+        addTimerListener(std::make_shared<EnabledTimer>(TIMER_3_TAC_ID, tima_, tma_, tac_, cpu_), TIMER_3_MODULO);
+
         initialized_ = true;
     }
 
-    void Timer::update()
+    void Timer::update(uint64_t deltaCycles)
     {
         if (!initialized_)
             throw std::runtime_error("Cannot increment an uninitialized tiemr.");
 
-        const auto timeSinceLaunch = Clock::now() - launchTime_;
+        cyclesSinceLaunch_ += deltaCycles;
 
         if (timerListeners_.empty())
             return;
 
-        while (timerListeners_.top().nextTimepointTrigger_ <= timeSinceLaunch)
+        while (timerListeners_.top().nextCycleCountTrigger_ <= cyclesSinceLaunch_)
         {
             auto info = timerListeners_.top();
             timerListeners_.pop();
 
             info.listener_->timerTriggerHandler();
-            info.nextTimepointTrigger_ = timeSinceLaunch + info.listenerInterval_;
+            info.nextCycleCountTrigger_ = cyclesSinceLaunch_ + info.listenerModulo_;
 
             timerListeners_.push(info);
         }
@@ -45,6 +54,12 @@ namespace gbemu {
             case RAM::DIV:
                 return divAccumulator_->value();
                 break;
+            case RAM::TIMA:
+                return *tima_;
+            case RAM::TMA:
+                return *tma_;
+            case RAM::TAC:
+                return *tac_;
         }
         // TODO: throw exception?
         return 0x00;
@@ -56,6 +71,15 @@ namespace gbemu {
         {
             case RAM::DIV:
                 divAccumulator_.reset();
+                break;
+            case RAM::TIMA:
+                *tima_ = newValue;
+                break;
+            case RAM::TMA:
+                *tma_ = newValue;
+                break;
+            case RAM::TAC:
+                *tac_ = newValue;
                 break;
         }
         // TODO: throw exception?

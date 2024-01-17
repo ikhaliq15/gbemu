@@ -27,11 +27,11 @@ namespace gbemu {
         bool cartridgeLoaded_;
         bool quit_;
 
-        std::shared_ptr<Timer> timer_;
         std::shared_ptr<Joypad> joypad_;
         std::shared_ptr<RAM> ram_;
         std::shared_ptr<CPU> cpu_;
         std::shared_ptr<PPU> ppu_;
+        std::shared_ptr<Timer> timer_;
 
         SDL_Event event_;
     };

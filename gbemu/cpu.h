@@ -16,6 +16,7 @@ namespace gbemu {
         enum class Interrupt{
             VBLANK,
             STAT,
+            TIMER,
         };
 
         enum class Mode{

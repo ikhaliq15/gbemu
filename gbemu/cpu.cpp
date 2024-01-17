@@ -435,6 +435,9 @@ namespace gbemu {
             case Interrupt::STAT:
                 newIF = setBit(currentIF, 1, 1);
                 break;
+            case Interrupt::TIMER:
+                newIF = setBit(currentIF, 2, 1);
+                break;
         }
         ram_->set(RAM::IF, newIF);
     }

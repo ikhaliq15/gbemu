@@ -8,11 +8,11 @@ namespace gbemu {
     Gameboy::Gameboy(const std::string& opcodeDataFile)
     : cartridgeLoaded_(false)
     , quit_(false)
-    , timer_(std::make_shared<Timer>())
     , joypad_(std::make_shared<Joypad>())
     , ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE))
     , cpu_(std::make_shared<CPU>(ram_, opcodeDataFile))
     , ppu_(std::make_shared<PPU>(cpu_))
+    , timer_(std::make_shared<Timer>(cpu_))
     {}
 
     void Gameboy::loadCartridge(const Cartridge& cartridge)
@@ -33,6 +33,9 @@ namespace gbemu {
         /* Setup RAM address owners. */
         ram_->addOwner(RAM::JOYP, joypad_);
         ram_->addOwner(RAM::DIV, timer_);
+        ram_->addOwner(RAM::TIMA, timer_);
+        ram_->addOwner(RAM::TMA, timer_);
+        ram_->addOwner(RAM::TAC, timer_);
         ram_->addOwner(RAM::STAT, ppu_);
         ram_->addOwner(RAM::SCY, ppu_);
         ram_->addOwner(RAM::SCX, ppu_);
@@ -42,7 +45,7 @@ namespace gbemu {
         ram_->addOwner(RAM::WX, ppu_);
 
         /* Setup timer cycle listeners. */
-        timer_->addTimerListener(ppu_, PPU::SCANLINE_FREQUENCY);
+        timer_->addTimerListener(ppu_, PPU::CYCLES_PER_SCANLINE);
 
         /* Setup up PPU frame completion listeners. */
         ppu_->subscribeToCompleteFrames(shared_from_this());
@@ -53,10 +56,16 @@ namespace gbemu {
 
         while (!quit_)
         {
+            uint64_t deltaCycles = 1;
             if (cpu_->mode() == CPU::Mode::NORMAL)
+            {
+                const auto beforeCycleCount = cpu_->cycles();
                 cpu_->executeInstruction(false);
+                const auto afterCycleCount = cpu_->cycles();
+                deltaCycles = afterCycleCount - beforeCycleCount;
+            }
 
-            timer_->update();
+            timer_->update(deltaCycles);
             ppu_->update();
 
             if ((ram_->get(RAM::IF) & ram_->get(RAM::IE) & 0x1f) != 0x00)
@@ -65,7 +74,7 @@ namespace gbemu {
             if (cpu_->IME())
             {
                 // TODO: what happens if mulitple interupts fired at same time?
-                const auto interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
+                const uint8_t interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
                 if ((interruptsFired & 0x01) != 0x00)
                 {
                     cpu_->setIME(false);
@@ -79,6 +88,13 @@ namespace gbemu {
                     cpu_->pushToStack(cpu_->PC());
                     ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 1, 0));
                     cpu_->setPC(0x0048);
+                }
+                else if ((interruptsFired & 0x04) != 0x00)
+                {
+                    cpu_->setIME(false);
+                    cpu_->pushToStack(cpu_->PC());
+                    ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 2, 0));
+                    cpu_->setPC(0x0050);
                 }
             }
         }
