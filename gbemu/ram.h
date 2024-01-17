@@ -40,12 +40,16 @@ namespace gbemu {
         static constexpr uint16_t IF   = 0xff0f;
         static constexpr uint16_t LCDC = 0xff40;
         static constexpr uint16_t STAT = 0xff41;
+        static constexpr uint16_t SCY  = 0xff42;
+        static constexpr uint16_t SCX  = 0xff43;
         static constexpr uint16_t LY   = 0xff44;
         static constexpr uint16_t LYC  = 0xff45;
         static constexpr uint16_t DMA  = 0xff46;
         static constexpr uint16_t BGP  = 0xff47;
         static constexpr uint16_t OBP0 = 0xff48;
         static constexpr uint16_t OBP1 = 0xff49;
+        static constexpr uint16_t WY   = 0xff4a;
+        static constexpr uint16_t WX   = 0xff4b;
         static constexpr uint16_t IE   = 0xffff;
 
         RAM(uint32_t ramSize, uint8_t defaultValue = 0);

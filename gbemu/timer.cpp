@@ -4,37 +4,37 @@ namespace gbemu {
 
     Timer::Timer()
     : initialized_(false)
-    , framesSinceLaunch_(0)
+    , launchTime_(Clock::now())
     , divAccumulator_(std::make_shared<Accumulator<uint8_t>>(DIV_REGISTER_START_VALUE))
     {
     }
 
     void Timer::init()
     {
-        addCycleListener(divAccumulator_, DIV_REGISTER_MODULO);
-
+        addTimerListener(divAccumulator_, DIV_REGISTER_FREQUENCY);
+        launchTime_ = Clock::now();
         initialized_ = true;
     }
 
-    void Timer::incrementTimer(uint64_t deltaCycles)
+    void Timer::update()
     {
         if (!initialized_)
             throw std::runtime_error("Cannot increment an uninitialized tiemr.");
 
-        framesSinceLaunch_ += deltaCycles;
+        const auto timeSinceLaunch = Clock::now() - launchTime_;
 
-        if (cycleListeners_.empty())
+        if (timerListeners_.empty())
             return;
 
-        while (cycleListeners_.top().nextCycleCountTrigger_ <= framesSinceLaunch_)
+        while (timerListeners_.top().nextTimepointTrigger_ <= timeSinceLaunch)
         {
-            auto info = cycleListeners_.top();
-            cycleListeners_.pop();
+            auto info = timerListeners_.top();
+            timerListeners_.pop();
 
-            info.listener_->cycleTriggerHandler(framesSinceLaunch_);
-            info.nextCycleCountTrigger_ = framesSinceLaunch_ + info.listenerModulo_;
+            info.listener_->timerTriggerHandler();
+            info.nextTimepointTrigger_ = timeSinceLaunch + info.listenerInterval_;
 
-            cycleListeners_.push(info);
+            timerListeners_.push(info);
         }
     }
 

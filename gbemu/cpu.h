@@ -18,6 +18,11 @@ namespace gbemu {
             STAT,
         };
 
+        enum class Mode{
+            NORMAL,
+            HALT,
+        };
+
         CPU(std::shared_ptr<RAM> ram, const std::string& opcodeDataFile);
         CPU(const CPU& cpu);
 
@@ -47,6 +52,8 @@ namespace gbemu {
         std::shared_ptr<RAM> ram() const;
 
         uint64_t cycles() const;
+        Mode mode() const;
+        void setMode(Mode mode);
 
         void setIME(bool newIME);
 
@@ -122,6 +129,7 @@ namespace gbemu {
         std::shared_ptr<RAM> ram_;
 
         uint64_t cycles_;
+        Mode mode_;
 
         using OPCodeHandler = std::function<void(uint16_t, const OPCode&)>;
         std::map<uint8_t, OPCode> opcodes_;
@@ -152,6 +160,7 @@ namespace gbemu {
         void LDD(uint16_t pc, const OPCode& opcode);
         void SCF(uint16_t pc, const OPCode& opcode);
         void CCF(uint16_t pc, const OPCode& opcode);
+        void HALT(uint16_t pc, const OPCode& opcode);
         void ADC(uint16_t pc, const OPCode& opcode);
         void SUB(uint16_t pc, const OPCode& opcode);
         void SBC(uint16_t pc, const OPCode& opcode);

@@ -1,10 +1,18 @@
 #include "ppu.h"
 
+#include <queue>
+
 namespace gbemu {
 
     PPU::PPU(std::shared_ptr<CPU> cpu)
-    : ly_(0x00)
+    : scy_(0x00)
+    , scx_(0x00)
+    , ly_(0x00)
     , lyc_(0x00)
+    , wy_(0x00)
+    , wx_(0x00)
+    , windowLy_(0x00)
+    , lycCoincidenceCalledOnThisLy_(false)
     , cpu_(cpu)
     {
     }
@@ -35,14 +43,15 @@ namespace gbemu {
     {
         const auto lyLycMatch = ly_ == lyc_;
         lcdStatus_ = setBit(lcdStatus_, 2, (lyLycMatch) ? 1 : 0);
-        if (lyLycMatch)
+        if (lyLycMatch && !lycCoincidenceCalledOnThisLy_)
+        {
             cpu_->requestInterupt(CPU::Interrupt::STAT);
+            lycCoincidenceCalledOnThisLy_ = true;
+        }
     }
 
-    void PPU::cycleTriggerHandler(uint64_t cycleCount)
+    void PPU::timerTriggerHandler()
     {
-        ly_ += 1;
-
         if (ly_ < 144)
         {
             drawScanLine();
@@ -82,21 +91,34 @@ namespace gbemu {
             // TODO: request VBLANK interrupt
             cpu_->requestInterupt(CPU::Interrupt::VBLANK);
         }
-        else if (ly_ > 153) // TODO: check if 153 is correct value here.
+
+        ly_ += 1;
+        lycCoincidenceCalledOnThisLy_ = false;
+
+        if (ly_ > 153) // TODO: check if 153 is correct value here.
         {
             ly_ = 0;
+            windowLy_ = 0;
         }
     }
 
     uint8_t PPU::onReadOwnedByte(uint16_t address)
     {
         switch (address) {
+            case RAM::SCY:
+                return scy_;
+            case RAM::SCX:
+                return scx_;
             case RAM::LY:
                 return ly_;
             case RAM::LYC:
                 return lyc_;
             case RAM::STAT:
                 return lcdStatus_;
+            case RAM::WY:
+                return wy_;
+            case RAM::WX:
+                return wx_;
         }
         // TODO: exception?
         return 0x00;
@@ -105,12 +127,26 @@ namespace gbemu {
     void PPU::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue)
     {
         switch (address) {
+            case RAM::SCY:
+                scy_ = newValue;
+                break;
+            case RAM::SCX:
+                scx_ = newValue;
+                break;
             case RAM::LY:
-                return;
+                break;
             case RAM::LYC:
                 lyc_ = newValue;
+                break;
             case RAM::STAT:
                 lcdStatus_ = (newValue & 0xf8) | (lcdStatus_ & 0x03);
+                break;
+            case RAM::WY:
+                wy_ = newValue;
+                break;
+            case RAM::WX:
+                wx_ = newValue;
+                break;
         }
         // TODO: exception?
     }
@@ -144,16 +180,16 @@ namespace gbemu {
         {
             switch (bgp & 0x03) {
                 case 0:
-                    bg_palette[i] = 0xFFFFFFFF;
+                    bg_palette[i] = COLOR_0;
                     break;
                 case 1:
-                    bg_palette[i] = 0xFFC0C0C0;
+                    bg_palette[i] = COLOR_1;
                     break;
                 case 2:
-                    bg_palette[i] = 0xFF606060;
+                    bg_palette[i] = COLOR_2;
                     break;
                 case 3:
-                    bg_palette[i] = 0xFF000000;
+                    bg_palette[i] = COLOR_3;
                     break;
             }
             bgp >>= 2;
@@ -166,8 +202,11 @@ namespace gbemu {
         if (bg_enabled)
         {
             for (int x = 0; x < LCD_WIDTH; x++) {
-                int tile_x = x / 8;
-                int tile_y = y / 8;
+                const auto viewPortX = (x + scx_) % 256;
+                const auto viewPortY = (y + scy_) % 256;
+
+                int tile_x = viewPortX / 8;
+                int tile_y = viewPortY / 8;
                 int tile_index = tile_y * 32 + tile_x;
 
                 uint16_t tile;
@@ -178,36 +217,92 @@ namespace gbemu {
                     tile = tile_data + 16 * (int8_t) cpu_->ram()->get(bg_tile_map + tile_index);
                 }
 
-                int inner_tile_x = x % 8;
-                int inner_tile_y = y % 8;
+                int inner_tile_x = viewPortX % 8;
+                int inner_tile_y = viewPortY % 8;
 
                 uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
                 uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
 
                 pixels_[y * LCD_WIDTH + x] = bg_palette[(msb << 1) | lsb];
             }
+        } else {
+            for (int x = 0; x < LCD_WIDTH; x++) {
+                pixels_[y * LCD_WIDTH + x] = 0xffffffff;
+            }
+        }
+
+        /* Draw window for current scan line, if window is enabled. */
+        // TODO: if not enabled, window is white
+        if (window_enabled && bg_enabled)
+        {
+            const int window_y = y - wy_;
+            const int window_pixel_y = windowLy_;
+
+            bool windowVisible = false;
+            for (int x = 0; x < LCD_WIDTH; x++) {
+                const int window_x = x - wx_ + 7;
+
+                if (!(0 <= window_x && window_x < LCD_WIDTH && 0 <= window_y && window_y < LCD_HEIGHT))
+                    continue;
+
+                int tile_x = window_x / 8;
+                int tile_y = window_pixel_y / 8;
+                int tile_index = tile_y * 32 + tile_x;
+
+                uint16_t tile;
+                if (tile_data == 0x8000) {
+                    tile = tile_data + 16 * cpu_->ram()->get(window_tilemap + tile_index);
+                } else {
+                    // TODO: does cast to signed value need to happen after multiply by 16?
+                    tile = tile_data + 16 * (int8_t) cpu_->ram()->get(window_tilemap + tile_index);
+                }
+
+                int inner_tile_x = window_x % 8;
+                int inner_tile_y = window_pixel_y % 8;
+
+                uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
+                uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
+
+                windowVisible = true;
+                pixels_[y * LCD_WIDTH + x] = bg_palette[(msb << 1) | lsb];
+            }
+            if (windowVisible)
+                windowLy_ += 1;
         }
 
         /* Draw sprites for current scan line, if sprites are enabled. */
         if (sprite_enabled)
         {
-            // note - 40 = num of sprites in OAM
-            for (uint16_t i = 0; i < 40; i++)
+            // TODO: handle sprite drawing priority case where sprites overlap at same x,y but starting x are not the same.
+            std::priority_queue<std::pair<uint8_t, int>> selectedSprites;
+            for (uint16_t i = 0; i < 40 && selectedSprites.size() < MAX_SPRITES_PER_SCANLINE; i++)
             {
-                const uint16_t sprite = RAM::OAM + (i * 4);
-
-                const auto sprite_y = cpu_->ram()->get(sprite) - 16;
-                const auto sprite_x = cpu_->ram()->get(sprite + 1) - 8;
+                const uint16_t spriteAddress = RAM::OAM + (i * 4);
+                const uint8_t spriteY = cpu_->ram()->get(spriteAddress) - 16;
+                const uint8_t spriteX = cpu_->ram()->get(spriteAddress + 1) - 8;
 
                 /* If sprite does not appear on current scanline, then skip. */
-                if (!(sprite_y <= y && y < sprite_y + sprite_height))
+                if (!(spriteY <= y && y < spriteY + sprite_height))
                     continue;
 
-                auto sprite_tile_index = cpu_->ram()->get(sprite + 2);
+                selectedSprites.push(std::make_pair(spriteX, i));
+            }
+
+            while (!selectedSprites.empty())
+            {
+                const auto selectedSprite = selectedSprites.top();
+                selectedSprites.pop();
+
+                const uint16_t spriteAddress = RAM::OAM + (std::get<1>(selectedSprite) * 4);
+
+                const auto sprite_y = cpu_->ram()->get(spriteAddress) - 16;
+                const auto sprite_x = cpu_->ram()->get(spriteAddress + 1) - 8;
+
+                auto sprite_tile_index = cpu_->ram()->get(spriteAddress + 2);
                 if (!sprite_eight_by_eight_mode)
                     sprite_tile_index = setBit(sprite_tile_index, 0, 0);
 
-                const auto sprite_attributes = cpu_->ram()->get(sprite + 3);
+                const auto sprite_attributes = cpu_->ram()->get(spriteAddress + 3);
 
                 const auto sprite_priority = getBit(sprite_attributes, 7) == 1;
                 const auto sprite_y_flip = getBit(sprite_attributes, 6) == 1;
@@ -224,16 +319,16 @@ namespace gbemu {
                 {
                     switch (obp & 0x03) {
                         case 0:
-                            palette[i] = 0xFFFFFFFF;
+                            palette[i] = COLOR_0;
                             break;
                         case 1:
-                            palette[i] = 0xFFC0C0C0;
+                            palette[i] = COLOR_1;
                             break;
                         case 2:
-                            palette[i] = 0xFF606060;
+                            palette[i] = COLOR_2;
                             break;
                         case 3:
-                            palette[i] = 0xFF000000;
+                            palette[i] = COLOR_3;
                             break;
                     }
                     obp >>= 2;
@@ -259,7 +354,8 @@ namespace gbemu {
                     if (colorId == 0)
                         continue;
 
-                    pixels_[y * LCD_WIDTH + x] = palette[colorId];
+                    if (!sprite_priority || pixels_[y * LCD_WIDTH + x] == bg_palette[0])
+                        pixels_[y * LCD_WIDTH + x] = palette[colorId];
                 }
             }
         }

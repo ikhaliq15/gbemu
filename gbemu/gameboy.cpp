@@ -34,11 +34,15 @@ namespace gbemu {
         ram_->addOwner(RAM::JOYP, joypad_);
         ram_->addOwner(RAM::DIV, timer_);
         ram_->addOwner(RAM::STAT, ppu_);
+        ram_->addOwner(RAM::SCY, ppu_);
+        ram_->addOwner(RAM::SCX, ppu_);
         ram_->addOwner(RAM::LY, ppu_);
         ram_->addOwner(RAM::LYC, ppu_);
+        ram_->addOwner(RAM::WY, ppu_);
+        ram_->addOwner(RAM::WX, ppu_);
 
         /* Setup timer cycle listeners. */
-        timer_->addCycleListener(ppu_, PPU::CYCLES_PER_SCANLINE);
+        timer_->addTimerListener(ppu_, PPU::SCANLINE_FREQUENCY);
 
         /* Setup up PPU frame completion listeners. */
         ppu_->subscribeToCompleteFrames(shared_from_this());
@@ -49,12 +53,14 @@ namespace gbemu {
 
         while (!quit_)
         {
-            const auto beforeCycleCount = cpu_->cycles();
-            cpu_->executeInstruction(false);
-            const auto afterCycleCount = cpu_->cycles();
+            if (cpu_->mode() == CPU::Mode::NORMAL)
+                cpu_->executeInstruction(false);
 
-            timer_->incrementTimer(afterCycleCount - beforeCycleCount);
+            timer_->update();
             ppu_->update();
+
+            if ((ram_->get(RAM::IF) & ram_->get(RAM::IE) & 0x1f) != 0x00)
+                cpu_->setMode(CPU::Mode::NORMAL);
 
             if (cpu_->IME())
             {

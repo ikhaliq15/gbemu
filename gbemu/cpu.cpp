@@ -15,6 +15,7 @@ namespace gbemu {
     , HL_(STARTING_HL)
     , ram_(ram)
     , cycles_(0ul)
+    , mode_(Mode::NORMAL)
     {
         std::tie(opcodes_, prefixedOpcodes_) = OPCode::constructOpcodes(opcodeDataFile);
 
@@ -101,6 +102,11 @@ namespace gbemu {
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
             std::string("CCF"),
             [this](uint16_t pc, const OPCode& opcode) { CCF(pc, opcode); }
+        ));
+
+        opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
+            std::string("HALT"),
+            [this](uint16_t pc, const OPCode& opcode) { HALT(pc, opcode); }
         ));
 
         opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
@@ -298,6 +304,8 @@ namespace gbemu {
     std::shared_ptr<RAM> CPU::ram() const { return ram_; }
 
     uint64_t CPU::cycles() const { return cycles_; }
+    CPU::Mode CPU::mode() const { return mode_; }
+    void CPU::setMode(Mode mode) { mode_ = mode; }
 
     void CPU::setIME(bool newIME) { IME_ = newIME; }
 
@@ -449,11 +457,14 @@ namespace gbemu {
             prefixedOpcode = true;
         }
 
-        const auto opcodeString = (prefixedOpcode) ? (toHexString(opcodeValue) + " (CB)") : toHexString(opcodeValue);
+        const auto opcodeString = [&prefixedOpcode, &opcodeValue]()
+        {
+            return (prefixedOpcode) ? (toHexString(opcodeValue) + " (CB)") : toHexString(opcodeValue);
+        };
 
         const auto it = opcodeMap->find(opcodeValue);
         if (it == opcodeMap->end())
-            throw std::runtime_error(std::string("Unknown opcode detected: ") + opcodeString + std::string(" at PC=") + toHexString(PC()));
+            throw std::runtime_error(std::string("Unknown opcode detected: ") + opcodeString() + std::string(" at PC=") + toHexString(PC()));
         const auto opcode = it->second;
 
         const auto oldPC = PC();
@@ -463,7 +474,7 @@ namespace gbemu {
         if (it2 == opcodeFunctions_.end())
             throw std::runtime_error(
                 std::string("Unknown mnemonic ") + opcode.mnemonic() + 
-                std::string(" detected for opcode: ") + opcodeString
+                std::string(" detected for opcode: ") + opcodeString()
             );
         const auto opcodeHandler = it2->second;
 
@@ -481,7 +492,7 @@ namespace gbemu {
         // {
         //     std::cout
         //             << std::setw(20) << std::left << opcode.command()
-        //             << std::setw(17) << ("Opcode=" + opcodeString) << "   "
+        //             << std::setw(17) << ("Opcode=" + opcodeString()) << "   "
         //             << std::setw(9) << ("PC=" + toHexString(PC())) << "   "
         //             << std::setw(9) << ("SP=" + toHexString(SP())) << "   "
         //             << std::setw(9) << ("AF=" + toHexString(AF())) << "   "
@@ -1042,6 +1053,11 @@ namespace gbemu {
     void CPU::CCF(uint16_t pc, const OPCode& opcode)
     {
         setFlagsFromResult(alu::AluFlagResult{}, opcode);
+    }
+
+    void CPU::HALT(uint16_t pc, const OPCode& opcode)
+    {
+        mode_ = Mode::HALT;
     }
 
     void CPU::ADC(uint16_t pc, const OPCode& opcode)

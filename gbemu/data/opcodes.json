@@ -130,7 +130,7 @@
     { "opcode": "0x73", "command": "LD (HL), E",     "mnemonic": "LD",    "operands": ["(HL)", "E"],    "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x74", "command": "LD (HL), H",     "mnemonic": "LD",    "operands": ["(HL)", "H"],    "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x75", "command": "LD (HL), L",     "mnemonic": "LD",    "operands": ["(HL)", "L"],    "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
-
+    { "opcode": "0x76", "command": "HALT",           "mnemonic": "HALT",  "operands": [],               "bytes": 1,  "cycles": 1,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x77", "command": "LD (HL), A",     "mnemonic": "LD",    "operands": ["(HL)", "A"],    "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x78", "command": "LD A, B",        "mnemonic": "LD",    "operands": ["A", "B"],       "bytes": 1,  "cycles": 1,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x79", "command": "LD A, C",        "mnemonic": "LD",    "operands": ["A", "C"],       "bytes": 1,  "cycles": 1,  "flagsZNHC": ["-","-","-","-"]   },
