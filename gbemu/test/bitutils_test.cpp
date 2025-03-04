@@ -2,7 +2,8 @@
 
 #include "../bitutils.h"
 
-TEST(BitUtilsTest, GetAndSetBit) {
+TEST(BitUtilsTest, GetAndSetBit)
+{
     EXPECT_EQ(0b00000001, gbemu::setBit(0b00000000, 0, 1));
     EXPECT_EQ(0b00000010, gbemu::setBit(0b00000000, 1, 1));
     EXPECT_EQ(0b00000100, gbemu::setBit(0b00000000, 2, 1));
@@ -14,7 +15,7 @@ TEST(BitUtilsTest, GetAndSetBit) {
 
     EXPECT_EQ(0, gbemu::getBit(0b11010010, 0));
     EXPECT_EQ(1, gbemu::getBit(0b11010010, 1));
-    EXPECT_EQ(0, gbemu::getBit(0b11010010,2));
+    EXPECT_EQ(0, gbemu::getBit(0b11010010, 2));
     EXPECT_EQ(0, gbemu::getBit(0b11010010, 3));
     EXPECT_EQ(1, gbemu::getBit(0b11010010, 4));
     EXPECT_EQ(0, gbemu::getBit(0b11010010, 5));

@@ -1,11 +1,12 @@
 #include <iostream>
 
-#include "gameboy.h"
 #include "cartridge.h"
+#include "gameboy.h"
 
 #include <nfd.h>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     std::string cartridgeFilename;
     std::string opcodeDataFilename;
 
@@ -22,7 +23,7 @@ int main(int argc, char** argv) {
         opcodeDataFilename = argv[1];
 
         nfdchar_t *selectedPath;
-        nfdfilteritem_t filterItem[1] = { { "Gameboy ROMs", "gb" } };
+        nfdfilteritem_t filterItem[1] = {{"Gameboy ROMs", "gb"}};
         nfdresult_t result = NFD_OpenDialog(&selectedPath, filterItem, 1, NULL);
         if (result == NFD_OKAY)
         {

@@ -3,21 +3,22 @@
 
 #include <vector>
 
-namespace gbemu {
+namespace gbemu
+{
 
-    class Cartridge
-    {
-    public:
-        Cartridge(const std::string& romFileName);
-        Cartridge(const std::vector<uint8_t>& catridgeData);
+class Cartridge
+{
+  public:
+    Cartridge(const std::string &romFileName);
+    Cartridge(const std::vector<uint8_t> &catridgeData);
 
-        uint8_t operator [](int i) const;
-        size_t size() const;
+    uint8_t operator[](int i) const;
+    size_t size() const;
 
-    private:
-        std::vector<uint8_t> cartridgeData_;
-    };
+  private:
+    std::vector<uint8_t> cartridgeData_;
+};
 
-} // gbemu
+} // namespace gbemu
 
 #endif // GBEMU_CARTRIDGE

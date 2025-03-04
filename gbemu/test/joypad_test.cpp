@@ -2,9 +2,11 @@
 
 #include "../joypad.h"
 
-class JoypadTest : public testing::Test {
- protected:
-    void SetUp() override {
+class JoypadTest : public testing::Test
+{
+  protected:
+    void SetUp() override
+    {
         joypad_ = std::make_shared<gbemu::Joypad>();
     }
 
@@ -12,7 +14,7 @@ class JoypadTest : public testing::Test {
     {
         auto event = SDL_KeyboardEvent();
         event.keysym.sym = keyCode;
-        return event; 
+        return event;
     }
 
     uint8_t getButtonsNibble() const
@@ -34,32 +36,34 @@ class JoypadTest : public testing::Test {
     std::shared_ptr<gbemu::Joypad> joypad_;
 };
 
-#define SINGLE_BUTTON_TEST(TestName, Button, ButtonBitIndex, isDpad) \
-    TEST_F(JoypadTest, SingleButton_ ## TestName) { \
-        const uint8_t expectedNibble = (~(1 << ButtonBitIndex)) & 0x0f; \
-        ASSERT_EQ(getButtonsNibble(), 0x0f); \
-        ASSERT_EQ(getDpadNibble(), 0x0f); \
-        \
-        for (int i = 0; i < 3; i++) \
-        { \
-            joypad_->handleKeyDownEvent(getKeyboardEvent(Button)); \
-            \
-            if (isDpad) { \
-                ASSERT_EQ(getButtonsNibble(), 0x0f); \
-                ASSERT_EQ(getDpadNibble(), expectedNibble); \
-            } \
-            else \
-            { \
-                ASSERT_EQ(getButtonsNibble(), expectedNibble); \
-                ASSERT_EQ(getDpadNibble(), 0x0f); \
-            } \
-            \
-            joypad_->handleKeyUpEvent(getKeyboardEvent(Button)); \
-            \
-            ASSERT_EQ(getButtonsNibble(), 0x0f); \
-            ASSERT_EQ(getDpadNibble(), 0x0f); \
-        } \
-    } \
+#define SINGLE_BUTTON_TEST(TestName, Button, ButtonBitIndex, isDpad)                                                   \
+    TEST_F(JoypadTest, SingleButton_##TestName)                                                                        \
+    {                                                                                                                  \
+        const uint8_t expectedNibble = (~(1 << ButtonBitIndex)) & 0x0f;                                                \
+        ASSERT_EQ(getButtonsNibble(), 0x0f);                                                                           \
+        ASSERT_EQ(getDpadNibble(), 0x0f);                                                                              \
+                                                                                                                       \
+        for (int i = 0; i < 3; i++)                                                                                    \
+        {                                                                                                              \
+            joypad_->handleKeyDownEvent(getKeyboardEvent(Button));                                                     \
+                                                                                                                       \
+            if (isDpad)                                                                                                \
+            {                                                                                                          \
+                ASSERT_EQ(getButtonsNibble(), 0x0f);                                                                   \
+                ASSERT_EQ(getDpadNibble(), expectedNibble);                                                            \
+            }                                                                                                          \
+            else                                                                                                       \
+            {                                                                                                          \
+                ASSERT_EQ(getButtonsNibble(), expectedNibble);                                                         \
+                ASSERT_EQ(getDpadNibble(), 0x0f);                                                                      \
+            }                                                                                                          \
+                                                                                                                       \
+            joypad_->handleKeyUpEvent(getKeyboardEvent(Button));                                                       \
+                                                                                                                       \
+            ASSERT_EQ(getButtonsNibble(), 0x0f);                                                                       \
+            ASSERT_EQ(getDpadNibble(), 0x0f);                                                                          \
+        }                                                                                                              \
+    }
 
 TEST_F(JoypadTest, NoButtonsPressed)
 {
@@ -82,4 +86,3 @@ SINGLE_BUTTON_TEST(Start, gbemu::Joypad::START_BUTTON, 3, false);
 SINGLE_BUTTON_TEST(Select, gbemu::Joypad::SELECT_BUTTON, 2, false);
 SINGLE_BUTTON_TEST(B, gbemu::Joypad::B_BUTTON, 1, false);
 SINGLE_BUTTON_TEST(A, gbemu::Joypad::A_BUTTON, 0, false);
-
