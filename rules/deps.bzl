@@ -18,7 +18,7 @@ def internal_deps():
     git_repository(
         name = "gtest",
         remote = "https://github.com/google/googletest",
-        branch = "v1.14.x",
+        commit = "f8d7d77c06936315286eb55f8de22cd23c188571",
     )
 
     http_archive(
