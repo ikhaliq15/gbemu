@@ -6,10 +6,11 @@
 namespace gbemu
 {
 
-Gameboy::Gameboy(const std::string &opcodeDataFile)
+Gameboy::Gameboy(const config::Config &cfg, const std::string &opcodeDataFile)
     : cartridgeLoaded_(false), quit_(false), joypad_(std::make_shared<Joypad>()),
       ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE)), cpu_(std::make_shared<CPU>(ram_, opcodeDataFile)),
-      ppu_(std::make_shared<PPU>(cpu_)), timer_(std::make_shared<Timer>(cpu_))
+      ppu_(std::make_shared<PPU>(cpu_, cfg.runHeadless())), timer_(std::make_shared<Timer>(cpu_)),
+      enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging())
 {
 }
 
@@ -93,6 +94,18 @@ void Gameboy::start()
                 cpu_->pushToStack(cpu_->PC());
                 ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 2, 0));
                 cpu_->setPC(0x0050);
+            }
+        }
+
+        if (enableBlarggSerialLogging_)
+        {
+            const auto currentSB = ram_->get(RAM::SB);
+            const auto currentSC = ram_->get(RAM::SC);
+            if (currentSC == 0x81)
+            {
+                putc(currentSB, stdout);
+                fflush(stdout);
+                ram_->set(RAM::SC, 0x00);
             }
         }
     }

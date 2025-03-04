@@ -5,9 +5,9 @@
 namespace gbemu
 {
 
-PPU::PPU(std::shared_ptr<CPU> cpu)
+PPU::PPU(std::shared_ptr<CPU> cpu, bool runHeadless)
     : scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00), wy_(0x00), wx_(0x00), windowLy_(0x00),
-      lycCoincidenceCalledOnThisLy_(false), cpu_(cpu)
+      lycCoincidenceCalledOnThisLy_(false), cpu_(cpu), runHeadless_(runHeadless)
 {
 }
 
@@ -19,17 +19,21 @@ PPU::~PPU()
         SDL_DestroyWindow(window_);
     if (texture_)
         SDL_DestroyTexture(texture_);
-    SDL_Quit();
+    if (!runHeadless_)
+        SDL_Quit();
 }
 
 void PPU::init()
 {
-    SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO);
-    window_ =
-        SDL_CreateWindow("GBEmu v3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
-    texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WINDOW_WIDTH,
-                                 WINDOW_HEIGHT);
+    if (!runHeadless_)
+    {
+        SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO);
+        window_ = SDL_CreateWindow("GBEmu v3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH,
+                                   WINDOW_HEIGHT, 0);
+        renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
+        texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WINDOW_WIDTH,
+                                     WINDOW_HEIGHT);
+    }
 
     for (int i = 0; i < pixels_.size(); i++)
         pixels_[i] = 0x00000000;
@@ -55,10 +59,13 @@ void PPU::timerTriggerHandler()
     else if (ly_ == 144)
     {
         // TODO: render frame
-        const auto scaledPixels = scalePixels(WINDOW_SCALE);
-        SDL_UpdateTexture(texture_, NULL, scaledPixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
-        SDL_RenderCopy(renderer_, texture_, NULL, NULL);
-        SDL_RenderPresent(renderer_);
+        if (!runHeadless_)
+        {
+            const auto scaledPixels = scalePixels(WINDOW_SCALE);
+            SDL_UpdateTexture(texture_, NULL, scaledPixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
+            SDL_RenderCopy(renderer_, texture_, NULL, NULL);
+            SDL_RenderPresent(renderer_);
+        }
 
         for (const auto &frameCompleteListener : frameCompleteListeners_)
             frameCompleteListener->onFrameComplete();
@@ -67,20 +74,22 @@ void PPU::timerTriggerHandler()
         // TODO: this mechanism is causing actual FPS to be a bit lower than desired FPS
         //       probably due to some overhead from SDL_Delay and the thread sleeping and restarting.
         //       from a quick test, i was getting approx 56.9 FPS when desired FPS was 60.
-        const auto now = SDL_GetTicks64();
-        if (lastFrameTickCount_ > 0)
+        if (!runHeadless_)
         {
-            constexpr auto timeBetweenFramesMs = (Uint64)((1.0 / DEVICE_FPS) * 1000);
-            const auto timeToSleepUntil = lastFrameTickCount_ + timeBetweenFramesMs;
+            if (lastFrameTickCount_ > 0)
+            {
+                constexpr auto timeBetweenFramesMs = (Uint64)((1.0 / DEVICE_FPS) * 1000);
+                const auto timeToSleepUntil = lastFrameTickCount_ + timeBetweenFramesMs;
 
-            // TODO: add warning once we keep a moving average of the FPS (otherwise errors are too jiterry)
-            // if (timeToSleepUntil < now)
-            //     std::cout << "[WARNING] Rendering unable to keep up with desired framerate." << std::endl;
-
-            const auto delayAmount = (timeToSleepUntil > now) ? timeToSleepUntil - now : 0ull;
-            SDL_Delay(delayAmount);
+                // TODO: add warning once we keep a moving average of the FPS (otherwise errors are too jiterry)
+                // if (timeToSleepUntil < now)
+                //     std::cout << "[WARNING] Rendering unable to keep up with desired framerate." << std::endl;
+                const auto now = SDL_GetTicks64();
+                const auto delayAmount = (timeToSleepUntil > now) ? timeToSleepUntil - now : 0ull;
+                SDL_Delay(delayAmount);
+            }
+            lastFrameTickCount_ = SDL_GetTicks64();
         }
-        lastFrameTickCount_ = SDL_GetTicks64();
 
         // std::cout << "Drew frame #" << ++frameCount_ << std::endl;
 

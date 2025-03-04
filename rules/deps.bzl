@@ -25,6 +25,7 @@ def internal_deps():
         name = "com_grail_bazel_compdb",
         strip_prefix = "bazel-compilation-database-0.5.2",
         urls = ["https://github.com/grailbio/bazel-compilation-database/archive/0.5.2.tar.gz"],
+        integrity = "sha256-0yg1sm3TWq2P0LoNcSJl32Vlo62GDTnkwBrUEFnqfto",
     )
 
     http_archive(
@@ -40,4 +41,11 @@ def internal_deps():
         build_file = "//rules:nfd.BUILD",
         commit = "5786fabceeaee4d892f3c7a16b243796244cdddc",
         remote = "https://github.com/btzy/nativefiledialog-extended.git",
+    )
+
+    http_archive(
+        name = "argparse",
+        sha256 = "3e5a59ab7688dcd1f918bc92051a10564113d4f36c3bbed3ef596c25e519a062",
+        strip_prefix = "argparse-3.1",
+        url = "https://github.com/p-ranav/argparse/archive/refs/tags/v3.1.zip",
     )

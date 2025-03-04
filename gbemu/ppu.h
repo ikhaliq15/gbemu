@@ -38,6 +38,7 @@ class PPU : public Timer::TimerListener, public RAM::Owner
     static constexpr uint64_t CYCLES_PER_SCANLINE = 114;
 
     PPU(std::shared_ptr<CPU> cpu);
+    PPU(std::shared_ptr<CPU> cpu, bool runHeadless = false);
     ~PPU();
     void init();
     void update();
@@ -85,6 +86,8 @@ class PPU : public Timer::TimerListener, public RAM::Owner
     uint64_t lastFrameTickCount_ = 0;
 
     std::vector<std::shared_ptr<FrameCompleteListener>> frameCompleteListeners_;
+
+    const bool runHeadless_;
 
     void drawScanLine();
     std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scalePixels(uint32_t scaleFactor) const;

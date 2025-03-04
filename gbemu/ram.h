@@ -43,6 +43,8 @@ class RAM
 
     static constexpr uint16_t OAM = 0xfe00;
     static constexpr uint16_t JOYP = 0xff00;
+    static constexpr uint16_t SB = 0xff01;
+    static constexpr uint16_t SC = 0xff02;
     static constexpr uint16_t DIV = 0xff04;
     static constexpr uint16_t TIMA = 0xff05;
     static constexpr uint16_t TMA = 0xff06;

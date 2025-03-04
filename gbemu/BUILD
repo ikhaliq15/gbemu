@@ -36,6 +36,7 @@ cc_binary(
     }),
     visibility = ["//visibility:public"],
     deps = [
+        "@argparse",
         "@com_github_libsdl_sdl2//:SDL",
         "@com_github_libsdl_sdl2//:include",
         "@json",
@@ -66,7 +67,7 @@ cc_test(
         "test/joypad_test.cpp",
     ],
     data = [
-        "data/opcodes.json",
+        "//gbemu/data:opcodes",
     ],
     deps = [
         "@com_github_libsdl_sdl2//:SDL",

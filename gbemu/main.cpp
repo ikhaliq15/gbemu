@@ -3,66 +3,43 @@
 #include "cartridge.h"
 #include "gameboy.h"
 
-#include <nfd.h>
+#include <argparse/argparse.hpp>
 
 int main(int argc, char **argv)
 {
-    std::string cartridgeFilename;
-    std::string opcodeDataFilename;
+    argparse::ArgumentParser args("GBEmu v3");
+    args.add_argument("rom_file").help("ROM file to load into the GBEmu");
+    args.add_argument("opcode_data_file").help("Data file of GBEmu opcodes.");
+    args.add_argument("--blarg_console")
+        .help("Print output from serial port (useful for Blargg testing)")
+        .default_value(false)
+        .implicit_value(true);
+    args.add_argument("--headless")
+        .help("Run GBEmu without a window (useful for integration testing)")
+        .default_value(false)
+        .implicit_value(true);
 
-    if (argc <= 1)
+    try
     {
-        std::cerr << "Too few arguments provided. Args: [rom_file] opcode_data_file" << std::endl;
-        return EXIT_FAILURE;
+        args.parse_args(argc, argv);
     }
-    else if (argc == 2)
+    catch (const std::exception &err)
     {
-        // TODO: cleaner handling of NFD_Init/NFD_Quit
-        NFD_Init();
-
-        opcodeDataFilename = argv[1];
-
-        nfdchar_t *selectedPath;
-        nfdfilteritem_t filterItem[1] = {{"Gameboy ROMs", "gb"}};
-        nfdresult_t result = NFD_OpenDialog(&selectedPath, filterItem, 1, NULL);
-        if (result == NFD_OKAY)
-        {
-            cartridgeFilename = selectedPath;
-            NFD_FreePath(selectedPath);
-        }
-        else if (result == NFD_CANCEL)
-        {
-            std::cerr << "Too few arguments provided. Args: [rom_file] opcode_data_file" << std::endl;
-            return EXIT_FAILURE;
-        }
-        else
-        {
-            std::cerr << "File Selection Error:" << NFD_GetError() << std::endl;
-            return EXIT_FAILURE;
-        }
-    }
-    else if (argc == 3)
-    {
-        cartridgeFilename = argv[1];
-        opcodeDataFilename = argv[2];
-    }
-    else
-    {
-        std::cerr << "Too many arguments provided. Args: [rom_file] opcode_data_file" << std::endl;
+        std::cerr << err.what() << std::endl;
+        std::cerr << args.usage();
         return EXIT_FAILURE;
     }
 
-    std::cout << "Selected cartridge file: " << cartridgeFilename << std::endl;
+    const gbemu::config::Config gameboyCfg{args.get<bool>("--blarg_console"), args.get<bool>("--headless")};
 
-    const auto gameboy = std::make_shared<gbemu::Gameboy>(opcodeDataFilename);
+    const auto cartridgeFilename = args.get<std::string>("rom_file");
+    const auto opcodeDataFilename = args.get<std::string>("opcode_data_file");
+    const auto gameboy = std::make_shared<gbemu::Gameboy>(gameboyCfg, opcodeDataFilename);
 
-    gbemu::Cartridge catridge(cartridgeFilename);
+    const gbemu::Cartridge catridge(cartridgeFilename);
+
     gameboy->loadCartridge(catridge);
-
     gameboy->start();
-
-    // TODO: cleaner handling of NFD_Init/NFD_Quit
-    NFD_Quit();
 
     return 0;
 }

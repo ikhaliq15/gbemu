@@ -2,6 +2,7 @@
 #define GBEMU_GAMEBOY
 
 #include "cartridge.h"
+#include "config.h"
 #include "cpu.h"
 #include "joypad.h"
 #include "ppu.h"
@@ -14,7 +15,7 @@ namespace gbemu
 class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_from_this<Gameboy>
 {
   public:
-    Gameboy(const std::string &opcodeDataFile);
+    Gameboy(const config::Config &cfg, const std::string &opcodeDataFile);
 
     void loadCartridge(const Cartridge &cartridge);
     void start();
@@ -35,6 +36,8 @@ class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_fro
     std::shared_ptr<Timer> timer_;
 
     SDL_Event event_;
+
+    const bool enableBlarggSerialLogging_;
 };
 
 } // namespace gbemu
