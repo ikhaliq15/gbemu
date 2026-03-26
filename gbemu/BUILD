@@ -40,7 +40,6 @@ cc_binary(
         "@com_github_libsdl_sdl2//:SDL",
         "@com_github_libsdl_sdl2//:include",
         "@json",
-        "@nativefiledialog_git//:nfd",
     ],
 )
 
