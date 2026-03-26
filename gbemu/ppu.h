@@ -7,6 +7,8 @@
 #include "gbemu/shutdown_listener.h"
 #include "gbemu/timer.h"
 
+#include <optional>
+
 // TODO: explore why top of window looks cut off (like in blargg tests)
 namespace gbemu
 {
