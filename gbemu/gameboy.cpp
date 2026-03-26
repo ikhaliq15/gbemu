@@ -9,8 +9,8 @@ namespace gbemu
 Gameboy::Gameboy(const config::Config &cfg)
     : cartridgeLoaded_(false), quit_(false), joypad_(std::make_shared<Joypad>()),
       ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE)), cpu_(std::make_shared<CPU>(ram_)),
-      ppu_(std::make_shared<PPU>(cpu_, cfg.runHeadless())), timer_(std::make_shared<Timer>(cpu_)),
-      enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging())
+      ppu_(std::make_shared<PPU>(cpu_, cfg.runHeadless(), cfg.dumpDisplayOnExitPath())),
+      timer_(std::make_shared<Timer>(cpu_)), enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging())
 {
 }
 
@@ -48,6 +48,7 @@ void Gameboy::start()
 
     /* Setup up PPU frame completion listeners. */
     ppu_->subscribeToCompleteFrames(shared_from_this());
+    subscribeToShutDown(ppu_);
 
     /* Initialize subcomponents of the gameboy. */
     ppu_->init();
@@ -109,6 +110,8 @@ void Gameboy::start()
             }
         }
     }
+
+    shutdown();
 }
 
 void Gameboy::reset()
