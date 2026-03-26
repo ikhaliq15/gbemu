@@ -6,6 +6,8 @@
 #include "operand.h"
 #include "ram.h"
 
+#include <functional>
+#include <memory>
 #include <stdint.h>
 
 namespace gbemu
