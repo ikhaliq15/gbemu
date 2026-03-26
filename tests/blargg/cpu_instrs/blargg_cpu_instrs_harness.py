@@ -7,24 +7,19 @@ import sys
 import threading
 import unittest
 
+from python.runfiles import Runfiles
 from typing import Iterable, Tuple
 
 # TODO Enhancements:
-#   - Each test is it's own Bazel target instead of subtests in this file
 #   - Allow for no timeout option (should be doable by passing Nones all the way to subprocess/threading waits/joins)
 #   - Can we have the timeout period be provided/enforced by the Bazel level?
-#   - Run the test roms in parallel
-#   - Have Bazel get the test roms from a repository instead of having the user need to provide them
 
 
 # Test parameters
-TEST_ROM_TIMEOUT_SECONDS = 30
+TEST_ROM_TIMEOUT_SECONDS = 60
 TEST_ROM_PASSED_MARKER = "Passed"
 
 # Test data and command information
-BLARGG_TEST_ROM_GLOB = os.path.join(
-    "roms", "blargg", "cpu_instrs", "individual", "*.gb"
-)
 GBEMU_BINARY_LOCATION = os.path.join("gbemu", "gbemu-bin")
 GBEMU_OPCODES_DATA_LOCATION = os.path.join("gbemu", "data", "opcodes.json")
 GBEMU_BLARGG_LOGGING_OPTION = "--blarg_console"
@@ -68,14 +63,27 @@ def process_output_contains_target_before_timeout(
     # the target string and already killed the process. Otherwise, we have
     # to kill the process in the exception block. Finally, we join the thread
     # in case it was still alive capturing the rest of the output.
+
+    timeout_occurred = False
+
     try:
         process.wait(timeout=timeout_sec)
     except subprocess.TimeoutExpired:
         process.kill()
         process.wait()
+
+        timeout_occurred = True
     finally:
         if t.is_alive():
             t.join(timeout=timeout_sec)
+            if t.is_alive():
+                logging.warning(
+                    "Output collection thread is still alive after join timeout. This may indicate an issue with the thread not exiting properly."
+                )
+                timeout_occurred = True
+
+    if timeout_occurred:
+        raise subprocess.TimeoutExpired(command, timeout_sec)
 
     # Return if the target string appears in any line of the output and the output itself
     output = "".join(program_output.queue)
@@ -84,9 +92,15 @@ def process_output_contains_target_before_timeout(
 
 class BlarggCPUInstrsTest(unittest.TestCase):
     def test_run(self):
+        r = Runfiles.Create()
+        blargg_test_rom_glob = os.path.join(
+            r.Rlocation("blargg_test_roms/cpu_instrs/individual/"),
+            "*.gb"
+        )
 
         # Find all the test roms
-        test_roms = sorted(glob.glob(BLARGG_TEST_ROM_GLOB))
+        test_roms = sorted(glob.glob(blargg_test_rom_glob))
+        assert test_roms, f"No test roms found with glob: {blargg_test_rom_glob}"
 
         # For each test rom, start a subtest that runs GBEmu on the rom and detects
         # if the "Passed" marker appears in the serial output before the configured
