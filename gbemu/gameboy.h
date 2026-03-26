@@ -7,6 +7,7 @@
 #include "gbemu/joypad.h"
 #include "gbemu/ppu.h"
 #include "gbemu/ram.h"
+#include "gbemu/shutdown_listener.h"
 #include "gbemu/timer.h"
 
 namespace gbemu
@@ -23,6 +24,18 @@ class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_fro
 
     void onFrameComplete();
 
+    void subscribeToShutDown(const std::shared_ptr<ShutDownListener> shutDownListener)
+    {
+        shutDownListeners_.push_back(shutDownListener);
+    }
+
+  private:
+    void shutdown()
+    {
+        for (const auto &shutDownListener : shutDownListeners_)
+            shutDownListener->onShutDown();
+    }
+
   private:
     static constexpr uint32_t GAMEBOY_RAM_SIZE = 0x10000;
 
@@ -38,6 +51,7 @@ class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_fro
     SDL_Event event_;
 
     const bool enableBlarggSerialLogging_;
+    std::vector<std::shared_ptr<ShutDownListener>> shutDownListeners_;
 };
 
 } // namespace gbemu

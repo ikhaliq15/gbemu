@@ -1,13 +1,17 @@
 #include "gbemu/ppu.h"
 
+#include <ostream>
 #include <queue>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 namespace gbemu
 {
 
-PPU::PPU(std::shared_ptr<CPU> cpu, bool runHeadless)
+PPU::PPU(std::shared_ptr<CPU> cpu, bool runHeadless, std::optional<std::string> displayDumpPath)
     : scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00), wy_(0x00), wx_(0x00), windowLy_(0x00),
-      lycCoincidenceCalledOnThisLy_(false), cpu_(cpu), runHeadless_(runHeadless)
+      lycCoincidenceCalledOnThisLy_(false), cpu_(cpu), runHeadless_(runHeadless), displayDumpPath_(displayDumpPath)
 {
 }
 
@@ -156,6 +160,14 @@ void PPU::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentVa
         break;
     }
     // TODO: exception?
+}
+
+void PPU::onShutDown()
+{
+    if (displayDumpPath_.has_value())
+    {
+        dumpDisplay(displayDumpPath_.value());
+    }
 }
 
 void PPU::drawScanLine()
@@ -400,6 +412,38 @@ std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> PPU::scalePixels(uint32_t sca
         }
     }
     return scaledPixels;
+}
+
+void PPU::dumpDisplay(const std::string &path)
+{
+    if (path.empty())
+    {
+        return;
+    }
+
+    const auto width = LCD_WIDTH;
+    const auto height = LCD_HEIGHT;
+    constexpr auto channels = 4; // RGBA
+    unsigned char *image_data = (unsigned char *)malloc(width * height * channels);
+    if (!image_data)
+    {
+        std::cerr << "Failed to allocate memory for image data." << std::endl;
+        return;
+    }
+
+    for (int i = 0; i < width * height; i++)
+    {
+        const auto pixel = pixels_[i];
+        image_data[i * 4 + 0] = (pixel >> 16) & 0xFF; // Red
+        image_data[i * 4 + 1] = (pixel >> 8) & 0xFF;  // Green
+        image_data[i * 4 + 2] = pixel & 0xFF;         // Blue
+        image_data[i * 4 + 3] = (pixel >> 24) & 0xFF; // Alpha
+    }
+
+    const auto stride_bytes = width * channels * sizeof(unsigned char);
+    stbi_write_png(path.c_str(), width, height, channels, image_data, stride_bytes);
+
+    free(image_data);
 }
 
 } // namespace gbemu

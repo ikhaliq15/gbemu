@@ -61,6 +61,7 @@ cc_library(
         "opcode_data.h",
         "operand.h",
         "ppu.h",
+        "shutdown_listener.h",
         "timer.h",
     ],
     deps = [
@@ -69,6 +70,7 @@ cc_library(
         ":gbemu-ram",
         "@json",
         "@sdl2//:SDL2",
+        "@stb//:stb_image_write",
     ],
 )
 
