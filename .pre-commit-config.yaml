@@ -18,8 +18,3 @@ repos:
   rev: v22.1.1
   hooks:
     - id: clang-format
-
-- repo: https://github.com/cpp-linter/cpp-linter-hooks
-  rev: v1.1.14
-  hooks:
-    - id: clang-tidy
