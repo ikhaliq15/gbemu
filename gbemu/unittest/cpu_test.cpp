@@ -12,7 +12,7 @@ class CPUTest : public testing::Test
     void SetUp() override
     {
         ram_ = std::make_shared<gbemu::RAM>(1 << 16);
-        cpu_ = std::make_unique<gbemu::CPU>(ram_, "data/opcodes.json");
+        cpu_ = std::make_unique<gbemu::CPU>(ram_);
     }
 
     void loadSimpleProgram(const Program &program)

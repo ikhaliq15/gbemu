@@ -1,3 +1,10 @@
+#ifndef GBEMU_OPCODE_DATA
+#define GBEMU_OPCODE_DATA
+
+namespace gbemu::opcodes
+{
+
+static constexpr const char *OPCODES_DATA = R"json(
 [
     { "opcode": "0x00", "command": "NOP",            "mnemonic": "NOP",   "operands": [],               "bytes": 1,  "cycles": 1,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x01", "command": "LD BC, d16",     "mnemonic": "LD",    "operands": ["BC"],           "bytes": 3,  "cycles": 3,  "flagsZNHC": ["-","-","-","-"]   },
@@ -573,3 +580,8 @@
     { "prefix": true, "opcode": "0xfe", "command": "SET 7, (HL)",  "mnemonic": "BIT_SET",  "aux_args": [7, 1],  "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["-", "-", "-", "-"] },
     { "prefix": true, "opcode": "0xff", "command": "SET 7, A",     "mnemonic": "BIT_SET",  "aux_args": [7, 1],  "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["-", "-", "-", "-"] }
 ]
+)json";
+
+} // namespace gbemu::opcodes
+
+#endif // GBEMU_OPCODE_DATA

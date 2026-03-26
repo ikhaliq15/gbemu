@@ -7,11 +7,11 @@
 namespace gbemu
 {
 
-CPU::CPU(std::shared_ptr<RAM> ram, const std::string &opcodeDataFile)
+CPU::CPU(std::shared_ptr<RAM> ram)
     : IME_(false), PC_(STARTING_PC), SP_(STARTING_SP), AF_(STARTING_AF), BC_(STARTING_BC), DE_(STARTING_DE),
       HL_(STARTING_HL), ram_(ram), cycles_(0ul), mode_(Mode::NORMAL)
 {
-    std::tie(opcodes_, prefixedOpcodes_) = OPCode::constructOpcodes(opcodeDataFile);
+    std::tie(opcodes_, prefixedOpcodes_) = OPCode::constructOpcodes();
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
         std::string("NOP"), [this](uint16_t pc, const OPCode &opcode) { NOP(pc, opcode); }));

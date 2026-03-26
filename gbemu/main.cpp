@@ -9,7 +9,6 @@ int main(int argc, char **argv)
 {
     argparse::ArgumentParser args("GBEmu v3");
     args.add_argument("rom_file").help("ROM file to load into the GBEmu");
-    args.add_argument("opcode_data_file").help("Data file of GBEmu opcodes.");
     args.add_argument("--blarg_console")
         .help("Print output from serial port (useful for Blargg testing)")
         .default_value(false)
@@ -33,8 +32,7 @@ int main(int argc, char **argv)
     const gbemu::config::Config gameboyCfg{args.get<bool>("--blarg_console"), args.get<bool>("--headless")};
 
     const auto cartridgeFilename = args.get<std::string>("rom_file");
-    const auto opcodeDataFilename = args.get<std::string>("opcode_data_file");
-    const auto gameboy = std::make_shared<gbemu::Gameboy>(gameboyCfg, opcodeDataFilename);
+    const auto gameboy = std::make_shared<gbemu::Gameboy>(gameboyCfg);
 
     const gbemu::Cartridge catridge(cartridgeFilename);
 

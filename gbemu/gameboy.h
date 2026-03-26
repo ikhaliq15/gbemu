@@ -15,7 +15,7 @@ namespace gbemu
 class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_from_this<Gameboy>
 {
   public:
-    Gameboy(const config::Config &cfg, const std::string &opcodeDataFile);
+    Gameboy(const config::Config &cfg);
 
     void loadCartridge(const Cartridge &cartridge);
     void start();

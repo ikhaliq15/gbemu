@@ -6,9 +6,9 @@
 namespace gbemu
 {
 
-Gameboy::Gameboy(const config::Config &cfg, const std::string &opcodeDataFile)
+Gameboy::Gameboy(const config::Config &cfg)
     : cartridgeLoaded_(false), quit_(false), joypad_(std::make_shared<Joypad>()),
-      ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE)), cpu_(std::make_shared<CPU>(ram_, opcodeDataFile)),
+      ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE)), cpu_(std::make_shared<CPU>(ram_)),
       ppu_(std::make_shared<PPU>(cpu_, cfg.runHeadless())), timer_(std::make_shared<Timer>(cpu_)),
       enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging())
 {

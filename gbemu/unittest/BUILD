@@ -18,9 +18,6 @@ cc_test(
     srcs = [
         "cpu_test.cpp",
     ],
-    data = [
-        "//data:opcodes",
-    ],
     deps = [
         "//gbemu:gbemu-lib",
         "@googletest//:gtest_main",
@@ -32,9 +29,6 @@ cc_test(
     size = "small",
     srcs = [
         "joypad_test.cpp",
-    ],
-    data = [
-        "//data:opcodes",
     ],
     deps = [
         "//gbemu:gbemu-joypad",
