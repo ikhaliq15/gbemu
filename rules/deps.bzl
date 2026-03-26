@@ -36,13 +36,6 @@ def internal_deps():
         urls = ["https://github.com/libsdl-org/SDL/archive/dca3fd8307c2c9ebda8d8ea623bbbf19649f5e22.zip"],
     )
 
-    git_repository(
-        name = "nativefiledialog_git",
-        build_file = "//rules:nfd.BUILD",
-        commit = "5786fabceeaee4d892f3c7a16b243796244cdddc",
-        remote = "https://github.com/btzy/nativefiledialog-extended.git",
-    )
-
     http_archive(
         name = "argparse",
         sha256 = "3e5a59ab7688dcd1f918bc92051a10564113d4f36c3bbed3ef596c25e519a062",
