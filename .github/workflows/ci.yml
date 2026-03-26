@@ -32,3 +32,11 @@ jobs:
 
       - name: Run tests
         run: bazel test //...
+
+      - name: Upload Bazel test logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: bazel-test-logs
+          path: bazel-testlogs/
+          if-no-files-found: warn
+        if: always()
