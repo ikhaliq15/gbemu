@@ -1,7 +1,7 @@
 #ifndef GBEMU_RAM
 #define GBEMU_RAM
 
-#include "cartridge.h"
+#include "gbemu/cartridge.h"
 
 #include <iostream>
 #include <map>

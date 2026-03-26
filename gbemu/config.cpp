@@ -1,4 +1,4 @@
-#include "config.h"
+#include "gbemu/config.h"
 
 namespace gbemu::config
 {

@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "cartridge.h"
-#include "gameboy.h"
+#include "gbemu/cartridge.h"
+#include "gbemu/gameboy.h"
 
 #include <argparse/argparse.hpp>
 

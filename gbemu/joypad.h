@@ -1,7 +1,7 @@
 #ifndef GBEMU_JOYPAD
 #define GBEMU_JOYPAD
 
-#include "ram.h"
+#include "gbemu/ram.h"
 
 #include <SDL2/SDL.h>
 #include <map>

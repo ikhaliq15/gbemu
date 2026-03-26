@@ -1,7 +1,7 @@
 #ifndef GBEMU_OPCODE
 #define GBEMU_OPCODE
 
-#include "operand.h"
+#include "gbemu/operand.h"
 
 #include <array>
 #include <map>

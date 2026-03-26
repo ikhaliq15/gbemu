@@ -1,7 +1,7 @@
 #ifndef GBEMU_ALU
 #define GBEMU_ALU
 
-#include "bitutils.h"
+#include "gbemu/bitutils.h"
 
 #include <stdint.h>
 
