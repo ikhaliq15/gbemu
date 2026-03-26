@@ -93,8 +93,7 @@ class BlarggCPUInstrsTest(unittest.TestCase):
     def test_run(self):
         r = Runfiles.Create()
         blargg_test_rom_glob = os.path.join(
-            r.Rlocation("blargg_test_roms/cpu_instrs/individual/"),
-            "*.gb"
+            r.Rlocation("blargg_test_roms/cpu_instrs/individual/"), "*.gb"
         )
 
         # Find all the test roms

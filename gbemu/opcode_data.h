@@ -23,7 +23,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "opcode": "0x0e", "command": "LD C, d8",       "mnemonic": "LD",    "operands": ["C"],            "bytes": 2,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x0f", "command": "RRCA",           "mnemonic": "RRCA",  "operands": [],               "bytes": 1,  "cycles": 1,  "flagsZNHC": ["0","0","0","A0"]  },
 
-    
+
     { "opcode": "0x11", "command": "LD DE, d16",     "mnemonic": "LD",    "operands": ["DE"],           "bytes": 3,  "cycles": 3,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x12", "command": "LD (DE), A",     "mnemonic": "LD",    "operands": ["(DE)", "A"],    "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
     { "opcode": "0x13", "command": "INC DE",         "mnemonic": "INC",   "operands": ["DE"],           "bytes": 1,  "cycles": 2,  "flagsZNHC": ["-","-","-","-"]   },
@@ -251,7 +251,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "opcode": "0xda", "command": "JP C, a16",      "mnemonic": "JP",    "operands": [],               "bytes": 3,  "cycles": 3,  "additionalCycles": 1, "jumpCondition": "C", "flagsZNHC": ["-","-","-","-"]  },
 
     { "opcode": "0xdc", "command": "CALL C, a16",    "mnemonic": "CALL",  "operands": [],               "bytes": 3,  "cycles": 3,  "additionalCycles": 3, "jumpCondition": "C", "flagsZNHC": ["-","-","-","-"]  },
-    
+
     { "opcode": "0xde", "command": "SBC A, d8",      "mnemonic": "SBC",   "operands": ["A"],            "bytes": 2,  "cycles": 2,  "flagsZNHC": ["Z","1","H","CY"]  },
     { "opcode": "0xdf", "command": "RST 3",          "mnemonic": "RST", "aux_args": [3], "operands": [],"bytes": 1,  "cycles": 4,  "flagsZNHC": ["-","-","-","-"]  },
 
@@ -267,9 +267,9 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "opcode": "0xe8", "command": "ADD SP, s8",     "mnemonic": "ADD",   "operands": ["SP"],           "bytes": 2,  "cycles": 4,  "flagsZNHC": ["0","0","H","CY"]  },
     { "opcode": "0xe9", "command": "JP HL",          "mnemonic": "JP",    "operands": ["HL"],           "bytes": 1,  "cycles": 1,  "additionalCycles": 0, "jumpCondition": "ALWAYS", "flagsZNHC": ["-","-","-","-"]  },
     { "opcode": "0xea", "command": "LD (a16), A",    "mnemonic": "LDa16", "operands": ["A"],            "bytes": 3,  "cycles": 4,  "flagsZNHC": ["-","-","-","-"]   },
-    
-    
-    
+
+
+
     { "opcode": "0xee", "command": "XOR A, d8",      "mnemonic": "XOR",   "operands": ["A"],            "bytes": 2,  "cycles": 2,  "flagsZNHC": ["Z","0","0","0"]   },
     { "opcode": "0xef", "command": "RST 5",          "mnemonic": "RST", "aux_args": [5], "operands": [],"bytes": 1,  "cycles": 4,  "flagsZNHC": ["-","-","-","-"]  },
 
@@ -290,7 +290,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "opcode": "0xfe", "command": "CP A, d8",       "mnemonic": "CP",    "operands": ["A"],            "bytes": 2,  "cycles": 2,  "flagsZNHC": ["Z","1","H","CY"]  },
     { "opcode": "0xff", "command": "RST 7",          "mnemonic": "RST", "aux_args": [7], "operands": [],"bytes": 1,  "cycles": 4,  "flagsZNHC": ["-","-","-","-"]  },
 
-    
+
 
 
 
@@ -328,7 +328,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x1d", "command": "RR L",      "mnemonic": "RR",   "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["Z", "0", "0", "A0"]},
     { "prefix": true, "opcode": "0x1e", "command": "RR (HL)",   "mnemonic": "RR",   "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["Z", "0", "0", "A0"]},
     { "prefix": true, "opcode": "0x1f", "command": "RR A",      "mnemonic": "RR",   "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["Z", "0", "0", "A0"]},
- 
+
 
     { "prefix": true, "opcode": "0x20", "command": "SLA B",     "mnemonic": "SLA",  "operands": ["B"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["Z", "0", "0", "A7"]},
     { "prefix": true, "opcode": "0x21", "command": "SLA C",     "mnemonic": "SLA",  "operands": ["C"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["Z", "0", "0", "A7"]},
@@ -346,7 +346,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x2d", "command": "SRA L",     "mnemonic": "SRA",  "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["Z", "0", "0", "A0"]},
     { "prefix": true, "opcode": "0x2e", "command": "SRA (HL)",  "mnemonic": "SRA",  "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["Z", "0", "0", "A0"]},
     { "prefix": true, "opcode": "0x2f", "command": "SRA A",     "mnemonic": "SRA",  "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["Z", "0", "0", "A0"]},
- 
+
 
     { "prefix": true, "opcode": "0x30", "command": "SWAP B",    "mnemonic": "SWAP", "operands": ["B"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["Z", "0", "0", "0"] },
     { "prefix": true, "opcode": "0x31", "command": "SWAP C",    "mnemonic": "SWAP", "operands": ["C"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["Z", "0", "0", "0"] },

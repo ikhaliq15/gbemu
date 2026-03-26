@@ -28,6 +28,7 @@ GEBEMU_HEADLESS_MODE_OPTION = "--headless"
 GEBEMU_DUMP_DISPLAY_ON_EXIT_OPTION = "--dump_display_path"
 OUTPUT_REFERENCE_PNG_OPTION = "output.png"
 
+
 def are_images_identical(img1_path, img2_path):
     # Open the images (ignore alpha channel)
     image_one = Image.open(img1_path).convert("RGB")
@@ -103,13 +104,19 @@ class DMGAcid2Test(unittest.TestCase):
         dmg_acid2_test_rom_glob = r.Rlocation("dmg_acid2_rom/file/dmg-acid2.gb")
         test_roms = sorted(glob.glob(dmg_acid2_test_rom_glob))
         assert test_roms, f"No test roms found with glob: {dmg_acid2_test_rom_glob}"
-        assert len(test_roms) == 1, f"Expected exactly one test rom, but found {len(test_roms)} with glob: {dmg_acid2_test_rom_glob}"
+        assert (
+            len(test_roms) == 1
+        ), f"Expected exactly one test rom, but found {len(test_roms)} with glob: {dmg_acid2_test_rom_glob}"
         test_rom = test_roms[0]
 
         golden_reference_png_glob = r.Rlocation("dmg_acid2/img/reference-dmg.png")
         golden_reference_pngs = sorted(glob.glob(golden_reference_png_glob))
-        assert golden_reference_pngs, f"No golden reference PNGs found with glob: {golden_reference_png_glob}"
-        assert len(golden_reference_pngs) == 1, f"Expected exactly one golden reference PNG, but found {len(golden_reference_pngs)} with glob: {golden_reference_png_glob}"
+        assert (
+            golden_reference_pngs
+        ), f"No golden reference PNGs found with glob: {golden_reference_png_glob}"
+        assert (
+            len(golden_reference_pngs) == 1
+        ), f"Expected exactly one golden reference PNG, but found {len(golden_reference_pngs)} with glob: {golden_reference_png_glob}"
         golden_reference_png = golden_reference_pngs[0]
 
         test_reference_png = r.Rlocation(OUTPUT_REFERENCE_PNG_OPTION)
@@ -120,12 +127,13 @@ class DMGAcid2Test(unittest.TestCase):
         for test_rom in test_roms:
             base_rom_name = os.path.basename(test_rom)
             with self.subTest(f"dmg_acid2_{base_rom_name}", rom=test_rom):
-                logger = logging.getLogger(
-                    f"DMGAcid2Test.test_run_{base_rom_name}"
-                )
+                logger = logging.getLogger(f"DMGAcid2Test.test_run_{base_rom_name}")
 
                 test_reference_png_exists = os.path.exists(test_reference_png)
-                self.assertFalse(test_reference_png_exists, f"Expected test reference PNG to not exist at {test_reference_png}, but it exists.")
+                self.assertFalse(
+                    test_reference_png_exists,
+                    f"Expected test reference PNG to not exist at {test_reference_png}, but it exists.",
+                )
 
                 command = [
                     GBEMU_BINARY_LOCATION,
@@ -135,19 +143,23 @@ class DMGAcid2Test(unittest.TestCase):
                     test_rom,
                 ]
 
-                _, __ = (
-                    process_output_contains_target_before_timeout(
-                        command,
-                        TEST_ROM_PASSED_MARKER,
-                        TEST_ROM_TIMEOUT_SECONDS,
-                        timeout_is_failure=False,
-                    )
+                _, __ = process_output_contains_target_before_timeout(
+                    command,
+                    TEST_ROM_PASSED_MARKER,
+                    TEST_ROM_TIMEOUT_SECONDS,
+                    timeout_is_failure=False,
                 )
-                
-                test_reference_png_exists = os.path.exists(test_reference_png)
-                self.assertTrue(test_reference_png_exists, f"Expected test reference PNG to be dumped at {test_reference_png}, but it does not exist.")
 
-                self.assertTrue(are_images_identical(test_reference_png, golden_reference_png), "The test reference PNG does not match the golden reference PNG.")
+                test_reference_png_exists = os.path.exists(test_reference_png)
+                self.assertTrue(
+                    test_reference_png_exists,
+                    f"Expected test reference PNG to be dumped at {test_reference_png}, but it does not exist.",
+                )
+
+                self.assertTrue(
+                    are_images_identical(test_reference_png, golden_reference_png),
+                    "The test reference PNG does not match the golden reference PNG.",
+                )
 
                 if test_reference_png_exists:
                     os.remove(test_reference_png)
