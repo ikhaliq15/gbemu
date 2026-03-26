@@ -58,6 +58,7 @@ cc_library(
         "cpu.h",
         "gameboy.h",
         "opcode.h",
+        "opcode_data.h",
         "operand.h",
         "ppu.h",
         "timer.h",

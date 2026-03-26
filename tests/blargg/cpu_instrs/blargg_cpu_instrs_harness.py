@@ -21,7 +21,6 @@ TEST_ROM_PASSED_MARKER = "Passed"
 
 # Test data and command information
 GBEMU_BINARY_LOCATION = os.path.join("gbemu", "gbemu-bin")
-GBEMU_OPCODES_DATA_LOCATION = os.path.join("data", "opcodes.json")
 GBEMU_BLARGG_LOGGING_OPTION = "--blarg_console"
 GEBEMU_HEADLESS_MODE_OPTION = "--headless"
 
@@ -115,7 +114,6 @@ class BlarggCPUInstrsTest(unittest.TestCase):
                 command = [
                     GBEMU_BINARY_LOCATION,
                     test_rom,
-                    GBEMU_OPCODES_DATA_LOCATION,
                     GBEMU_BLARGG_LOGGING_OPTION,
                     GEBEMU_HEADLESS_MODE_OPTION,
                 ]

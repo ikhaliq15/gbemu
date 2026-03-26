@@ -29,7 +29,7 @@ class CPU
         HALT,
     };
 
-    CPU(std::shared_ptr<RAM> ram, const std::string &opcodeDataFile);
+    CPU(std::shared_ptr<RAM> ram);
     CPU(const CPU &cpu);
 
     bool IME() const;

@@ -59,8 +59,7 @@ class OPCode
            const std::vector<uint8_t> auxiliaryArguments, const std::vector<Operand> operands, uint8_t bytes,
            uint8_t cycles, uint8_t additionalCycles, JumpCondition jumpCondition, Flags flags);
 
-    static std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> constructOpcodes(
-        const std::string &opcodeDataFile);
+    static std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> constructOpcodes();
 
     uint8_t opcode() const;
     std::string command() const;

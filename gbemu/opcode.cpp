@@ -1,8 +1,8 @@
 #include "gbemu/opcode.h"
-#include "gbemu/bitutils.h"
 
-#include <fstream>
-#include <iostream>
+#include "gbemu/bitutils.h"
+#include "gbemu/opcode_data.h"
+
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -19,11 +19,9 @@ OPCode::OPCode(uint8_t opcode, const std::string command, const std::string mnem
 {
 }
 
-std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> OPCode::constructOpcodes(
-    const std::string &opcodeDataFile)
+std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> OPCode::constructOpcodes()
 {
-    std::ifstream opcodeDataFileStream(opcodeDataFile);
-    const auto opcodeData = json::parse(opcodeDataFileStream).get<std::vector<json>>();
+    const auto opcodeData = json::parse(opcodes::OPCODES_DATA).get<std::vector<json>>();
 
     std::map<uint8_t, OPCode> opcodesMap;
     std::map<uint8_t, OPCode> prefixedOpcodesMap;
