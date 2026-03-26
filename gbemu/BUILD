@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 
 cc_binary(
     name = "gbemu-bin",
@@ -37,9 +37,9 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         "@argparse",
-        "@com_github_libsdl_sdl2//:SDL",
-        "@com_github_libsdl_sdl2//:include",
         "@json",
+        "@sdl2//:SDL2",
+        "@sdl2//:sdl2_headers_flat",
     ],
 )
 
@@ -69,9 +69,9 @@ cc_test(
         "//gbemu/data:opcodes",
     ],
     deps = [
-        "@com_github_libsdl_sdl2//:SDL",
-        "@com_github_libsdl_sdl2//:include",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@json",
+        "@sdl2//:SDL2",
+        "@sdl2//:sdl2_headers_flat",
     ],
 )
