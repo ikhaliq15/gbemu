@@ -4,8 +4,10 @@ py_test(
     data = [
         "//gbemu:gbemu-bin",
         "//gbemu/data:opcodes",
-        "//roms/blargg/cpu_instrs/individual:cpu_instrs_individual",
+        "@blargg_test_roms//:cpu_instrs/individual",
     ],
     main = "blargg_cpu_instrs_harness.py",
-    deps = ["//gbemu:gbemu-bin"],
+    deps = [
+        "//gbemu:gbemu-bin",
+    ],
 )

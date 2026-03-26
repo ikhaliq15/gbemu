@@ -14,7 +14,6 @@ from typing import Iterable, Tuple
 #   - Allow for no timeout option (should be doable by passing Nones all the way to subprocess/threading waits/joins)
 #   - Can we have the timeout period be provided/enforced by the Bazel level?
 #   - Run the test roms in parallel
-#   - Have Bazel get the test roms from a repository instead of having the user need to provide them
 
 
 # Test parameters
@@ -23,7 +22,7 @@ TEST_ROM_PASSED_MARKER = "Passed"
 
 # Test data and command information
 BLARGG_TEST_ROM_GLOB = os.path.join(
-    "roms", "blargg", "cpu_instrs", "individual", "*.gb"
+    "external", "blargg_test_roms", "cpu_instrs", "individual", "*.gb"
 )
 GBEMU_BINARY_LOCATION = os.path.join("gbemu", "gbemu-bin")
 GBEMU_OPCODES_DATA_LOCATION = os.path.join("gbemu", "data", "opcodes.json")
@@ -84,9 +83,9 @@ def process_output_contains_target_before_timeout(
 
 class BlarggCPUInstrsTest(unittest.TestCase):
     def test_run(self):
-
         # Find all the test roms
         test_roms = sorted(glob.glob(BLARGG_TEST_ROM_GLOB))
+        assert test_roms, f"No test roms found with glob: {BLARGG_TEST_ROM_GLOB}"
 
         # For each test rom, start a subtest that runs GBEmu on the rom and detects
         # if the "Passed" marker appears in the serial output before the configured

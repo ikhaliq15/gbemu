@@ -24,3 +24,25 @@ bazel_dep(name = "googletest", version = "1.17.0")
 bazel_dep(name = "argparse", version = "3.2.0")
 bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
 bazel_dep(name = "sdl2", version = "2.32.0.bcr.beta.5")
+
+cc_compatibility_proxy = use_extension("@rules_cc//cc:extensions.bzl", "compatibility_proxy")
+use_repo(cc_compatibility_proxy, "cc_compatibility_proxy")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "blargg_test_roms",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+
+exports_files(["cpu_instrs/individual"])
+""",
+    strip_prefix = "gb-test-roms-master",
+    urls = ["https://github.com/retrio/gb-test-roms/archive/refs/heads/master.zip"],
+)
