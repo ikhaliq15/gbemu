@@ -1,5 +1,5 @@
-#include "gameboy.h"
-#include "bitutils.h"
+#include "gbemu/gameboy.h"
+#include "gbemu/bitutils.h"
 
 #include <iostream>
 

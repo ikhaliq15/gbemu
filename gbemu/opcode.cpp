@@ -1,5 +1,5 @@
-#include "opcode.h"
-#include "bitutils.h"
+#include "gbemu/opcode.h"
+#include "gbemu/bitutils.h"
 
 #include <fstream>
 #include <iostream>

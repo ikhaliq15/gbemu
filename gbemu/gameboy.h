@@ -1,13 +1,13 @@
 #ifndef GBEMU_GAMEBOY
 #define GBEMU_GAMEBOY
 
-#include "cartridge.h"
-#include "config.h"
-#include "cpu.h"
-#include "joypad.h"
-#include "ppu.h"
-#include "ram.h"
-#include "timer.h"
+#include "gbemu/cartridge.h"
+#include "gbemu/config.h"
+#include "gbemu/cpu.h"
+#include "gbemu/joypad.h"
+#include "gbemu/ppu.h"
+#include "gbemu/ram.h"
+#include "gbemu/timer.h"
 
 namespace gbemu
 {

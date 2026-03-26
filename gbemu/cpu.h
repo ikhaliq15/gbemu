@@ -1,10 +1,10 @@
 #ifndef GBEMU_CPU
 #define GBEMU_CPU
 
-#include "alu.h"
-#include "opcode.h"
-#include "operand.h"
-#include "ram.h"
+#include "gbemu/alu.h"
+#include "gbemu/opcode.h"
+#include "gbemu/operand.h"
+#include "gbemu/ram.h"
 
 #include <functional>
 #include <memory>

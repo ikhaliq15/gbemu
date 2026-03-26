@@ -1,4 +1,4 @@
-#include "cartridge.h"
+#include "gbemu/cartridge.h"
 
 #include <filesystem>
 #include <fstream>

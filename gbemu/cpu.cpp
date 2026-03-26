@@ -1,5 +1,5 @@
-#include "cpu.h"
-#include "bitutils.h"
+#include "gbemu/cpu.h"
+#include "gbemu/bitutils.h"
 
 #include <iostream>
 #include <memory>

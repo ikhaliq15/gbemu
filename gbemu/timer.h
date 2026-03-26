@@ -1,8 +1,8 @@
 #ifndef GBEMU_TIMER
 #define GBEMU_TIMER
 
-#include "cpu.h"
-#include "ram.h"
+#include "gbemu/cpu.h"
+#include "gbemu/ram.h"
 
 #include <queue>
 

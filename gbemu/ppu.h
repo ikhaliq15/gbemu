@@ -3,8 +3,8 @@
 
 #include <SDL2/SDL.h>
 
-#include "cpu.h"
-#include "timer.h"
+#include "gbemu/cpu.h"
+#include "gbemu/timer.h"
 
 // TODO: explore why top of window looks cut off (like in blargg tests)
 namespace gbemu
