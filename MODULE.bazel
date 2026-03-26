@@ -5,13 +5,6 @@
 # For more details, please check https://github.com/bazelbuild/bazel/issues/18958
 ###############################################################################
 
-bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
-git_override(
-    module_name = "hedron_compile_commands",
-    commit = "abb61a688167623088f8768cc9264798df6a9d10",
-    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
-)
-
 bazel_dep(name = "apple_support", version = "2.3.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_python", version = "1.9.0")
@@ -21,6 +14,15 @@ bazel_dep(name = "argparse", version = "3.2.0")
 bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
 bazel_dep(name = "stb", version = "0.0.0-20251026-f1c79c0")
 bazel_dep(name = "sdl2", version = "2.32.0.bcr.beta.5")
+
+### Compilation Database Generation ###
+
+bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+git_override(
+    module_name = "hedron_compile_commands",
+    commit = "abb61a688167623088f8768cc9264798df6a9d10",
+    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
+)
 
 ### Python PyPi dependencies ###
 
@@ -55,14 +57,7 @@ http_archive(
     name = "blargg_test_roms",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "all_srcs",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
-)
-
-exports_files(["cpu_instrs/individual"])
+exports_files(glob(["cpu_instrs/individual/*.gb"]))
 """,
     strip_prefix = "gb-test-roms-master",
     url = "https://github.com/retrio/gb-test-roms/archive/refs/heads/master.zip",
@@ -74,13 +69,6 @@ http_archive(
     name = "dmg_acid2",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "all_srcs",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
-)
-
 exports_files(["img/reference-dmg.png"])
 """,
     integrity = "sha256-xZiN2VpAAbk+mM+K74WStZGzWnoI/IsMwqSKwOPl6g4=",
