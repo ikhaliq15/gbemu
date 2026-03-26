@@ -27,7 +27,7 @@ class Timer : public RAM::Owner
     template <typename T> class Accumulator : public TimerListener
     {
       public:
-        Accumulator<T>(T startValue) : accumulator_(startValue)
+        Accumulator(T startValue) : accumulator_(startValue)
         {
         }
         void timerTriggerHandler()

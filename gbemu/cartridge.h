@@ -12,7 +12,7 @@ class Cartridge
 {
   public:
     Cartridge(const std::string &romFileName);
-    Cartridge(const std::vector<uint8_t> &catridgeData);
+    Cartridge(const std::vector<uint8_t> &cartridgeData);
 
     uint8_t operator[](int i) const;
     size_t size() const;
