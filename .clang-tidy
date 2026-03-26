@@ -1,0 +1,7 @@
+Checks: '-*,
+         bugprone-*,
+         modernize-*,
+         performance-*,
+         readability-*'
+FormatStyle: 'file'
+WarningsAsErrors: false
