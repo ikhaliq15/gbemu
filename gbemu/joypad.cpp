@@ -1,5 +1,5 @@
-#include "joypad.h"
-#include "bitutils.h"
+#include "gbemu/joypad.h"
+#include "gbemu/bitutils.h"
 
 #include <iostream>
 

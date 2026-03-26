@@ -5,8 +5,8 @@ def cpu_instrs_test(name, roms):
         name = name,
         srcs = ["blargg_cpu_instrs_harness.py"],
         data = [
+            "//data:opcodes",
             "//gbemu:gbemu-bin",
-            "//gbemu/data:opcodes",
         ] + roms,
         main = "blargg_cpu_instrs_harness.py",
         deps = [

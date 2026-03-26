@@ -1,5 +1,6 @@
-#include "ram.h"
-#include "bitutils.h"
+#include "gbemu/ram.h"
+
+#include "gbemu/bitutils.h"
 
 namespace gbemu
 {

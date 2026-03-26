@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "../bitutils.h"
+#include "gbemu/bitutils.h"
 
 TEST(BitUtilsTest, GetAndSetBit)
 {

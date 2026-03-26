@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "../joypad.h"
+#include "gbemu/joypad.h"
 
 class JoypadTest : public testing::Test
 {
