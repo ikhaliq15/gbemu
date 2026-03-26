@@ -6,14 +6,14 @@ To get auto-complete and other intellisense features to work in IDEs and VSCode,
 
 First, build the project with
 
-```bash
+```console
 $ bazel build //...
 ```
 
 Then, generate the `compile_commands.json` file with
 
-```bash
-$ bazel run @wolfd_bazel_compile_commands//:generate_compile_commands
+```console
+$ bazel run @hedron_compile_commands//:refresh_all
 ```
 
 There should now be a `compile_commands.json` in the root directory of the project.
