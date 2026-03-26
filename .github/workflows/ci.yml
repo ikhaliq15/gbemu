@@ -15,9 +15,6 @@ jobs:
       - name: Setup Bazel
         # Use the recommended action to install and configure Bazel
         uses: bazel-contrib/setup-bazel@v1 # Check GitHub Marketplace for latest version
-        with:
-          # Optional: Specify a version or let it use the one in .bazelversion
-          # bazel-version: 'latest' 
 
       - name: Configure Bazel Caching
         # Setup disk and repository caching to speed up builds
