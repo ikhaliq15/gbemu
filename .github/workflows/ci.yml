@@ -12,11 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev
-
       - name: Setup Bazel
-        # Use the recommended action to install and configure Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
 
       - name: Set up Bazel cache
