@@ -1,0 +1,39 @@
+name: CI for PR Merge
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        # Use the recommended action to install and configure Bazel
+        uses: bazel-contrib/setup-bazel@v1 # Check GitHub Marketplace for latest version
+        with:
+          # Optional: Specify a version or let it use the one in .bazelversion
+          # bazel-version: 'latest' 
+
+      - name: Configure Bazel Caching
+        # Setup disk and repository caching to speed up builds
+        # Replace '...' with your desired cache directory paths
+
+        # Example using a simple cache setup within the runner's home directory
+      - name: Set up Bazel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ hashFiles('**/*.bazelrc') }}-${{ hashFiles('MODULE.bazel', 'WORKSPACE') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+
+      - name: Build the project
+        run: bazel build //...
+
+      - name: Run tests
+        run: bazel test //...
