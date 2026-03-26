@@ -21,10 +21,16 @@ bazel_dep(name = "argparse", version = "3.2.0")
 bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
 bazel_dep(name = "sdl2", version = "2.32.0.bcr.beta.5")
 
+### Test ROMs and Data ###
+
 cc_compatibility_proxy = use_extension("@rules_cc//cc:extensions.bzl", "compatibility_proxy")
 use_repo(cc_compatibility_proxy, "cc_compatibility_proxy")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+### Blargg's test ROMs ###
 
 http_archive(
     name = "blargg_test_roms",
@@ -40,5 +46,31 @@ filegroup(
 exports_files(["cpu_instrs/individual"])
 """,
     strip_prefix = "gb-test-roms-master",
-    urls = ["https://github.com/retrio/gb-test-roms/archive/refs/heads/master.zip"],
+    url = "https://github.com/retrio/gb-test-roms/archive/refs/heads/master.zip",
+)
+
+### dmg-acid2 ROM ###
+
+http_archive(
+    name = "dmg_acid2",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+
+exports_files(["img/reference-dmg.png"])
+""",
+    strip_prefix = "dmg-acid2-master",
+    url = "https://github.com/mattcurrie/dmg-acid2/archive/refs/heads/master.zip",
+)
+
+http_file(
+    name = "dmg_acid2_rom",
+    downloaded_file_path = "dmg-acid2.gb",
+    integrity = "sha256-Rk4Ut9Quf+6gt+3kK+cHHciJE/dbn/pEQplCS2PR3/E=",
+    url = "https://github.com/mattcurrie/dmg-acid2/releases/download/v1.0/dmg-acid2.gb",
 )
