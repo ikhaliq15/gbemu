@@ -3,6 +3,7 @@
 
 #include "operand.h"
 
+#include <array>
 #include <map>
 #include <stdint.h>
 #include <string>

@@ -1,6 +1,7 @@
 #ifndef GBEMU_OPERAND
 #define GBEMU_OPERAND
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <variant>

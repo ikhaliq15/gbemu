@@ -1,6 +1,8 @@
 #ifndef GBEMU_CARTRIDGE
 #define GBEMU_CARTRIDGE
 
+#include <cstdint>
+#include <string>
 #include <vector>
 
 namespace gbemu

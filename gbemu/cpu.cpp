@@ -2,6 +2,7 @@
 #include "bitutils.h"
 
 #include <iostream>
+#include <memory>
 
 namespace gbemu
 {
