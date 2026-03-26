@@ -1,7 +1,31 @@
 Checks: '-*,
-         bugprone-*,
-         modernize-*,
-         performance-*,
-         readability-*'
+  bugprone-assert-side-effect,
+  bugprone-branch-clone,
+  bugprone-bool-pointer-implicit-conversion,
+  bugprone-dangling-handle,
+  bugprone-dangling-pointer,
+  bugprone-dangling-reference,
+  bugprone-dangling-uninit-array,
+  bugprone-dangling-uninit-std-array,
+  bugprone-dangling-uninit-std-vector,
+  bugprone-dangling-uninit-var,
+  bugprone-forwarding-reference-overload,
+  bugprone-misplaced-widening-cast,
+  bugprone-move-forwarding-reference,
+  bugprone-no-escape,
+  bugprone-reserved-identifier,
+  bugprone-suspicious-enum-usage,
+  bugprone-suspicious-missing-comma,
+  bugprone-suspicious-string-compare,
+  bugprone-suspicious-memory-comparison,
+  bugprone-suspicious-semicolon,
+  bugprone-suspicious-include,
+  bugprone-suspicious-operator-overloading,
+  bugprone-suspicious-operator-sign,
+  bugprone-suspicious-operator-not'
+WarningsAsErrors: ''
+HeaderFilterRegex: '^(gbemu)/.*'
 FormatStyle: 'file'
-WarningsAsErrors: false
+CheckOptions:
+  - key: modernize-use-trailing-return-type.AllowShortFunctions
+    value: 1
