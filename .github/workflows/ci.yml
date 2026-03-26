@@ -16,11 +16,6 @@ jobs:
         # Use the recommended action to install and configure Bazel
         uses: bazel-contrib/setup-bazel@v1 # Check GitHub Marketplace for latest version
 
-      - name: Configure Bazel Caching
-        # Setup disk and repository caching to speed up builds
-        # Replace '...' with your desired cache directory paths
-
-        # Example using a simple cache setup within the runner's home directory
       - name: Set up Bazel cache
         uses: actions/cache@v4
         with:
