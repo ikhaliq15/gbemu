@@ -23,15 +23,16 @@ PPU::~PPU()
         SDL_DestroyWindow(window_);
     if (texture_)
         SDL_DestroyTexture(texture_);
-    if (!runHeadless_)
-        SDL_Quit();
+    SDL_Quit();
 }
 
 void PPU::init()
 {
+    const auto sdlFlags = (runHeadless_) ? SDL_INIT_EVENTS : (SDL_INIT_TIMER | SDL_INIT_VIDEO);
+    SDL_Init(sdlFlags);
+
     if (!runHeadless_)
     {
-        SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO);
         window_ = SDL_CreateWindow("GBEmu v3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH,
                                    WINDOW_HEIGHT, 0);
         renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);

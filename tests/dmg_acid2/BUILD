@@ -9,6 +9,7 @@ py_test(
     main = "dmg_acid2_harness.py",
     deps = [
         "//gbemu:gbemu-bin",
+        "@gbemu_pip//pillow",
         "@rules_python//python/runfiles",
     ],
 )
