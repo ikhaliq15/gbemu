@@ -83,6 +83,7 @@ filegroup(
 
 exports_files(["img/reference-dmg.png"])
 """,
+    integrity = "sha256-xZiN2VpAAbk+mM+K74WStZGzWnoI/IsMwqSKwOPl6g4=",
     strip_prefix = "dmg-acid2-master",
     url = "https://github.com/mattcurrie/dmg-acid2/archive/refs/heads/master.zip",
 )
