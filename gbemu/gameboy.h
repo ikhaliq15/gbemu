@@ -37,6 +37,10 @@ class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_fro
     }
 
   private:
+    void handleInterrupts();
+    void handleSerialPorts();
+
+  private:
     static constexpr uint32_t GAMEBOY_RAM_SIZE = 0x10000;
 
     bool cartridgeLoaded_;

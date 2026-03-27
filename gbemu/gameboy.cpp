@@ -22,7 +22,6 @@ void Gameboy::loadCartridge(const Cartridge &cartridge)
 
 void Gameboy::start()
 {
-    // TODO
     if (!cartridgeLoaded_)
     {
         std::cerr << "No cartridge loaded in gameboy." << std::endl;
@@ -68,50 +67,55 @@ void Gameboy::start()
         timer_->update(deltaCycles);
         ppu_->update();
 
-        if ((ram_->get(RAM::IF) & ram_->get(RAM::IE) & 0x1f) != 0x00)
-            cpu_->setMode(CPU::Mode::NORMAL);
-
-        if (cpu_->IME())
-        {
-            // TODO: what happens if mulitple interupts fired at same time?
-            const uint8_t interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
-            if ((interruptsFired & 0x01) != 0x00)
-            {
-                cpu_->setIME(false);
-                cpu_->pushToStack(cpu_->PC());
-                ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 0, 0));
-                cpu_->setPC(0x0040);
-            }
-            else if ((interruptsFired & 0x02) != 0x00)
-            {
-                cpu_->setIME(false);
-                cpu_->pushToStack(cpu_->PC());
-                ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 1, 0));
-                cpu_->setPC(0x0048);
-            }
-            else if ((interruptsFired & 0x04) != 0x00)
-            {
-                cpu_->setIME(false);
-                cpu_->pushToStack(cpu_->PC());
-                ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), 2, 0));
-                cpu_->setPC(0x0050);
-            }
-        }
-
-        if (enableBlarggSerialLogging_)
-        {
-            const auto currentSB = ram_->get(RAM::SB);
-            const auto currentSC = ram_->get(RAM::SC);
-            if (currentSC == 0x81)
-            {
-                putc(currentSB, stdout);
-                fflush(stdout);
-                ram_->set(RAM::SC, 0x00);
-            }
-        }
+        handleInterrupts();
+        handleSerialPorts();
     }
 
     shutdown();
+}
+
+void Gameboy::handleInterrupts()
+{
+    if ((ram_->get(RAM::IF) & ram_->get(RAM::IE) & 0x1f) != 0x00)
+        cpu_->setMode(CPU::Mode::NORMAL);
+
+    if (!cpu_->IME())
+        return;
+
+    // TODO: what happens if mulitple interupts fired at same time?
+    const uint8_t interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
+
+    constexpr auto VBLANK_INTERRUPT_BIT = 0;
+    constexpr auto LCD_STAT_INTERRUPT_BIT = 1;
+    constexpr auto TIMER_INTERRUPT_BIT = 2;
+
+    for (const auto interruptBit : {VBLANK_INTERRUPT_BIT, LCD_STAT_INTERRUPT_BIT, TIMER_INTERRUPT_BIT})
+    {
+        if (getBit(interruptsFired, interruptBit))
+        {
+            cpu_->setIME(false);
+            cpu_->pushToStack(cpu_->PC());
+            ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), interruptBit, 0));
+            cpu_->setPC(0x40 + 0x08 * interruptBit);
+            break; // Only handle the first fired interrupt
+        }
+    }
+}
+
+void Gameboy::handleSerialPorts()
+{
+    const auto currentSC = ram_->get(RAM::SC);
+    if (currentSC == 0x81)
+    {
+        const auto currentSB = ram_->get(RAM::SB);
+        ram_->set(RAM::SC, 0x00);
+
+        if (enableBlarggSerialLogging_)
+        {
+            putc(currentSB, stdout);
+            fflush(stdout);
+        }
+    }
 }
 
 void Gameboy::reset()
