@@ -149,6 +149,9 @@ class CPU
     [[nodiscard]] bool testJumpCondition(OPCode::JumpCondition jumpCondition) const;
 
     /*** OPCode Handlers ***/
+    template <typename F> void unary_alu_operation(uint16_t pc, const OPCode &opcode, F operation);
+    template <typename F> void binary_alu_operation(uint16_t pc, const OPCode &opcode, F operation);
+
     void NOP(uint16_t pc, const OPCode &opcode);
     void LD(uint16_t pc, const OPCode &opcode);
     void INC(uint16_t pc, const OPCode &opcode);
@@ -168,11 +171,8 @@ class CPU
     void CCF(uint16_t pc, const OPCode &opcode);
     void HALT(uint16_t pc, const OPCode &opcode);
     void ADC(uint16_t pc, const OPCode &opcode);
-    void SUB(uint16_t pc, const OPCode &opcode);
     void SBC(uint16_t pc, const OPCode &opcode);
-    void AND(uint16_t pc, const OPCode &opcode);
-    void XOR(uint16_t pc, const OPCode &opcode);
-    void OR(uint16_t pc, const OPCode &opcode);
+
     void CP(uint16_t pc, const OPCode &opcode);
     void RET(uint16_t pc, const OPCode &opcode);
     void POP(uint16_t pc, const OPCode &opcode);
@@ -189,14 +189,8 @@ class CPU
     void LDs8(uint16_t pc, const OPCode &opcode);
     void EI(uint16_t pc, const OPCode &opcode);
 
-    void RLC(uint16_t pc, const OPCode &opcode);
-    void RRC(uint16_t pc, const OPCode &opcode);
     void RL(uint16_t pc, const OPCode &opcode);
     void RR(uint16_t pc, const OPCode &opcode);
-    void SLA(uint16_t pc, const OPCode &opcode);
-    void SRA(uint16_t pc, const OPCode &opcode);
-    void SWAP(uint16_t pc, const OPCode &opcode);
-    void SRL(uint16_t pc, const OPCode &opcode);
     void BIT_GET(uint16_t pc, const OPCode &opcode);
     void BIT_SET(uint16_t pc, const OPCode &opcode);
 };
