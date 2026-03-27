@@ -20,7 +20,7 @@ void Joypad::handleKeyUpEvent(const SDL_KeyboardEvent &event)
     handleKeyEvent(event.keysym.sym, BUTTON_UP);
 }
 
-uint8_t Joypad::getJoypadRegister() const
+auto Joypad::getJoypadRegister() const -> uint8_t
 {
     uint8_t lowerNibble = 0x0f;
     if (getBit(selectedStates_, DPAD_STATE_BIT) == SELECTED)
@@ -30,7 +30,7 @@ uint8_t Joypad::getJoypadRegister() const
     return interpolateNibbles(selectedStates_, lowerNibble);
 }
 
-uint8_t Joypad::onReadOwnedByte(uint16_t address)
+auto Joypad::onReadOwnedByte(uint16_t address) -> uint8_t
 {
     return getJoypadRegister();
 }

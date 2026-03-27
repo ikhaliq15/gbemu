@@ -19,7 +19,7 @@ OPCode::OPCode(uint8_t opcode, const std::string command, const std::string mnem
 {
 }
 
-std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> OPCode::constructOpcodes()
+auto OPCode::constructOpcodes() -> std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>>
 {
     const auto opcodeData = json::parse(opcodes::OPCODES_DATA).get<std::vector<json>>();
 
@@ -30,7 +30,7 @@ std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> OPCode::construc
         const auto prefixed = opcode.contains("prefix") && opcode["prefix"].get<bool>();
         const auto opcodeMap = prefixed ? &prefixedOpcodesMap : &opcodesMap;
 
-        const auto op = (uint8_t)std::strtoul(opcode["opcode"].get<std::string>().c_str(), nullptr, 16);
+        const auto op = static_cast<uint8_t>(std::strtoul(opcode["opcode"].get<std::string>().c_str(), nullptr, 16));
 
         if (opcodeMap->find(op) != opcodeMap->end())
             throw std::runtime_error(std::string("Repeated opcode in opcode data: ") + toHexString(op));
@@ -90,60 +90,60 @@ std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> OPCode::construc
     return std::make_pair(opcodesMap, prefixedOpcodesMap);
 }
 
-uint8_t OPCode::opcode() const
+auto OPCode::opcode() const -> uint8_t
 {
     return opcode_;
 }
-std::string OPCode::command() const
+auto OPCode::command() const -> std::string
 {
     return command_;
 }
-std::string OPCode::mnemonic() const
+auto OPCode::mnemonic() const -> std::string
 {
     return mnemonic_;
 }
-std::vector<uint8_t> OPCode::auxiliaryArguments() const
+auto OPCode::auxiliaryArguments() const -> std::vector<uint8_t>
 {
     return auxiliaryArguments_;
 }
-std::vector<Operand> OPCode::operands() const
+auto OPCode::operands() const -> std::vector<Operand>
 {
     return operands_;
 }
-uint8_t OPCode::bytes() const
+auto OPCode::bytes() const -> uint8_t
 {
     return bytes_;
 }
-uint8_t OPCode::cycles() const
+auto OPCode::cycles() const -> uint8_t
 {
     return cycles_;
 }
-uint8_t OPCode::additionalCycles() const
+auto OPCode::additionalCycles() const -> uint8_t
 {
     return additionalCycles_;
 }
-OPCode::JumpCondition OPCode::jumpCondition() const
+auto OPCode::jumpCondition() const -> OPCode::JumpCondition
 {
     return jumpCondition_;
 }
 
-OPCode::Flags OPCode::flags() const
+auto OPCode::flags() const -> OPCode::Flags
 {
     return flags_;
 }
-OPCode::Flag OPCode::flagZ() const
+auto OPCode::flagZ() const -> OPCode::Flag
 {
     return flags_[0];
 }
-OPCode::Flag OPCode::flagN() const
+auto OPCode::flagN() const -> OPCode::Flag
 {
     return flags_[1];
 }
-OPCode::Flag OPCode::flagH() const
+auto OPCode::flagH() const -> OPCode::Flag
 {
     return flags_[2];
 }
-OPCode::Flag OPCode::flagC() const
+auto OPCode::flagC() const -> OPCode::Flag
 {
     return flags_[3];
 }

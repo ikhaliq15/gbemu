@@ -5,7 +5,7 @@
 
 #include <argparse/argparse.hpp>
 
-int main(int argc, char **argv)
+auto main(int argc, char **argv) -> int
 {
     argparse::ArgumentParser args("GBEmu v3");
     args.add_argument("--blarg_console")

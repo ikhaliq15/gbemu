@@ -1,11 +1,13 @@
 #include "gbemu/timer.h"
 
+#include <utility>
+
 namespace gbemu
 {
 
 Timer::Timer(std::shared_ptr<CPU> cpu)
     : initialized_(false), cyclesSinceLaunch_(0),
-      divAccumulator_(std::make_shared<Accumulator<uint8_t>>(DIV_REGISTER_START_VALUE)), cpu_(cpu),
+      divAccumulator_(std::make_shared<Accumulator<uint8_t>>(DIV_REGISTER_START_VALUE)), cpu_(std::move(cpu)),
       tima_(std::make_shared<uint8_t>(0x00)), tma_(std::make_shared<uint8_t>(0x00)),
       tac_(std::make_shared<uint8_t>(0x00))
 {
@@ -45,7 +47,7 @@ void Timer::update(uint64_t deltaCycles)
     }
 }
 
-uint8_t Timer::onReadOwnedByte(uint16_t address)
+auto Timer::onReadOwnedByte(uint16_t address) -> uint8_t
 {
     switch (address)
     {

@@ -10,7 +10,7 @@ namespace gbemu::config
 class Config
 {
   public:
-    Config(bool enableBlarggSerialLogging, bool runHeadless, const std::string &dumpDisplayOnExitPath);
+    Config(bool enableBlarggSerialLogging, bool runHeadless, std::string dumpDisplayOnExitPath);
 
     [[nodiscard]] bool enableBlarggSerialLogging() const
     {

@@ -1,11 +1,9 @@
 #include "gbemu/alu.h"
 
-namespace gbemu
-{
-namespace alu
+namespace gbemu::alu
 {
 
-AluResult<uint8_t> adc(uint8_t a, uint8_t b, uint8_t carry)
+auto adc(uint8_t a, uint8_t b, uint8_t carry) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = a + b + carry;
@@ -21,7 +19,7 @@ AluResult<uint8_t> adc(uint8_t a, uint8_t b, uint8_t carry)
     return result;
 }
 
-AluResult<uint8_t> sbc(uint8_t a, uint8_t b, uint8_t carry)
+auto sbc(uint8_t a, uint8_t b, uint8_t carry) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = a - b - carry;
@@ -37,7 +35,7 @@ AluResult<uint8_t> sbc(uint8_t a, uint8_t b, uint8_t carry)
     return result;
 }
 
-AluResult<uint8_t> rlc(uint8_t a)
+auto rlc(uint8_t a) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = (a << 1) | getBit(a, 7);
@@ -50,7 +48,7 @@ AluResult<uint8_t> rlc(uint8_t a)
     return result;
 }
 
-AluResult<uint8_t> rrc(uint8_t a)
+auto rrc(uint8_t a) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = (a >> 1) | (getBit(a, 0) << 7);
@@ -63,7 +61,7 @@ AluResult<uint8_t> rrc(uint8_t a)
     return result;
 }
 
-AluResult<uint8_t> rl(uint8_t a, uint8_t newBit0)
+auto rl(uint8_t a, uint8_t newBit0) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = (a << 1) | newBit0;
@@ -76,7 +74,7 @@ AluResult<uint8_t> rl(uint8_t a, uint8_t newBit0)
     return result;
 }
 
-AluResult<uint8_t> rr(uint8_t a, uint8_t newBit7)
+auto rr(uint8_t a, uint8_t newBit7) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = (a >> 1) | (newBit7 << 7);
@@ -89,7 +87,7 @@ AluResult<uint8_t> rr(uint8_t a, uint8_t newBit7)
     return result;
 }
 
-AluResult<uint8_t> bit_and(uint8_t a, uint8_t b)
+auto bit_and(uint8_t a, uint8_t b) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = a & b;
@@ -102,7 +100,7 @@ AluResult<uint8_t> bit_and(uint8_t a, uint8_t b)
     return result;
 }
 
-AluResult<uint8_t> bit_xor(uint8_t a, uint8_t b)
+auto bit_xor(uint8_t a, uint8_t b) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = a ^ b;
@@ -115,7 +113,7 @@ AluResult<uint8_t> bit_xor(uint8_t a, uint8_t b)
     return result;
 }
 
-AluResult<uint8_t> bit_or(uint8_t a, uint8_t b)
+auto bit_or(uint8_t a, uint8_t b) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = a | b;
@@ -128,7 +126,7 @@ AluResult<uint8_t> bit_or(uint8_t a, uint8_t b)
     return result;
 }
 
-AluResult<uint8_t> bit_cpl(uint8_t a)
+auto bit_cpl(uint8_t a) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = ~a;
@@ -141,7 +139,7 @@ AluResult<uint8_t> bit_cpl(uint8_t a)
     return result;
 }
 
-AluResult<uint8_t> bit_swap(uint8_t a)
+auto bit_swap(uint8_t a) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = swapNibbles(a);
@@ -154,7 +152,7 @@ AluResult<uint8_t> bit_swap(uint8_t a)
     return result;
 }
 
-AluResult<uint8_t> bit_set(uint8_t a, uint8_t i, uint8_t b)
+auto bit_set(uint8_t a, uint8_t i, uint8_t b) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = setBit(a, i, b);
@@ -167,7 +165,7 @@ AluResult<uint8_t> bit_set(uint8_t a, uint8_t i, uint8_t b)
     return result;
 }
 
-AluResult<uint8_t> bit_get(uint8_t a, uint8_t i)
+auto bit_get(uint8_t a, uint8_t i) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = getBit(a, i);
@@ -186,7 +184,7 @@ AluResult<uint8_t> bit_get(uint8_t a, uint8_t i)
     return result;
 }
 
-AluResult<uint8_t> bit_sla(uint8_t a)
+auto bit_sla(uint8_t a) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = a << 1;
@@ -199,7 +197,7 @@ AluResult<uint8_t> bit_sla(uint8_t a)
     return result;
 }
 
-AluResult<uint8_t> bit_sra(uint8_t a)
+auto bit_sra(uint8_t a) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = (a >> 1) | (a & 0x80);
@@ -212,7 +210,7 @@ AluResult<uint8_t> bit_sra(uint8_t a)
     return result;
 }
 
-AluResult<uint8_t> bit_srl(uint8_t a)
+auto bit_srl(uint8_t a) -> AluResult<uint8_t>
 {
     AluResult<uint8_t> result;
     result.result = a >> 1;
@@ -225,5 +223,4 @@ AluResult<uint8_t> bit_srl(uint8_t a)
     return result;
 }
 
-} // namespace alu
-} // namespace gbemu
+} // namespace gbemu::alu

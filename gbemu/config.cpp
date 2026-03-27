@@ -1,11 +1,13 @@
 #include "gbemu/config.h"
 
+#include <utility>
+
 namespace gbemu::config
 {
 
-Config::Config(bool enableBlarggSerialLogging, bool runHeadless, const std::string &dumpDisplayOnExitPath)
+Config::Config(bool enableBlarggSerialLogging, bool runHeadless, std::string dumpDisplayOnExitPath)
     : enableBlarggSerialLogging_(enableBlarggSerialLogging), runHeadless_(runHeadless),
-      dumpDisplayOnExitPath_(dumpDisplayOnExitPath)
+      dumpDisplayOnExitPath_(std::move(dumpDisplayOnExitPath))
 {
 }
 

@@ -27,7 +27,7 @@ RAM::RAM(const RAM &ram)
 //     return memory_[i];
 // }
 
-bool RAM::operator==(const RAM &rhs) const
+auto RAM::operator==(const RAM &rhs) const -> bool
 {
     if (memory_.size() != rhs.memory_.size())
         return false;
@@ -41,20 +41,20 @@ bool RAM::operator==(const RAM &rhs) const
     return true;
 }
 
-bool RAM::operator!=(const RAM &rhs) const
+auto RAM::operator!=(const RAM &rhs) const -> bool
 {
     return !(*this == rhs);
 }
 
-std::ostream &operator<<(std::ostream &os, const RAM &ram)
+auto operator<<(std::ostream &os, const RAM &ram) -> std::ostream &
 {
-    for (int i = 0; i < ram.memory_.size(); i++)
+    for (size_t i = 0; i < ram.memory_.size(); i++)
     {
         const auto val = ram.get(i);
         if (val != 0)
         {
             // TODO: avoid having to cast address
-            os << "[" << toHexString((uint16_t)i) << "] = " << toHexString(ram.get(i)) << "\n";
+            os << "[" << toHexString(static_cast<uint16_t>(i)) << "] = " << toHexString(ram.get(i)) << "\n";
         }
     }
     return os;
@@ -62,11 +62,11 @@ std::ostream &operator<<(std::ostream &os, const RAM &ram)
 
 void RAM::loadCartridge(const Cartridge &cartridge)
 {
-    for (int i = 0; i < std::max(cartridge.size(), 0x8000ul); i++)
+    for (size_t i = 0; i < std::max(cartridge.size(), 0x8000ul); i++)
         memory_[i] = cartridge[i];
 }
 
-uint16_t RAM::getImmediate16(uint16_t i) const
+auto RAM::getImmediate16(uint16_t i) const -> uint16_t
 {
     const auto lower = get(i);
     const auto upper = get(i + 1);
@@ -107,7 +107,7 @@ void RAM::set(uint16_t address, uint8_t value)
     memory_[address] = value;
 }
 
-uint8_t RAM::get(uint16_t address) const
+auto RAM::get(uint16_t address) const -> uint8_t
 {
     // temp: for GB Doctor log comparison testing.
     // if (address == RAM::LY)
