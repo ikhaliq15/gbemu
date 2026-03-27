@@ -57,7 +57,7 @@ http_archive(
     name = "blargg_test_roms",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
-exports_files(glob(["cpu_instrs/individual/*.gb"]))
+exports_files(glob(["cpu_instrs/individual/*.gb"] + ["instr_timing/instr_timing.gb"]))
 """,
     integrity = "sha256-z4dBE6hT4qdSUIyUNVyi7k54gwwSh1POjfYLenYMAK8=",
     strip_prefix = "gb-test-roms-master",

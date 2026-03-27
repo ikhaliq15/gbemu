@@ -1,7 +1,7 @@
-load("//tests/blargg/cpu_instrs:cpu_instrs.bzl", "cpu_instrs_test")
+load("//tests/blargg:blargg.bzl", "blargg_test")
 
 [
-    cpu_instrs_test(
+    blargg_test(
         name = test.replace(" ", "-").replace(",", "-").replace(".", "-"),
         roms = [
             "@blargg_test_roms//:cpu_instrs/individual/{}.gb".format(test),

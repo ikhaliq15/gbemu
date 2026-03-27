@@ -92,12 +92,10 @@ def process_output_contains_target_before_timeout(
 class BlarggCPUInstrsTest(unittest.TestCase):
     def test_run(self):
         r = Runfiles.Create()
-        blargg_test_rom_glob = os.path.join(
-            r.Rlocation("blargg_test_roms/cpu_instrs/individual/"), "*.gb"
-        )
+        blargg_test_rom_glob = os.path.join(r.Rlocation("blargg_test_roms/**/"), "*.gb")
 
         # Find all the test roms
-        test_roms = sorted(glob.glob(blargg_test_rom_glob))
+        test_roms = sorted(glob.glob(blargg_test_rom_glob, recursive=True))
         assert test_roms, f"No test roms found with glob: {blargg_test_rom_glob}"
 
         # For each test rom, start a subtest that runs GBEmu on the rom and detects
