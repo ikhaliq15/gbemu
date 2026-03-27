@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 py_test(
     name = "dmg_acid2",
     srcs = ["dmg_acid2_harness.py"],
