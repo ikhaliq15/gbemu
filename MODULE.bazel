@@ -59,6 +59,7 @@ http_archive(
 package(default_visibility = ["//visibility:public"])
 exports_files(glob(["cpu_instrs/individual/*.gb"]))
 """,
+    integrity = "sha256-z4dBE6hT4qdSUIyUNVyi7k54gwwSh1POjfYLenYMAK8=",
     strip_prefix = "gb-test-roms-master",
     url = "https://github.com/retrio/gb-test-roms/archive/refs/heads/master.zip",
 )
