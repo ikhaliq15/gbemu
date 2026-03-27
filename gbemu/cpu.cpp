@@ -72,19 +72,24 @@ CPU::CPU(std::shared_ptr<RAM> ram)
         std::string("ADC"), [this](uint16_t pc, const OPCode &opcode) -> void { ADC(pc, opcode); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("SUB"), [this](uint16_t pc, const OPCode &opcode) -> void { SUB(pc, opcode); }));
+        std::string("SUB"), [this](uint16_t pc, const OPCode &opcode) -> void {
+            binary_alu_operation(pc, opcode, alu::sub<uint8_t, uint8_t>);
+        }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
         std::string("SBC"), [this](uint16_t pc, const OPCode &opcode) -> void { SBC(pc, opcode); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("AND"), [this](uint16_t pc, const OPCode &opcode) -> void { AND(pc, opcode); }));
+        std::string("AND"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { binary_alu_operation(pc, opcode, alu::bit_and); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("XOR"), [this](uint16_t pc, const OPCode &opcode) -> void { XOR(pc, opcode); }));
+        std::string("XOR"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { binary_alu_operation(pc, opcode, alu::bit_xor); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("OR"), [this](uint16_t pc, const OPCode &opcode) -> void { OR(pc, opcode); }));
+        std::string("OR"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { binary_alu_operation(pc, opcode, alu::bit_or); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
         std::string("CP"), [this](uint16_t pc, const OPCode &opcode) -> void { CP(pc, opcode); }));
@@ -132,10 +137,12 @@ CPU::CPU(std::shared_ptr<RAM> ram)
         std::string("LDaff16"), [this](uint16_t pc, const OPCode &opcode) -> void { LDaff16(pc, opcode); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("RLC"), [this](uint16_t pc, const OPCode &opcode) -> void { RLC(pc, opcode); }));
+        std::string("RLC"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { unary_alu_operation(pc, opcode, alu::rlc); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("RRC"), [this](uint16_t pc, const OPCode &opcode) -> void { RRC(pc, opcode); }));
+        std::string("RRC"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { unary_alu_operation(pc, opcode, alu::rrc); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
         std::string("RL"), [this](uint16_t pc, const OPCode &opcode) -> void { RL(pc, opcode); }));
@@ -144,16 +151,20 @@ CPU::CPU(std::shared_ptr<RAM> ram)
         std::string("RR"), [this](uint16_t pc, const OPCode &opcode) -> void { RR(pc, opcode); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("SLA"), [this](uint16_t pc, const OPCode &opcode) -> void { SLA(pc, opcode); }));
+        std::string("SLA"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { unary_alu_operation(pc, opcode, alu::bit_sla); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("SRA"), [this](uint16_t pc, const OPCode &opcode) -> void { SRA(pc, opcode); }));
+        std::string("SRA"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { unary_alu_operation(pc, opcode, alu::bit_sra); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("SWAP"), [this](uint16_t pc, const OPCode &opcode) -> void { SWAP(pc, opcode); }));
+        std::string("SWAP"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { unary_alu_operation(pc, opcode, alu::bit_swap); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
-        std::string("SRL"), [this](uint16_t pc, const OPCode &opcode) -> void { SRL(pc, opcode); }));
+        std::string("SRL"),
+        [this](uint16_t pc, const OPCode &opcode) -> void { unary_alu_operation(pc, opcode, alu::bit_srl); }));
 
     opcodeFunctions_.insert(std::make_pair<std::string, OPCodeHandler>(
         std::string("BIT_GET"), [this](uint16_t pc, const OPCode &opcode) -> void { BIT_GET(pc, opcode); }));
@@ -754,6 +765,64 @@ auto CPU::testJumpCondition(OPCode::JumpCondition jumpCondition) const -> bool
 
 /*** OPCode Handlers ***/
 
+template <typename F> void CPU::unary_alu_operation(uint16_t pc, const OPCode &opcode, F operation)
+{
+    const auto operand = opcode.operands()[0];
+
+    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
+    {
+        const auto currentValue = std::get<uint8_t>(getOperand(operand));
+        const auto result = operation(currentValue);
+
+        setOperand(operand, result.result);
+        setFlagsFromResult(result.flags, opcode);
+
+        return;
+    }
+
+    throw std::runtime_error("sra not implemented for opcode " + toHexString(opcode.opcode()));
+}
+
+template <typename F> void CPU::binary_alu_operation(uint16_t pc, const OPCode &opcode, F operation)
+{
+    if (opcode.operands().size() == 1)
+    {
+        const auto destOperand = opcode.operands()[0];
+
+        const auto firstOperand = getOperand(opcode.operands()[0]);
+
+        const auto firstValue = std::get<uint8_t>(firstOperand);
+        const auto secondValue = ram_->get(pc + 1);
+        const auto result = operation(firstValue, secondValue);
+
+        setOperand(destOperand, result.result);
+        setFlagsFromResult(result.flags, opcode);
+
+        return;
+    }
+    else if (opcode.operands().size() == 2)
+    {
+        const auto destOperand = opcode.operands()[0];
+        const auto firstOperand = getOperand(opcode.operands()[0]);
+        const auto secondOperand = getOperand(opcode.operands()[1]);
+
+        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
+        {
+            const auto firstValue = std::get<uint8_t>(firstOperand);
+            const auto secondValue = std::get<uint8_t>(secondOperand);
+
+            const auto result = operation(firstValue, secondValue);
+
+            setOperand(destOperand, result.result);
+            setFlagsFromResult(result.flags, opcode);
+
+            return;
+        }
+    }
+
+    throw std::runtime_error("and not implemented for opcode " + toHexString(opcode.opcode()));
+}
+
 void CPU::NOP(uint16_t pc, const OPCode &opcode)
 {
     return;
@@ -1111,46 +1180,6 @@ void CPU::ADC(uint16_t pc, const OPCode &opcode)
     throw std::runtime_error("adc not implemented for opcode " + toHexString(opcode.opcode()));
 }
 
-void CPU::SUB(uint16_t pc, const OPCode &opcode)
-{
-    if (opcode.operands().size() == 1)
-    {
-        const auto destOperand = opcode.operands()[0];
-        const auto firstOperand = getOperand(opcode.operands()[0]);
-
-        const auto firstValue = std::get<uint8_t>(firstOperand);
-        const auto secondValue = ram_->get(pc + 1);
-
-        const auto result = alu::sub(firstValue, secondValue);
-
-        setOperand(destOperand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-    else if (opcode.operands().size() == 2)
-    {
-        const auto destOperand = opcode.operands()[0];
-        const auto firstOperand = getOperand(opcode.operands()[0]);
-        const auto secondOperand = getOperand(opcode.operands()[1]);
-
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
-        {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = alu::sub(firstValue, secondValue);
-
-            setOperand(destOperand, result.result);
-            setFlagsFromResult(result.flags, opcode);
-
-            return;
-        }
-    }
-
-    throw std::runtime_error("sub not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
 void CPU::SBC(uint16_t pc, const OPCode &opcode)
 {
     if (opcode.operands().size() == 1)
@@ -1189,126 +1218,6 @@ void CPU::SBC(uint16_t pc, const OPCode &opcode)
     }
 
     throw std::runtime_error("sbc not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
-void CPU::AND(uint16_t pc, const OPCode &opcode)
-{
-    if (opcode.operands().size() == 1)
-    {
-        const auto destOperand = opcode.operands()[0];
-        const auto firstOperand = getOperand(opcode.operands()[0]);
-
-        const auto firstValue = std::get<uint8_t>(firstOperand);
-        const auto secondValue = ram_->get(pc + 1);
-
-        const auto result = alu::bit_and(firstValue, secondValue);
-
-        setOperand(destOperand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-    else if (opcode.operands().size() == 2)
-    {
-        const auto destOperand = opcode.operands()[0];
-        const auto firstOperand = getOperand(opcode.operands()[0]);
-        const auto secondOperand = getOperand(opcode.operands()[1]);
-
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
-        {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = alu::bit_and(firstValue, secondValue);
-
-            setOperand(destOperand, result.result);
-            setFlagsFromResult(result.flags, opcode);
-
-            return;
-        }
-    }
-
-    throw std::runtime_error("and not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
-void CPU::XOR(uint16_t pc, const OPCode &opcode)
-{
-    if (opcode.operands().size() == 1)
-    {
-        const auto destOperand = opcode.operands()[0];
-        const auto firstOperand = getOperand(opcode.operands()[0]);
-
-        const auto firstValue = std::get<uint8_t>(firstOperand);
-        const auto secondValue = ram_->get(pc + 1);
-
-        const auto result = alu::bit_xor(firstValue, secondValue);
-
-        setOperand(destOperand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-    else if (opcode.operands().size() == 2)
-    {
-        const auto destOperand = opcode.operands()[0];
-        const auto firstOperand = getOperand(opcode.operands()[0]);
-        const auto secondOperand = getOperand(opcode.operands()[1]);
-
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
-        {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = alu::bit_xor(firstValue, secondValue);
-
-            setOperand(destOperand, result.result);
-            setFlagsFromResult(result.flags, opcode);
-
-            return;
-        }
-    }
-
-    throw std::runtime_error("and not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
-void CPU::OR(uint16_t pc, const OPCode &opcode)
-{
-    if (opcode.operands().size() == 1)
-    {
-        const auto destOperand = opcode.operands()[0];
-        const auto firstOperand = getOperand(opcode.operands()[0]);
-
-        const auto firstValue = std::get<uint8_t>(firstOperand);
-        const auto secondValue = ram_->get(pc + 1);
-
-        const auto result = alu::bit_or(firstValue, secondValue);
-
-        setOperand(destOperand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-    else if (opcode.operands().size() == 2)
-    {
-        const auto destOperand = opcode.operands()[0];
-        const auto firstOperand = getOperand(opcode.operands()[0]);
-        const auto secondOperand = getOperand(opcode.operands()[1]);
-
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
-        {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = alu::bit_or(firstValue, secondValue);
-
-            setOperand(destOperand, result.result);
-            setFlagsFromResult(result.flags, opcode);
-
-            return;
-        }
-    }
-
-    throw std::runtime_error("or not implemented for opcode " + toHexString(opcode.opcode()));
 }
 
 void CPU::CP(uint16_t pc, const OPCode &opcode)
@@ -1582,42 +1491,6 @@ void CPU::EI(uint16_t pc, const OPCode &opcode)
     interuptsEnabledQueued_ = true;
 }
 
-void CPU::RLC(uint16_t pc, const OPCode &opcode)
-{
-    const auto operand = opcode.operands()[0];
-
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
-    {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
-        const auto result = alu::rlc(currentValue);
-
-        setOperand(operand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-
-    throw std::runtime_error("rlc not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
-void CPU::RRC(uint16_t pc, const OPCode &opcode)
-{
-    const auto operand = opcode.operands()[0];
-
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
-    {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
-        const auto result = alu::rrc(currentValue);
-
-        setOperand(operand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-
-    throw std::runtime_error("rrc not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
 void CPU::RL(uint16_t pc, const OPCode &opcode)
 {
     const auto operand = opcode.operands()[0];
@@ -1644,78 +1517,6 @@ void CPU::RR(uint16_t pc, const OPCode &opcode)
     {
         const auto currentValue = std::get<uint8_t>(getOperand(operand));
         const auto result = alu::rr(currentValue, FlagC());
-
-        setOperand(operand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-
-    throw std::runtime_error("sla not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
-void CPU::SLA(uint16_t pc, const OPCode &opcode)
-{
-    const auto operand = opcode.operands()[0];
-
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
-    {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
-        const auto result = alu::bit_sla(currentValue);
-
-        setOperand(operand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-
-    throw std::runtime_error("sla not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
-void CPU::SRA(uint16_t pc, const OPCode &opcode)
-{
-    const auto operand = opcode.operands()[0];
-
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
-    {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
-        const auto result = alu::bit_sra(currentValue);
-
-        setOperand(operand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-
-    throw std::runtime_error("sra not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
-void CPU::SWAP(uint16_t pc, const OPCode &opcode)
-{
-    const auto operand = opcode.operands()[0];
-
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
-    {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
-        const auto result = alu::bit_swap(currentValue);
-
-        setOperand(operand, result.result);
-        setFlagsFromResult(result.flags, opcode);
-
-        return;
-    }
-
-    throw std::runtime_error("swap not implemented for opcode " + toHexString(opcode.opcode()));
-}
-
-void CPU::SRL(uint16_t pc, const OPCode &opcode)
-{
-    const auto operand = opcode.operands()[0];
-
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
-    {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
-        const auto result = alu::bit_srl(currentValue);
 
         setOperand(operand, result.result);
         setFlagsFromResult(result.flags, opcode);
