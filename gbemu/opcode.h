@@ -4,8 +4,8 @@
 #include "gbemu/operand.h"
 
 #include <array>
+#include <cstdint>
 #include <map>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -61,20 +61,20 @@ class OPCode
 
     static std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> constructOpcodes();
 
-    uint8_t opcode() const;
-    std::string command() const;
-    std::string mnemonic() const;
-    std::vector<uint8_t> auxiliaryArguments() const;
-    std::vector<Operand> operands() const;
-    uint8_t bytes() const;
-    uint8_t cycles() const;
-    uint8_t additionalCycles() const;
-    JumpCondition jumpCondition() const;
-    Flags flags() const;
-    Flag flagZ() const;
-    Flag flagN() const;
-    Flag flagH() const;
-    Flag flagC() const;
+    [[nodiscard]] uint8_t opcode() const;
+    [[nodiscard]] std::string command() const;
+    [[nodiscard]] std::string mnemonic() const;
+    [[nodiscard]] std::vector<uint8_t> auxiliaryArguments() const;
+    [[nodiscard]] std::vector<Operand> operands() const;
+    [[nodiscard]] uint8_t bytes() const;
+    [[nodiscard]] uint8_t cycles() const;
+    [[nodiscard]] uint8_t additionalCycles() const;
+    [[nodiscard]] JumpCondition jumpCondition() const;
+    [[nodiscard]] Flags flags() const;
+    [[nodiscard]] Flag flagZ() const;
+    [[nodiscard]] Flag flagN() const;
+    [[nodiscard]] Flag flagH() const;
+    [[nodiscard]] Flag flagC() const;
 
   private:
     const uint8_t opcode_;

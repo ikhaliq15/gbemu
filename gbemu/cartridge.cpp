@@ -26,12 +26,12 @@ Cartridge::Cartridge(const std::vector<uint8_t> &cartridgeData) : cartridgeData_
 {
 }
 
-uint8_t Cartridge::operator[](int i) const
+auto Cartridge::operator[](int i) const -> uint8_t
 {
     return cartridgeData_[i];
 }
 
-size_t Cartridge::size() const
+auto Cartridge::size() const -> size_t
 {
     return cartridgeData_.size();
 }

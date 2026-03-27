@@ -14,8 +14,8 @@ class Cartridge
     Cartridge(const std::string &romFileName);
     Cartridge(const std::vector<uint8_t> &cartridgeData);
 
-    uint8_t operator[](int i) const;
-    size_t size() const;
+    [[nodiscard]] uint8_t operator[](int i) const;
+    [[nodiscard]] size_t size() const;
 
   private:
     std::vector<uint8_t> cartridgeData_;

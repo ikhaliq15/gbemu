@@ -15,12 +15,8 @@ class Timer : public RAM::Owner
     class TimerListener
     {
       public:
-        TimerListener()
-        {
-        }
-        virtual ~TimerListener()
-        {
-        }
+        TimerListener() = default;
+        virtual ~TimerListener() = default;
         virtual void timerTriggerHandler() = 0;
     };
 
@@ -131,7 +127,6 @@ class Timer : public RAM::Owner
 
     std::shared_ptr<Accumulator<uint8_t>> divAccumulator_;
 
-    // TODO: make these non-static?
     std::shared_ptr<CPU> cpu_;
 
     std::shared_ptr<uint8_t> tima_;

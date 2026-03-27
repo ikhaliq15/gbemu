@@ -6,9 +6,9 @@
 #include "gbemu/operand.h"
 #include "gbemu/ram.h"
 
+#include <cstdint>
 #include <functional>
 #include <memory>
-#include <stdint.h>
 
 namespace gbemu
 {
@@ -32,33 +32,33 @@ class CPU
     CPU(std::shared_ptr<RAM> ram);
     CPU(const CPU &cpu);
 
-    bool IME() const;
+    [[nodiscard]] bool IME() const;
 
-    uint16_t PC() const;
-    uint16_t SP() const;
+    [[nodiscard]] uint16_t PC() const;
+    [[nodiscard]] uint16_t SP() const;
 
-    uint16_t AF() const; // TODO: remove?
-    uint16_t BC() const;
-    uint16_t DE() const;
-    uint16_t HL() const;
+    [[nodiscard]] uint16_t AF() const; // TODO: remove?
+    [[nodiscard]] uint16_t BC() const;
+    [[nodiscard]] uint16_t DE() const;
+    [[nodiscard]] uint16_t HL() const;
 
-    uint8_t A() const;
-    uint8_t B() const;
-    uint8_t C() const;
-    uint8_t D() const;
-    uint8_t E() const;
-    uint8_t H() const;
-    uint8_t L() const;
+    [[nodiscard]] uint8_t A() const;
+    [[nodiscard]] uint8_t B() const;
+    [[nodiscard]] uint8_t C() const;
+    [[nodiscard]] uint8_t D() const;
+    [[nodiscard]] uint8_t E() const;
+    [[nodiscard]] uint8_t H() const;
+    [[nodiscard]] uint8_t L() const;
 
-    uint8_t FlagZ() const;
-    uint8_t FlagN() const;
-    uint8_t FlagH() const;
-    uint8_t FlagC() const;
+    [[nodiscard]] uint8_t FlagZ() const;
+    [[nodiscard]] uint8_t FlagN() const;
+    [[nodiscard]] uint8_t FlagH() const;
+    [[nodiscard]] uint8_t FlagC() const;
 
-    std::shared_ptr<RAM> ram() const;
+    [[nodiscard]] std::shared_ptr<RAM> ram() const;
 
-    uint64_t cycles() const;
-    Mode mode() const;
+    [[nodiscard]] uint64_t cycles() const;
+    [[nodiscard]] Mode mode() const;
     void setMode(Mode mode);
 
     void setIME(bool newIME);
@@ -91,8 +91,8 @@ class CPU
     void pushToStack(uint16_t val);
     uint16_t popFromStack();
 
-    uint8_t getRegister(Register reg) const;
-    uint16_t getFullRegister(FullRegister reg) const;
+    [[nodiscard]] uint8_t getRegister(Register reg) const;
+    [[nodiscard]] uint16_t getFullRegister(FullRegister reg) const;
 
     void setRegister(Register reg, uint8_t newRegVal);
     void setFullRegister(FullRegister reg, uint16_t newRegVal);
@@ -142,11 +142,11 @@ class CPU
     std::map<uint8_t, OPCode> prefixedOpcodes_;
     std::unordered_map<std::string, OPCodeHandler> opcodeFunctions_;
 
-    OperandValue getOperand(Operand operand) const;
+    [[nodiscard]] OperandValue getOperand(Operand operand) const;
     void setOperand(Operand operand, OperandValue newValue);
 
     void setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode &opcode);
-    bool testJumpCondition(OPCode::JumpCondition jumpCondition) const;
+    [[nodiscard]] bool testJumpCondition(OPCode::JumpCondition jumpCondition) const;
 
     /*** OPCode Handlers ***/
     void NOP(uint16_t pc, const OPCode &opcode);

@@ -4,6 +4,7 @@
 #include "gbemu/ram.h"
 
 #include <SDL2/SDL.h>
+
 #include <map>
 
 namespace gbemu
@@ -26,10 +27,10 @@ class Joypad : public RAM::Owner
     void handleKeyDownEvent(const SDL_KeyboardEvent &event);
     void handleKeyUpEvent(const SDL_KeyboardEvent &event);
 
-    uint8_t getJoypadRegister() const;
+    [[nodiscard]] uint8_t getJoypadRegister() const;
 
-    uint8_t onReadOwnedByte(uint16_t address);
-    void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue);
+    [[nodiscard]] uint8_t onReadOwnedByte(uint16_t address) override;
+    void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
   private:
     static constexpr uint8_t BUTTON_DOWN = 0;

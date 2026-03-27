@@ -1,17 +1,19 @@
 #include "gbemu/ppu.h"
 
-#include <ostream>
-#include <queue>
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+#include <ostream>
+#include <queue>
+#include <utility>
 
 namespace gbemu
 {
 
 PPU::PPU(std::shared_ptr<CPU> cpu, bool runHeadless, std::optional<std::string> displayDumpPath)
     : scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00), wy_(0x00), wx_(0x00), windowLy_(0x00),
-      lycCoincidenceCalledOnThisLy_(false), cpu_(cpu), runHeadless_(runHeadless), displayDumpPath_(displayDumpPath)
+      lycCoincidenceCalledOnThisLy_(false), cpu_(std::move(cpu)), runHeadless_(runHeadless),
+      displayDumpPath_(std::move(displayDumpPath))
 {
 }
 
@@ -40,8 +42,8 @@ void PPU::init()
                                      WINDOW_HEIGHT);
     }
 
-    for (int i = 0; i < pixels_.size(); i++)
-        pixels_[i] = 0x00000000;
+    for (auto &pixel : pixels_)
+        pixel = 0x00000000;
 }
 
 void PPU::update()
@@ -67,8 +69,8 @@ void PPU::timerTriggerHandler()
         if (!runHeadless_)
         {
             const auto scaledPixels = scalePixels(WINDOW_SCALE);
-            SDL_UpdateTexture(texture_, NULL, scaledPixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
-            SDL_RenderCopy(renderer_, texture_, NULL, NULL);
+            SDL_UpdateTexture(texture_, nullptr, scaledPixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
+            SDL_RenderCopy(renderer_, texture_, nullptr, nullptr);
             SDL_RenderPresent(renderer_);
         }
 
@@ -83,7 +85,7 @@ void PPU::timerTriggerHandler()
         {
             if (lastFrameTickCount_ > 0)
             {
-                constexpr auto timeBetweenFramesMs = (Uint64)((1.0 / DEVICE_FPS) * 1000);
+                constexpr auto timeBetweenFramesMs = static_cast<Uint64>((1.0 / DEVICE_FPS) * 1000);
                 const auto timeToSleepUntil = lastFrameTickCount_ + timeBetweenFramesMs;
 
                 // TODO: add warning once we keep a moving average of the FPS (otherwise errors are too jiterry)
@@ -112,7 +114,7 @@ void PPU::timerTriggerHandler()
     }
 }
 
-uint8_t PPU::onReadOwnedByte(uint16_t address)
+auto PPU::onReadOwnedByte(uint16_t address) -> uint8_t
 {
     switch (address)
     {
@@ -188,29 +190,29 @@ void PPU::drawScanLine()
     /* Draw nothing if lcd is turned off. */
     if (!lcd_enabled)
     {
-        for (int i = 0; i < pixels_.size(); i++)
-            pixels_[i] = 0;
+        for (unsigned int &pixel : pixels_)
+            pixel = 0;
         return;
     }
 
     /* Setup background color palette. */
-    uint32_t bg_palette[4];
+    std::array<unsigned int, 4> bg_palette;
     uint8_t bgp = cpu_->ram()->get(RAM::BGP);
-    for (int i = 0; i < 4; i++)
+    for (unsigned int &palette : bg_palette)
     {
         switch (bgp & 0x03)
         {
         case 0:
-            bg_palette[i] = COLOR_0;
+            palette = COLOR_0;
             break;
         case 1:
-            bg_palette[i] = COLOR_1;
+            palette = COLOR_1;
             break;
         case 2:
-            bg_palette[i] = COLOR_2;
+            palette = COLOR_2;
             break;
         case 3:
-            bg_palette[i] = COLOR_3;
+            palette = COLOR_3;
             break;
         }
         bgp >>= 2;
@@ -239,7 +241,7 @@ void PPU::drawScanLine()
             else
             {
                 // TODO: does cast to signed value need to happen after multiply by 16?
-                tile = tile_data + 16 * (int8_t)cpu_->ram()->get(bg_tile_map + tile_index);
+                tile = tile_data + 16 * static_cast<int8_t>(cpu_->ram()->get(bg_tile_map + tile_index));
             }
 
             int inner_tile_x = viewPortX % 8;
@@ -286,7 +288,7 @@ void PPU::drawScanLine()
             else
             {
                 // TODO: does cast to signed value need to happen after multiply by 16?
-                tile = tile_data + 16 * (int8_t)cpu_->ram()->get(window_tilemap + tile_index);
+                tile = tile_data + 16 * static_cast<int8_t>(cpu_->ram()->get(window_tilemap + tile_index));
             }
 
             int inner_tile_x = window_x % 8;
@@ -317,7 +319,7 @@ void PPU::drawScanLine()
             if (!(spriteY <= y && y < spriteY + sprite_height))
                 continue;
 
-            selectedSprites.push(std::make_pair(spriteX, i));
+            selectedSprites.emplace(spriteX, i);
         }
 
         while (!selectedSprites.empty())
@@ -345,23 +347,23 @@ void PPU::drawScanLine()
             const uint16_t tile = sprite_tile_data + (16 * sprite_tile_index);
 
             /* Setup object color palette. */
-            uint32_t palette[4];
+            std::array<uint32_t, 4> palette;
             uint8_t obp = cpu_->ram()->get(sprite_palette);
-            for (int i = 0; i < 4; i++)
+            for (auto &p : palette)
             {
                 switch (obp & 0x03)
                 {
                 case 0:
-                    palette[i] = COLOR_0;
+                    p = COLOR_0;
                     break;
                 case 1:
-                    palette[i] = COLOR_1;
+                    p = COLOR_1;
                     break;
                 case 2:
-                    palette[i] = COLOR_2;
+                    p = COLOR_2;
                     break;
                 case 3:
-                    palette[i] = COLOR_3;
+                    p = COLOR_3;
                     break;
                 }
                 obp >>= 2;
@@ -394,7 +396,7 @@ void PPU::drawScanLine()
     }
 }
 
-std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> PPU::scalePixels(uint32_t scaleFactor) const
+auto PPU::scalePixels(uint32_t scaleFactor) const -> std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT>
 {
     // TODO: optimze this function.
     std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scaledPixels;
@@ -425,7 +427,7 @@ void PPU::dumpDisplay(const std::string &path)
     const auto width = LCD_WIDTH;
     const auto height = LCD_HEIGHT;
     constexpr auto channels = 4; // RGBA
-    unsigned char *image_data = (unsigned char *)malloc(width * height * channels);
+    auto *image_data = static_cast<unsigned char *>(malloc(width * height * channels));
     if (!image_data)
     {
         std::cerr << "Failed to allocate memory for image data." << std::endl;

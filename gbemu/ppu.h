@@ -1,11 +1,11 @@
 #ifndef GBEMU_PPU
 #define GBEMU_PPU
 
-#include <SDL2/SDL.h>
-
 #include "gbemu/cpu.h"
 #include "gbemu/shutdown_listener.h"
 #include "gbemu/timer.h"
+
+#include <SDL2/SDL.h>
 
 #include <optional>
 
@@ -13,11 +13,11 @@
 namespace gbemu
 {
 
-#define LCD_WIDTH 160
-#define LCD_HEIGHT 144
-#define WINDOW_SCALE 3
-#define WINDOW_WIDTH (LCD_WIDTH * WINDOW_SCALE)
-#define WINDOW_HEIGHT (LCD_HEIGHT * WINDOW_SCALE)
+static constexpr uint16_t LCD_WIDTH = 160;
+static constexpr uint16_t LCD_HEIGHT = 144;
+static constexpr uint32_t WINDOW_SCALE = 3;
+static constexpr uint32_t WINDOW_WIDTH = LCD_WIDTH * WINDOW_SCALE;
+static constexpr uint32_t WINDOW_HEIGHT = LCD_HEIGHT * WINDOW_SCALE;
 
 // TODO: should technically be ~59.7.
 #define DEVICE_FPS (60.0)
@@ -28,12 +28,8 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
     class FrameCompleteListener
     {
       public:
-        FrameCompleteListener()
-        {
-        }
-        virtual ~FrameCompleteListener()
-        {
-        }
+        FrameCompleteListener() = default;
+        virtual ~FrameCompleteListener() = default;
         virtual void onFrameComplete() = 0;
     };
 
@@ -43,13 +39,17 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
     PPU(std::shared_ptr<CPU> cpu);
     PPU(std::shared_ptr<CPU> cpu, bool runHeadless = false, std::optional<std::string> displayDumpPath = std::nullopt);
     ~PPU();
+
     void init();
     void update();
 
-    void timerTriggerHandler();
+  public:
+    // Timer::TimerListener
+    void timerTriggerHandler() override;
 
-    uint8_t onReadOwnedByte(uint16_t address);
-    void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue);
+    // RAM::Owner
+    [[nodiscard]] uint8_t onReadOwnedByte(uint16_t address) override;
+    void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
     // ShutDownListener
     void onShutDown() override;
@@ -97,7 +97,7 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
     const std::optional<std::string> displayDumpPath_;
 
     void drawScanLine();
-    std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scalePixels(uint32_t scaleFactor) const;
+    [[nodiscard]] std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scalePixels(uint32_t scaleFactor) const;
 
     void dumpDisplay(const std::string &path);
 };

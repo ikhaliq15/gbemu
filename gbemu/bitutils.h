@@ -1,142 +1,123 @@
 #ifndef GBEMU_BITUTILS
 #define GBEMU_BITUTILS
 
-#include <iomanip>
-#include <sstream>
-#include <stdint.h>
+#include <concepts>
+#include <cstdint>
 #include <string>
 
 namespace gbemu
 {
-// TODO: test these methods!
 
-// TODO: makes a lot of assumptions on endinaness? can we remove such an assumption?
-inline uint8_t upperByte(uint16_t n)
+constexpr uint8_t upperByte(uint16_t n) noexcept
 {
-    return n >> 8;
-}
-inline uint8_t lowerByte(uint16_t n)
-{
-    return n & 0x00FF;
-}
-inline uint16_t setUpperByte(uint16_t n, uint8_t b)
-{
-    return (n & 0x00FF) | (b << 8);
-}
-inline uint16_t setLowerByte(uint16_t n, uint8_t b)
-{
-    return (n & 0xFF00) | b;
-}
-inline uint16_t concatBytes(uint8_t upper, uint8_t lower)
-{
-    return (upper << 8) | lower;
-}
-inline uint8_t swapNibbles(uint8_t n)
-{
-    return ((n & 0x0f) << 4) | ((n & 0xf0) >> 4);
-}
-inline uint8_t interpolateNibbles(uint8_t upper, uint8_t lower)
-{
-    return (upper & 0xF0) | (lower & 0x0F);
+    return static_cast<uint8_t>(n >> 8);
 }
 
-// Note: least significant bit is the zero-th bit
-template <typename T> inline T getBit(T val, uint8_t bit)
+constexpr uint8_t lowerByte(uint16_t n) noexcept
 {
-    return (val >> (bit)) & 0x01;
+    return static_cast<uint8_t>(n);
 }
 
-template <typename T> inline T setBit(T val, uint8_t bit, uint8_t newBit)
+constexpr uint16_t setUpperByte(uint16_t n, uint8_t b) noexcept
 {
-    return (val & ~(1 << bit)) | (newBit << bit);
+    return static_cast<uint16_t>((n & 0x00FFu) | (static_cast<uint16_t>(b) << 8));
+}
+
+constexpr uint16_t setLowerByte(uint16_t n, uint8_t b) noexcept
+{
+    return static_cast<uint16_t>((n & 0xFF00u) | b);
+}
+
+constexpr uint16_t concatBytes(uint8_t upper, uint8_t lower) noexcept
+{
+    return static_cast<uint16_t>((static_cast<uint16_t>(upper) << 8) | lower);
+}
+
+constexpr uint8_t swapNibbles(uint8_t n) noexcept
+{
+    return static_cast<uint8_t>((n << 4) | (n >> 4));
+}
+
+constexpr uint8_t interpolateNibbles(uint8_t upper, uint8_t lower) noexcept
+{
+    return static_cast<uint8_t>((upper & 0xF0u) | (lower & 0x0Fu));
+}
+
+template <std::unsigned_integral T> constexpr bool getBit(T val, uint8_t bit) noexcept
+{
+    return (val >> bit) & T{1};
+}
+
+template <std::unsigned_integral T> constexpr T setBit(T val, uint8_t bit, bool newBit) noexcept
+{
+    const T mask = T{1} << bit;
+    return newBit ? (val | mask) : (val & ~mask);
 }
 
 inline std::string toHexString(uint8_t n, bool prefixed = true)
 {
-    std::stringstream os;
+    constexpr char hex[] = "0123456789ABCDEF";
+
+    std::string out;
     if (prefixed)
-        os << "0x";
-    os << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << (int)n;
-    return os.str();
+        out += "0x";
+
+    out += hex[(n >> 4) & 0xF];
+    out += hex[n & 0xF];
+
+    return out;
 }
 
 inline std::string toHexString(uint16_t n, bool prefixed = true)
 {
-    std::stringstream os;
+    constexpr char hex[] = "0123456789ABCDEF";
+
+    std::string out;
     if (prefixed)
-        os << "0x";
-    os << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << (int)n;
-    return os.str();
+        out += "0x";
+
+    out += hex[(n >> 12) & 0xF];
+    out += hex[(n >> 8) & 0xF];
+    out += hex[(n >> 4) & 0xF];
+    out += hex[n & 0xF];
+
+    return out;
 }
 
-inline bool addHadCarry(uint8_t a, uint8_t b)
+constexpr bool addHadCarry(uint8_t a, uint8_t b, uint8_t c = 0) noexcept
 {
-    uint32_t promotedA = (uint32_t)a;
-    uint32_t promotedB = (uint32_t)b;
-    return ((promotedA + promotedB) & 0x00000100) == 0x00000100;
+    return static_cast<uint16_t>(a) + b + c > 0xFF;
 }
 
-inline bool addHadCarry(uint8_t a, uint8_t b, uint8_t c)
+constexpr bool addHadCarry(uint16_t a, uint16_t b) noexcept
 {
-    uint32_t promotedA = (uint32_t)a;
-    uint32_t promotedB = (uint32_t)b;
-    uint32_t promotedC = (uint32_t)c;
-    return ((promotedA + promotedB + promotedC) & 0x00000100) == 0x00000100;
+    return static_cast<uint32_t>(a) + b > 0xFFFF;
 }
 
-inline bool addHadCarry(uint16_t a, uint16_t b)
+constexpr bool addHadHalfCarry(uint8_t a, uint8_t b, uint8_t c = 0) noexcept
 {
-    uint32_t promotedA = (uint32_t)a;
-    uint32_t promotedB = (uint32_t)b;
-    return ((promotedA + promotedB) & 0x00010000) == 0x00010000;
+    return ((a & 0x0F) + (b & 0x0F) + (c & 0x0F)) > 0x0F;
 }
 
-inline bool addHadHalfCarry(uint8_t a, uint8_t b)
+constexpr bool addHadHalfCarry(uint16_t a, uint16_t b) noexcept
 {
-    return (((0x0F & a) + (0x0F & b)) & 0x10) == 0x10;
+    return ((a & 0x0FFF) + (b & 0x0FFF)) > 0x0FFF;
 }
 
-inline bool addHadHalfCarry(uint8_t a, uint8_t b, uint8_t c)
+template <std::unsigned_integral T> constexpr bool subHadCarry(T a, T b, T c = 0) noexcept
 {
-    return (((0x0F & a) + (0x0F & b)) + (0x0F & c) & 0x10) == 0x10;
+    using WideT = std::make_unsigned_t<decltype(a + b + c + 0U)>;
+    return static_cast<WideT>(a) < static_cast<WideT>(b) + static_cast<WideT>(c);
 }
 
-inline bool addHadHalfCarry(uint16_t a, uint16_t b)
+constexpr bool subHadHalfCarry(uint8_t a, uint8_t b, uint8_t c = 0) noexcept
 {
-    return (((0x0FFF & a) + (0x0FFF & b)) & 0x1000) == 0x1000;
+    return (a & 0x0F) < ((b & 0x0F) + (c & 0x0F));
 }
 
-inline bool subHadCarry(uint8_t a, uint8_t b)
+constexpr bool subHadHalfCarry(uint16_t a, uint16_t b) noexcept
 {
-    // TODO: test correctness
-    return (int32_t)(a & 0xFF) - (int32_t)(b & 0xFF) < 0;
-}
-
-inline bool subHadCarry(uint8_t a, uint8_t b, uint8_t c)
-{
-    // TODO: test correctness
-    return (int32_t)(a & 0xFF) - (int32_t)(b & 0xFF) - (int32_t)(c & 0xFF) < 0;
-}
-
-inline bool subHadCarry(uint16_t a, uint16_t b)
-{
-    // TODO: test correctness
-    return (int32_t)(a & 0xFFFF) - (int32_t)(b & 0xFFFF) < 0;
-}
-
-inline bool subHadHalfCarry(uint8_t a, uint8_t b)
-{
-    return (int32_t)(a & 0x0F) - (int32_t)(b & 0x0F) < 0;
-}
-
-inline bool subHadHalfCarry(uint8_t a, uint8_t b, uint8_t c)
-{
-    return (int32_t)(a & 0x0F) - (int32_t)(b & 0x0F) - (int32_t)(c & 0x0F) < 0;
-}
-
-inline bool subHadHalfCarry(uint16_t a, uint16_t b)
-{
-    return (int32_t)(a & 0x0FFF) - (int32_t)(b & 0x0FFF) < 0;
+    return (a & 0x0FFF) < (b & 0x0FFF);
 }
 
 } // namespace gbemu
