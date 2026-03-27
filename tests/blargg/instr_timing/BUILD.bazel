@@ -1,0 +1,8 @@
+load("//tests/blargg:blargg.bzl", "blargg_test")
+
+blargg_test(
+    name = "instr_timing",
+    roms = [
+        "@blargg_test_roms//:instr_timing/instr_timing.gb",
+    ],
+)
