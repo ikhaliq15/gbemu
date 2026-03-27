@@ -22,7 +22,7 @@ TEST_ROM_TIMEOUT_SECONDS = 10
 TEST_ROM_PASSED_MARKER = "Passed"
 
 # Test data and command information
-GBEMU_BINARY_LOCATION = os.path.join("gbemu", "gbemu-bin")
+GBEMU_BINARY_LOCATION = os.path.join("gbemu", "gbemu_exe")
 GBEMU_BLARGG_LOGGING_OPTION = "--blarg_console"
 GEBEMU_HEADLESS_MODE_OPTION = "--headless"
 GEBEMU_DUMP_DISPLAY_ON_EXIT_OPTION = "--dump_display_path"

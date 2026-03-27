@@ -7,7 +7,7 @@ cc_test(
         "bitutils_test.cpp",
     ],
     deps = [
-        "//gbemu:gbemu-bitutils",
+        "//gbemu:gbemu_bitutils",
         "@googletest//:gtest_main",
     ],
 )
@@ -19,7 +19,7 @@ cc_test(
         "cpu_test.cpp",
     ],
     deps = [
-        "//gbemu:gbemu-lib",
+        "//gbemu:gbemu_lib",
         "@googletest//:gtest_main",
     ],
 )
@@ -31,7 +31,7 @@ cc_test(
         "joypad_test.cpp",
     ],
     deps = [
-        "//gbemu:gbemu-joypad",
+        "//gbemu:gbemu_joypad",
         "@googletest//:gtest_main",
     ],
 )

@@ -3,7 +3,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 package(default_visibility = ["//gbemu:__subpackages__"])
 
 cc_library(
-    name = "gbemu-bitutils",
+    name = "gbemu_bitutils",
     srcs = [],
     hdrs = [
         "bitutils.h",
@@ -11,7 +11,7 @@ cc_library(
 )
 
 cc_library(
-    name = "gbemu-joypad",
+    name = "gbemu_joypad",
     srcs = [
         "joypad.cpp",
     ],
@@ -19,14 +19,14 @@ cc_library(
         "joypad.h",
     ],
     deps = [
-        ":gbemu-bitutils",
-        ":gbemu-ram",
+        ":gbemu_bitutils",
+        ":gbemu_ram",
         "@sdl2//:SDL2",
     ],
 )
 
 cc_library(
-    name = "gbemu-ram",
+    name = "gbemu_ram",
     srcs = [
         "cartridge.cpp",
         "ram.cpp",
@@ -36,12 +36,12 @@ cc_library(
         "ram.h",
     ],
     deps = [
-        ":gbemu-bitutils",
+        ":gbemu_bitutils",
     ],
 )
 
 cc_library(
-    name = "gbemu-lib",
+    name = "gbemu_lib",
     srcs = [
         "alu.cpp",
         "alu.h",
@@ -65,9 +65,9 @@ cc_library(
         "timer.h",
     ],
     deps = [
-        ":gbemu-bitutils",
-        ":gbemu-joypad",
-        ":gbemu-ram",
+        ":gbemu_bitutils",
+        ":gbemu_joypad",
+        ":gbemu_ram",
         "@json",
         "@sdl2//:SDL2",
         "@stb//:stb_image_write",
@@ -75,7 +75,7 @@ cc_library(
 )
 
 cc_binary(
-    name = "gbemu-bin",
+    name = "gbemu_exe",
     srcs = [
         "main.cpp",
     ],
@@ -109,7 +109,7 @@ cc_binary(
     }),
     visibility = ["//visibility:public"],
     deps = [
-        ":gbemu-lib",
+        ":gbemu_lib",
         "@argparse",
     ],
 )
