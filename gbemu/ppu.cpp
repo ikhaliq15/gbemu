@@ -245,8 +245,8 @@ void PPU::drawScanLine()
             int inner_tile_x = viewPortX % 8;
             int inner_tile_y = viewPortY % 8;
 
-            uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
-            uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
+            uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), inner_tile_x);
+            uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), inner_tile_x);
 
             pixels_[y * LCD_WIDTH + x] = bg_palette[(msb << 1) | lsb];
         }
