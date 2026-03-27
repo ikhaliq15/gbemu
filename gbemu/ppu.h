@@ -13,11 +13,11 @@
 namespace gbemu
 {
 
-#define LCD_WIDTH 160
-#define LCD_HEIGHT 144
-#define WINDOW_SCALE 3
-#define WINDOW_WIDTH (LCD_WIDTH * WINDOW_SCALE)
-#define WINDOW_HEIGHT (LCD_HEIGHT * WINDOW_SCALE)
+static constexpr uint16_t LCD_WIDTH = 160;
+static constexpr uint16_t LCD_HEIGHT = 144;
+static constexpr uint32_t WINDOW_SCALE = 3;
+static constexpr uint32_t WINDOW_WIDTH = LCD_WIDTH * WINDOW_SCALE;
+static constexpr uint32_t WINDOW_HEIGHT = LCD_HEIGHT * WINDOW_SCALE;
 
 // TODO: should technically be ~59.7.
 #define DEVICE_FPS (60.0)
