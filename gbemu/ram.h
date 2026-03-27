@@ -17,24 +17,16 @@ class RAM
     class ReadOwner
     {
       public:
-        ReadOwner()
-        {
-        }
-        virtual ~ReadOwner()
-        {
-        }
+        ReadOwner() = default;
+        virtual ~ReadOwner() = default;
         virtual uint8_t onReadOwnedByte(uint16_t address) = 0;
     };
 
     class WriteOwner
     {
       public:
-        WriteOwner()
-        {
-        }
-        virtual ~WriteOwner()
-        {
-        }
+        WriteOwner() = default;
+        virtual ~WriteOwner() = default;
         virtual void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) = 0;
     };
 
@@ -75,11 +67,11 @@ class RAM
 
     void loadCartridge(const Cartridge &cartridge);
 
-    uint16_t getImmediate16(uint16_t i) const;
+    [[nodiscard]] uint16_t getImmediate16(uint16_t i) const;
     void setImmediate16(uint16_t i, uint16_t newVal);
 
+    [[nodiscard]] uint8_t get(uint16_t address) const;
     void set(uint16_t address, uint8_t value);
-    uint8_t get(uint16_t address) const;
 
     void addReadOwner(uint16_t address, std::shared_ptr<ReadOwner> owner);
     void addWriteOwner(uint16_t address, std::shared_ptr<WriteOwner> owner);

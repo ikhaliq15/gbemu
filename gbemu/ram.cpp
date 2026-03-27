@@ -15,18 +15,6 @@ RAM::RAM(const RAM &ram)
     memory_ = ram.memory_;
 }
 
-// uint8_t RAM::operator [](int i) const
-// {
-//     // TODO: catch out of bounds errors here and either throw custom error or handle how real hardware would.
-//     return memory_[i];
-// }
-
-// uint8_t& RAM::operator [](int i)
-// {
-//     // TODO: catch out of bounds errors here and either throw custom error or handle how real hardware would.
-//     return memory_[i];
-// }
-
 auto RAM::operator==(const RAM &rhs) const -> bool
 {
     if (memory_.size() != rhs.memory_.size())
@@ -109,10 +97,6 @@ void RAM::set(uint16_t address, uint8_t value)
 
 auto RAM::get(uint16_t address) const -> uint8_t
 {
-    // temp: for GB Doctor log comparison testing.
-    // if (address == RAM::LY)
-    //     return 0x90;
-
     const auto it = readOwners_.find(address);
     if (it != readOwners_.end())
         return it->second->onReadOwnedByte(address);
@@ -121,14 +105,14 @@ auto RAM::get(uint16_t address) const -> uint8_t
 
 void RAM::addReadOwner(uint16_t address, std::shared_ptr<ReadOwner> owner)
 {
-    if (readOwners_.find(address) != readOwners_.end())
+    if (readOwners_.contains(address))
         throw std::runtime_error("The address " + toHexString(address) + " cannot have multiple read owners.");
     readOwners_.insert({address, owner});
 }
 
 void RAM::addWriteOwner(uint16_t address, std::shared_ptr<WriteOwner> owner)
 {
-    if (writeOwners_.find(address) != writeOwners_.end())
+    if (writeOwners_.contains(address))
         throw std::runtime_error("The address " + toHexString(address) + " cannot have multiple write owners.");
     writeOwners_.insert({address, owner});
 }

@@ -442,20 +442,21 @@ void CPU::setFullRegister(FullRegister reg, uint16_t newRegVal)
 void CPU::requestInterupt(Interrupt interrupt)
 {
     const auto currentIF = ram_->get(RAM::IF);
-    auto newIF = currentIF;
 
-    switch (interrupt)
-    {
-    case Interrupt::VBLANK:
-        newIF = setBit(currentIF, 0, 1);
-        break;
-    case Interrupt::STAT:
-        newIF = setBit(currentIF, 1, 1);
-        break;
-    case Interrupt::TIMER:
-        newIF = setBit(currentIF, 2, 1);
-        break;
-    }
+    const auto newIF = [&currentIF, &interrupt]() -> uint8_t {
+        switch (interrupt)
+        {
+        case Interrupt::VBLANK:
+            return setBit(currentIF, 0, 1);
+        case Interrupt::STAT:
+            return setBit(currentIF, 1, 1);
+        case Interrupt::TIMER:
+            return setBit(currentIF, 2, 1);
+        default:
+            return currentIF;
+        }
+    }();
+
     ram_->set(RAM::IF, newIF);
 }
 

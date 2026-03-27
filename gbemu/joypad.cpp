@@ -1,8 +1,6 @@
 #include "gbemu/joypad.h"
 #include "gbemu/bitutils.h"
 
-#include <iostream>
-
 namespace gbemu
 {
 

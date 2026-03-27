@@ -3,7 +3,7 @@
 
 #include "gbemu/bitutils.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace gbemu
 {

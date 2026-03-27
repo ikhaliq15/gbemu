@@ -1,11 +1,11 @@
 #include "gbemu/ppu.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #include <ostream>
 #include <queue>
 #include <utility>
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 
 namespace gbemu
 {

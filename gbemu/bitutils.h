@@ -1,9 +1,9 @@
 #ifndef GBEMU_BITUTILS
 #define GBEMU_BITUTILS
 
+#include <cstdint>
 #include <iomanip>
 #include <sstream>
-#include <stdint.h>
 #include <string>
 
 namespace gbemu

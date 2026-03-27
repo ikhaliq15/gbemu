@@ -1,11 +1,11 @@
 #ifndef GBEMU_PPU
 #define GBEMU_PPU
 
-#include <SDL2/SDL.h>
-
 #include "gbemu/cpu.h"
 #include "gbemu/shutdown_listener.h"
 #include "gbemu/timer.h"
+
+#include <SDL2/SDL.h>
 
 #include <optional>
 
@@ -28,12 +28,8 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
     class FrameCompleteListener
     {
       public:
-        FrameCompleteListener()
-        {
-        }
-        virtual ~FrameCompleteListener()
-        {
-        }
+        FrameCompleteListener() = default;
+        virtual ~FrameCompleteListener() = default;
         virtual void onFrameComplete() = 0;
     };
 
@@ -43,13 +39,17 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
     PPU(std::shared_ptr<CPU> cpu);
     PPU(std::shared_ptr<CPU> cpu, bool runHeadless = false, std::optional<std::string> displayDumpPath = std::nullopt);
     ~PPU();
+
     void init();
     void update();
 
-    void timerTriggerHandler();
+  public:
+    // Timer::TimerListener
+    void timerTriggerHandler() override;
 
-    uint8_t onReadOwnedByte(uint16_t address);
-    void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue);
+    // RAM::Owner
+    [[nodiscard]] uint8_t onReadOwnedByte(uint16_t address) override;
+    void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
     // ShutDownListener
     void onShutDown() override;
@@ -97,7 +97,7 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
     const std::optional<std::string> displayDumpPath_;
 
     void drawScanLine();
-    std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scalePixels(uint32_t scaleFactor) const;
+    [[nodiscard]] std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scalePixels(uint32_t scaleFactor) const;
 
     void dumpDisplay(const std::string &path);
 };
