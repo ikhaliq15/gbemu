@@ -372,7 +372,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x43", "command": "BIT 0, E",     "mnemonic": "BIT_GET",  "aux_args": [0],     "operands": ["E"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A0", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x44", "command": "BIT 0, H",     "mnemonic": "BIT_GET",  "aux_args": [0],     "operands": ["H"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A0", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x45", "command": "BIT 0, L",     "mnemonic": "BIT_GET",  "aux_args": [0],     "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A0", "0", "1", "-"] },
-    { "prefix": true, "opcode": "0x46", "command": "BIT 0, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [0],     "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["!A0", "0", "1", "-"] },
+    { "prefix": true, "opcode": "0x46", "command": "BIT 0, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [0],     "operands": ["(HL)"], "bytes": 2, "cycles": 3, "flagsZNHC": ["!A0", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x47", "command": "BIT 0, A",     "mnemonic": "BIT_GET",  "aux_args": [0],     "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A0", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x48", "command": "BIT 1, B",     "mnemonic": "BIT_GET",  "aux_args": [1],     "operands": ["B"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A1", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x49", "command": "BIT 1, C",     "mnemonic": "BIT_GET",  "aux_args": [1],     "operands": ["C"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A1", "0", "1", "-"] },
@@ -380,7 +380,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x4b", "command": "BIT 1, E",     "mnemonic": "BIT_GET",  "aux_args": [1],     "operands": ["E"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A1", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x4c", "command": "BIT 1, H",     "mnemonic": "BIT_GET",  "aux_args": [1],     "operands": ["H"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A1", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x4d", "command": "BIT 1, L",     "mnemonic": "BIT_GET",  "aux_args": [1],     "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A1", "0", "1", "-"] },
-    { "prefix": true, "opcode": "0x4e", "command": "BIT 1, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [1],     "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["!A1", "0", "1", "-"] },
+    { "prefix": true, "opcode": "0x4e", "command": "BIT 1, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [1],     "operands": ["(HL)"], "bytes": 2, "cycles": 3, "flagsZNHC": ["!A1", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x4f", "command": "BIT 1, A",     "mnemonic": "BIT_GET",  "aux_args": [1],     "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A1", "0", "1", "-"] },
 
 
@@ -390,7 +390,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x53", "command": "BIT 2, E",     "mnemonic": "BIT_GET",  "aux_args": [2],     "operands": ["E"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A2", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x54", "command": "BIT 2, H",     "mnemonic": "BIT_GET",  "aux_args": [2],     "operands": ["H"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A2", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x55", "command": "BIT 2, L",     "mnemonic": "BIT_GET",  "aux_args": [2],     "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A2", "0", "1", "-"] },
-    { "prefix": true, "opcode": "0x56", "command": "BIT 2, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [2],     "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["!A2", "0", "1", "-"] },
+    { "prefix": true, "opcode": "0x56", "command": "BIT 2, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [2],     "operands": ["(HL)"], "bytes": 2, "cycles": 3, "flagsZNHC": ["!A2", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x57", "command": "BIT 2, A",     "mnemonic": "BIT_GET",  "aux_args": [2],     "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A2", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x58", "command": "BIT 3, B",     "mnemonic": "BIT_GET",  "aux_args": [3],     "operands": ["B"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A3", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x59", "command": "BIT 3, C",     "mnemonic": "BIT_GET",  "aux_args": [3],     "operands": ["C"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A3", "0", "1", "-"] },
@@ -398,7 +398,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x5b", "command": "BIT 3, E",     "mnemonic": "BIT_GET",  "aux_args": [3],     "operands": ["E"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A3", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x5c", "command": "BIT 3, H",     "mnemonic": "BIT_GET",  "aux_args": [3],     "operands": ["H"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A3", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x5d", "command": "BIT 3, L",     "mnemonic": "BIT_GET",  "aux_args": [3],     "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A3", "0", "1", "-"] },
-    { "prefix": true, "opcode": "0x5e", "command": "BIT 3, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [3],     "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["!A3", "0", "1", "-"] },
+    { "prefix": true, "opcode": "0x5e", "command": "BIT 3, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [3],     "operands": ["(HL)"], "bytes": 2, "cycles": 3, "flagsZNHC": ["!A3", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x5f", "command": "BIT 3, A",     "mnemonic": "BIT_GET",  "aux_args": [3],     "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A3", "0", "1", "-"] },
 
 
@@ -408,7 +408,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x63", "command": "BIT 4, E",     "mnemonic": "BIT_GET",  "aux_args": [4],     "operands": ["E"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A4", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x64", "command": "BIT 4, H",     "mnemonic": "BIT_GET",  "aux_args": [4],     "operands": ["H"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A4", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x65", "command": "BIT 4, L",     "mnemonic": "BIT_GET",  "aux_args": [4],     "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A4", "0", "1", "-"] },
-    { "prefix": true, "opcode": "0x66", "command": "BIT 4, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [4],     "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["!A4", "0", "1", "-"] },
+    { "prefix": true, "opcode": "0x66", "command": "BIT 4, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [4],     "operands": ["(HL)"], "bytes": 2, "cycles": 3, "flagsZNHC": ["!A4", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x67", "command": "BIT 4, A",     "mnemonic": "BIT_GET",  "aux_args": [4],     "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A4", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x68", "command": "BIT 5, B",     "mnemonic": "BIT_GET",  "aux_args": [5],     "operands": ["B"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A5", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x69", "command": "BIT 5, C",     "mnemonic": "BIT_GET",  "aux_args": [5],     "operands": ["C"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A5", "0", "1", "-"] },
@@ -416,7 +416,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x6b", "command": "BIT 5, E",     "mnemonic": "BIT_GET",  "aux_args": [5],     "operands": ["E"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A5", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x6c", "command": "BIT 5, H",     "mnemonic": "BIT_GET",  "aux_args": [5],     "operands": ["H"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A5", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x6d", "command": "BIT 5, L",     "mnemonic": "BIT_GET",  "aux_args": [5],     "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A5", "0", "1", "-"] },
-    { "prefix": true, "opcode": "0x6e", "command": "BIT 5, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [5],     "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["!A5", "0", "1", "-"] },
+    { "prefix": true, "opcode": "0x6e", "command": "BIT 5, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [5],     "operands": ["(HL)"], "bytes": 2, "cycles": 3, "flagsZNHC": ["!A5", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x6f", "command": "BIT 5, A",     "mnemonic": "BIT_GET",  "aux_args": [5],     "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A5", "0", "1", "-"] },
 
 
@@ -426,7 +426,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x73", "command": "BIT 6, E",     "mnemonic": "BIT_GET",  "aux_args": [6],     "operands": ["E"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A6", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x74", "command": "BIT 6, H",     "mnemonic": "BIT_GET",  "aux_args": [6],     "operands": ["H"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A6", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x75", "command": "BIT 6, L",     "mnemonic": "BIT_GET",  "aux_args": [6],     "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A6", "0", "1", "-"] },
-    { "prefix": true, "opcode": "0x76", "command": "BIT 6, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [6],     "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["!A6", "0", "1", "-"] },
+    { "prefix": true, "opcode": "0x76", "command": "BIT 6, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [6],     "operands": ["(HL)"], "bytes": 2, "cycles": 3, "flagsZNHC": ["!A6", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x77", "command": "BIT 6, A",     "mnemonic": "BIT_GET",  "aux_args": [6],     "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A6", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x78", "command": "BIT 7, B",     "mnemonic": "BIT_GET",  "aux_args": [7],     "operands": ["B"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A7", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x79", "command": "BIT 7, C",     "mnemonic": "BIT_GET",  "aux_args": [7],     "operands": ["C"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A7", "0", "1", "-"] },
@@ -434,7 +434,7 @@ static constexpr const char *OPCODES_DATA = R"json(
     { "prefix": true, "opcode": "0x7b", "command": "BIT 7, E",     "mnemonic": "BIT_GET",  "aux_args": [7],     "operands": ["E"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A7", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x7c", "command": "BIT 7, H",     "mnemonic": "BIT_GET",  "aux_args": [7],     "operands": ["H"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A7", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x7d", "command": "BIT 7, L",     "mnemonic": "BIT_GET",  "aux_args": [7],     "operands": ["L"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A7", "0", "1", "-"] },
-    { "prefix": true, "opcode": "0x7e", "command": "BIT 7, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [7],     "operands": ["(HL)"], "bytes": 2, "cycles": 4, "flagsZNHC": ["!A7", "0", "1", "-"] },
+    { "prefix": true, "opcode": "0x7e", "command": "BIT 7, (HL)",  "mnemonic": "BIT_GET",  "aux_args": [7],     "operands": ["(HL)"], "bytes": 2, "cycles": 3, "flagsZNHC": ["!A7", "0", "1", "-"] },
     { "prefix": true, "opcode": "0x7f", "command": "BIT 7, A",     "mnemonic": "BIT_GET",  "aux_args": [7],     "operands": ["A"],    "bytes": 2, "cycles": 2, "flagsZNHC": ["!A7", "0", "1", "-"] },
 
 

@@ -30,20 +30,23 @@ void Timer::update(uint64_t deltaCycles)
     if (!initialized_)
         throw std::runtime_error("Cannot increment an uninitialized tiemr.");
 
-    cyclesSinceLaunch_ += deltaCycles;
-
-    if (timerListeners_.empty())
-        return;
-
-    while (timerListeners_.top().nextCycleCountTrigger_ <= cyclesSinceLaunch_)
+    for (uint64_t i = 0; i < deltaCycles; ++i)
     {
-        auto info = timerListeners_.top();
-        timerListeners_.pop();
+        cyclesSinceLaunch_ += 1;
 
-        info.listener_->timerTriggerHandler();
-        info.nextCycleCountTrigger_ = cyclesSinceLaunch_ + info.listenerModulo_;
+        if (timerListeners_.empty())
+            return;
 
-        timerListeners_.push(info);
+        while (timerListeners_.top().nextCycleCountTrigger_ <= cyclesSinceLaunch_)
+        {
+            auto info = timerListeners_.top();
+            timerListeners_.pop();
+
+            info.listener_->timerTriggerHandler();
+            info.nextCycleCountTrigger_ = cyclesSinceLaunch_ + info.listenerModulo_;
+
+            timerListeners_.push(info);
+        }
     }
 }
 
@@ -70,7 +73,7 @@ void Timer::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t current
     switch (address)
     {
     case RAM::DIV:
-        divAccumulator_.reset();
+        divAccumulator_->resetAccumulator();
         break;
     case RAM::TIMA:
         *tima_ = newValue;
