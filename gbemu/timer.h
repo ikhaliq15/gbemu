@@ -34,7 +34,7 @@ class Timer : public RAM::Owner
         {
             return accumulator_;
         }
-        void reset()
+        void resetAccumulator()
         {
             accumulator_ = 0;
         }
@@ -88,7 +88,7 @@ class Timer : public RAM::Owner
         }
         void timerTriggerHandler()
         {
-            if ((*tac_ & 0x04) != 0x00 && (*tac_ & 0x03) == tacId_)
+            if (enabled())
             {
                 if (*tima_ == 0xff)
                 {
@@ -101,6 +101,18 @@ class Timer : public RAM::Owner
         }
 
       private:
+        bool enabled() const
+        {
+            const auto masterTACEnabled = getBit(*tac_, 2);
+            if (!masterTACEnabled)
+            {
+                return false;
+            }
+
+            const auto enabledTACId = *tac_ & 0b11;
+            return enabledTACId == tacId_;
+        }
+
         const uint8_t tacId_;
 
         const std::shared_ptr<uint8_t> tima_;
