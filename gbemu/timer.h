@@ -4,6 +4,7 @@
 #include "gbemu/cpu.h"
 #include "gbemu/ram.h"
 
+#include <memory>
 #include <queue>
 
 namespace gbemu
@@ -43,7 +44,7 @@ class Timer : public RAM::Owner
         T accumulator_;
     };
 
-    Timer(std::shared_ptr<CPU> cpu);
+    Timer(CPU *cpu);
 
     void init();
     void update(uint64_t deltaCycles);
@@ -51,7 +52,7 @@ class Timer : public RAM::Owner
     uint8_t onReadOwnedByte(uint16_t address);
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue);
 
-    void addTimerListener(const std::shared_ptr<TimerListener> listener, uint64_t cycleModulo)
+    void addTimerListener(TimerListener *listener, uint64_t cycleModulo)
     {
         if (initialized_)
             throw std::runtime_error("Cannot add timer listener after timer is initalized.");
@@ -64,7 +65,7 @@ class Timer : public RAM::Owner
     class TimerListenerInfo
     {
       public:
-        std::shared_ptr<TimerListener> listener_;
+        TimerListener *listener_;
         uint64_t listenerModulo_;
         uint64_t nextCycleCountTrigger_;
     };
@@ -81,8 +82,7 @@ class Timer : public RAM::Owner
     class EnabledTimer : public TimerListener
     {
       public:
-        EnabledTimer(uint8_t tacId, std::shared_ptr<uint8_t> tima, std::shared_ptr<uint8_t> tma,
-                     std::shared_ptr<uint8_t> tac, std::shared_ptr<CPU> cpu)
+        EnabledTimer(uint8_t tacId, uint8_t *tima, uint8_t *tma, uint8_t *tac, CPU *cpu)
             : tacId_(tacId), tima_(tima), tma_(tma), tac_(tac), cpu_(cpu)
         {
         }
@@ -115,11 +115,11 @@ class Timer : public RAM::Owner
 
         const uint8_t tacId_;
 
-        const std::shared_ptr<uint8_t> tima_;
-        const std::shared_ptr<uint8_t> tma_;
-        const std::shared_ptr<uint8_t> tac_;
+        uint8_t *tima_;
+        const uint8_t *tma_;
+        const uint8_t *tac_;
 
-        const std::shared_ptr<CPU> cpu_;
+        CPU *cpu_;
     };
 
     static constexpr uint64_t DIV_REGISTER_MODULO = 64;
@@ -137,13 +137,18 @@ class Timer : public RAM::Owner
     bool initialized_;
     uint64_t cyclesSinceLaunch_;
 
-    std::shared_ptr<Accumulator<uint8_t>> divAccumulator_;
+    std::unique_ptr<Accumulator<uint8_t>> divAccumulator_;
 
-    std::shared_ptr<CPU> cpu_;
+    CPU *cpu_;
 
-    std::shared_ptr<uint8_t> tima_;
-    std::shared_ptr<uint8_t> tma_;
-    std::shared_ptr<uint8_t> tac_;
+    std::unique_ptr<EnabledTimer> timer0_;
+    std::unique_ptr<EnabledTimer> timer1_;
+    std::unique_ptr<EnabledTimer> timer2_;
+    std::unique_ptr<EnabledTimer> timer3_;
+
+    std::unique_ptr<uint8_t> tima_;
+    std::unique_ptr<uint8_t> tma_;
+    std::unique_ptr<uint8_t> tac_;
 
     std::priority_queue<TimerListenerInfo, std::vector<TimerListenerInfo>, TimerListenerInfoCompare> timerListeners_;
 };

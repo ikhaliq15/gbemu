@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <memory>
 
 namespace gbemu
 {
@@ -29,7 +28,7 @@ class CPU
         HALT,
     };
 
-    CPU(std::shared_ptr<RAM> ram);
+    CPU(RAM *ram);
     CPU(const CPU &cpu);
 
     [[nodiscard]] bool IME() const;
@@ -55,7 +54,7 @@ class CPU
     [[nodiscard]] uint8_t FlagH() const;
     [[nodiscard]] uint8_t FlagC() const;
 
-    [[nodiscard]] std::shared_ptr<RAM> ram() const;
+    [[nodiscard]] RAM *ram() const;
 
     [[nodiscard]] uint64_t cycles() const;
     [[nodiscard]] Mode mode() const;
@@ -132,67 +131,69 @@ class CPU
     uint16_t DE_;
     uint16_t HL_;
 
-    std::shared_ptr<RAM> ram_;
+    RAM *ram_;
 
     uint64_t cycles_;
     Mode mode_;
 
-    using OPCodeHandler = std::function<void(uint16_t, const OPCode &)>;
-    std::map<uint8_t, OPCode> opcodes_;
-    std::map<uint8_t, OPCode> prefixedOpcodes_;
-    std::unordered_map<std::string, OPCodeHandler> opcodeFunctions_;
+    using OPCodeHandler = std::function<void(uint16_t, const OPCode *)>;
+    using OPCodeHandlerMap = std::array<OPCodeHandler, 256>;
+    OPCode::OpCodeMap opcodes_;
+    OPCode::OpCodeMap prefixedOpcodes_;
+    OPCodeHandlerMap opcodeFunctions_;
+    OPCodeHandlerMap prefixedOpcodeFunctions_;
 
     [[nodiscard]] OperandValue getOperand(Operand operand) const;
     void setOperand(Operand operand, OperandValue newValue);
 
-    void setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode &opcode);
+    void setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode *opcode);
     [[nodiscard]] bool testJumpCondition(OPCode::JumpCondition jumpCondition) const;
 
     /*** OPCode Handlers ***/
-    template <typename F> void unary_alu_operation(uint16_t pc, const OPCode &opcode, F operation);
-    template <typename F> void binary_alu_operation(uint16_t pc, const OPCode &opcode, F operation);
+    template <typename F> void unary_alu_operation(uint16_t pc, const OPCode *opcode, F operation);
+    template <typename F> void binary_alu_operation(uint16_t pc, const OPCode *opcode, F operation);
 
-    void NOP(uint16_t pc, const OPCode &opcode);
-    void LD(uint16_t pc, const OPCode &opcode);
-    void INC(uint16_t pc, const OPCode &opcode);
-    void DEC(uint16_t pc, const OPCode &opcode);
-    void RLCA(uint16_t pc, const OPCode &opcode);
-    void LD_SP(uint16_t pc, const OPCode &opcode);
-    void ADD(uint16_t pc, const OPCode &opcode);
-    void RRCA(uint16_t pc, const OPCode &opcode);
-    void RLA(uint16_t pc, const OPCode &opcode);
-    void JR(uint16_t pc, const OPCode &opcode);
-    void RRA(uint16_t pc, const OPCode &opcode);
-    void LDI(uint16_t pc, const OPCode &opcode);
-    void DAA(uint16_t pc, const OPCode &opcode);
-    void CPL(uint16_t pc, const OPCode &opcode);
-    void LDD(uint16_t pc, const OPCode &opcode);
-    void SCF(uint16_t pc, const OPCode &opcode);
-    void CCF(uint16_t pc, const OPCode &opcode);
-    void HALT(uint16_t pc, const OPCode &opcode);
-    void ADC(uint16_t pc, const OPCode &opcode);
-    void SBC(uint16_t pc, const OPCode &opcode);
+    void NOP(uint16_t pc, const OPCode *opcode);
+    void LD(uint16_t pc, const OPCode *opcode);
+    void INC(uint16_t pc, const OPCode *opcode);
+    void DEC(uint16_t pc, const OPCode *opcode);
+    void RLCA(uint16_t pc, const OPCode *opcode);
+    void LD_SP(uint16_t pc, const OPCode *opcode);
+    void ADD(uint16_t pc, const OPCode *opcode);
+    void RRCA(uint16_t pc, const OPCode *opcode);
+    void RLA(uint16_t pc, const OPCode *opcode);
+    void JR(uint16_t pc, const OPCode *opcode);
+    void RRA(uint16_t pc, const OPCode *opcode);
+    void LDI(uint16_t pc, const OPCode *opcode);
+    void DAA(uint16_t pc, const OPCode *opcode);
+    void CPL(uint16_t pc, const OPCode *opcode);
+    void LDD(uint16_t pc, const OPCode *opcode);
+    void SCF(uint16_t pc, const OPCode *opcode);
+    void CCF(uint16_t pc, const OPCode *opcode);
+    void HALT(uint16_t pc, const OPCode *opcode);
+    void ADC(uint16_t pc, const OPCode *opcode);
+    void SBC(uint16_t pc, const OPCode *opcode);
 
-    void CP(uint16_t pc, const OPCode &opcode);
-    void RET(uint16_t pc, const OPCode &opcode);
-    void POP(uint16_t pc, const OPCode &opcode);
-    void JP(uint16_t pc, const OPCode &opcode);
-    void CALL(uint16_t pc, const OPCode &opcode);
-    void PUSH(uint16_t pc, const OPCode &opcode);
-    void RST(uint16_t pc, const OPCode &opcode);
-    void RETI(uint16_t pc, const OPCode &opcode);
-    void LDff8(uint16_t pc, const OPCode &opcode);
-    void LDa16(uint16_t pc, const OPCode &opcode);
-    void LDaff8(uint16_t pc, const OPCode &opcode);
-    void DI(uint16_t pc, const OPCode &opcode);
-    void LDaff16(uint16_t pc, const OPCode &opcode);
-    void LDs8(uint16_t pc, const OPCode &opcode);
-    void EI(uint16_t pc, const OPCode &opcode);
+    void CP(uint16_t pc, const OPCode *opcode);
+    void RET(uint16_t pc, const OPCode *opcode);
+    void POP(uint16_t pc, const OPCode *opcode);
+    void JP(uint16_t pc, const OPCode *opcode);
+    void CALL(uint16_t pc, const OPCode *opcode);
+    void PUSH(uint16_t pc, const OPCode *opcode);
+    void RST(uint16_t pc, const OPCode *opcode);
+    void RETI(uint16_t pc, const OPCode *opcode);
+    void LDff8(uint16_t pc, const OPCode *opcode);
+    void LDa16(uint16_t pc, const OPCode *opcode);
+    void LDaff8(uint16_t pc, const OPCode *opcode);
+    void DI(uint16_t pc, const OPCode *opcode);
+    void LDaff16(uint16_t pc, const OPCode *opcode);
+    void LDs8(uint16_t pc, const OPCode *opcode);
+    void EI(uint16_t pc, const OPCode *opcode);
 
-    void RL(uint16_t pc, const OPCode &opcode);
-    void RR(uint16_t pc, const OPCode &opcode);
-    void BIT_GET(uint16_t pc, const OPCode &opcode);
-    void BIT_SET(uint16_t pc, const OPCode &opcode);
+    void RL(uint16_t pc, const OPCode *opcode);
+    void RR(uint16_t pc, const OPCode *opcode);
+    void BIT_GET(uint16_t pc, const OPCode *opcode);
+    void BIT_SET(uint16_t pc, const OPCode *opcode);
 };
 
 } // namespace gbemu

@@ -10,10 +10,9 @@
 namespace gbemu
 {
 
-PPU::PPU(std::shared_ptr<CPU> cpu, bool runHeadless, std::optional<std::string> displayDumpPath)
+PPU::PPU(CPU *cpu, bool runHeadless, std::optional<std::string> displayDumpPath)
     : scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00), wy_(0x00), wx_(0x00), windowLy_(0x00),
-      lycCoincidenceCalledOnThisLy_(false), cpu_(std::move(cpu)), runHeadless_(runHeadless),
-      displayDumpPath_(std::move(displayDumpPath))
+      lycCoincidenceCalledOnThisLy_(false), cpu_(cpu), runHeadless_(runHeadless), displayDumpPath_(displayDumpPath)
 {
 }
 

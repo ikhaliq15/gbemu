@@ -11,8 +11,8 @@ class CPUTest : public testing::Test
 
     void SetUp() override
     {
-        ram_ = std::make_shared<gbemu::RAM>(1 << 16);
-        cpu_ = std::make_unique<gbemu::CPU>(ram_);
+        ram_ = std::make_unique<gbemu::RAM>(1 << 16);
+        cpu_ = std::make_unique<gbemu::CPU>(ram_.get());
     }
 
     void loadSimpleProgram(const Program &program)
@@ -74,7 +74,7 @@ class CPUTest : public testing::Test
         }
     }
 
-    std::shared_ptr<gbemu::RAM> ram_;
+    std::unique_ptr<gbemu::RAM> ram_;
     std::unique_ptr<gbemu::CPU> cpu_;
 };
 

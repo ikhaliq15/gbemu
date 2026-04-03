@@ -5,22 +5,27 @@
 namespace gbemu
 {
 
-Timer::Timer(std::shared_ptr<CPU> cpu)
+Timer::Timer(CPU *cpu)
     : initialized_(false), cyclesSinceLaunch_(0),
-      divAccumulator_(std::make_shared<Accumulator<uint8_t>>(DIV_REGISTER_START_VALUE)), cpu_(std::move(cpu)),
-      tima_(std::make_shared<uint8_t>(0x00)), tma_(std::make_shared<uint8_t>(0x00)),
-      tac_(std::make_shared<uint8_t>(0x00))
+      divAccumulator_(std::make_unique<Accumulator<uint8_t>>(DIV_REGISTER_START_VALUE)), cpu_(cpu),
+      tima_(std::make_unique<uint8_t>(0x00)), tma_(std::make_unique<uint8_t>(0x00)),
+      tac_(std::make_unique<uint8_t>(0x00))
 {
 }
 
 void Timer::init()
 {
-    addTimerListener(divAccumulator_, DIV_REGISTER_MODULO);
+    addTimerListener(divAccumulator_.get(), DIV_REGISTER_MODULO);
 
-    addTimerListener(std::make_shared<EnabledTimer>(TIMER_0_TAC_ID, tima_, tma_, tac_, cpu_), TIMER_0_MODULO);
-    addTimerListener(std::make_shared<EnabledTimer>(TIMER_1_TAC_ID, tima_, tma_, tac_, cpu_), TIMER_1_MODULO);
-    addTimerListener(std::make_shared<EnabledTimer>(TIMER_2_TAC_ID, tima_, tma_, tac_, cpu_), TIMER_2_MODULO);
-    addTimerListener(std::make_shared<EnabledTimer>(TIMER_3_TAC_ID, tima_, tma_, tac_, cpu_), TIMER_3_MODULO);
+    timer0_ = std::make_unique<EnabledTimer>(TIMER_0_TAC_ID, tima_.get(), tma_.get(), tac_.get(), cpu_);
+    timer1_ = std::make_unique<EnabledTimer>(TIMER_1_TAC_ID, tima_.get(), tma_.get(), tac_.get(), cpu_);
+    timer2_ = std::make_unique<EnabledTimer>(TIMER_2_TAC_ID, tima_.get(), tma_.get(), tac_.get(), cpu_);
+    timer3_ = std::make_unique<EnabledTimer>(TIMER_3_TAC_ID, tima_.get(), tma_.get(), tac_.get(), cpu_);
+
+    addTimerListener(timer0_.get(), TIMER_0_MODULO);
+    addTimerListener(timer1_.get(), TIMER_1_MODULO);
+    addTimerListener(timer2_.get(), TIMER_2_MODULO);
+    addTimerListener(timer3_.get(), TIMER_3_MODULO);
 
     initialized_ = true;
 }

@@ -36,8 +36,8 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
     static constexpr uint64_t SCANLINE_FREQUENCY = 9352;
     static constexpr uint64_t CYCLES_PER_SCANLINE = 114;
 
-    PPU(std::shared_ptr<CPU> cpu);
-    PPU(std::shared_ptr<CPU> cpu, bool runHeadless = false, std::optional<std::string> displayDumpPath = std::nullopt);
+    PPU(CPU *cpu);
+    PPU(CPU *cpu, bool runHeadless = false, std::optional<std::string> displayDumpPath = std::nullopt);
     ~PPU();
 
     void init();
@@ -54,7 +54,7 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
     // ShutDownListener
     void onShutDown() override;
 
-    void subscribeToCompleteFrames(const std::shared_ptr<FrameCompleteListener> frameCompleteListener)
+    void subscribeToCompleteFrames(FrameCompleteListener *frameCompleteListener)
     {
         frameCompleteListeners_.push_back(frameCompleteListener);
     }
@@ -85,13 +85,13 @@ class PPU : public Timer::TimerListener, public RAM::Owner, public gbemu::ShutDo
 
     bool lycCoincidenceCalledOnThisLy_;
 
-    std::shared_ptr<CPU> cpu_;
+    CPU *cpu_;
 
     size_t frameCount_ = 0;
 
     uint64_t lastFrameTickCount_ = 0;
 
-    std::vector<std::shared_ptr<FrameCompleteListener>> frameCompleteListeners_;
+    std::vector<FrameCompleteListener *> frameCompleteListeners_;
 
     const bool runHeadless_;
     const std::optional<std::string> displayDumpPath_;

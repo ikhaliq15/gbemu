@@ -10,6 +10,8 @@ using json = nlohmann::json;
 namespace gbemu
 {
 
+std::deque<std::unique_ptr<OPCode>> OPCode::opcodesStorage_;
+
 OPCode::OPCode(uint8_t opcode, const std::string command, const std::string mnemonic,
                const std::vector<uint8_t> auxiliaryArguments, const std::vector<Operand> operands, uint8_t bytes,
                uint8_t cycles, uint8_t additionalCycles, JumpCondition jumpCondition, Flags flags)
@@ -19,12 +21,12 @@ OPCode::OPCode(uint8_t opcode, const std::string command, const std::string mnem
 {
 }
 
-auto OPCode::constructOpcodes() -> std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>>
+auto OPCode::constructOpcodes() -> std::pair<OPCode::OpCodeMap, OPCode::OpCodeMap>
 {
     const auto opcodeData = json::parse(opcodes::OPCODES_DATA).get<std::vector<json>>();
 
-    std::map<uint8_t, OPCode> opcodesMap;
-    std::map<uint8_t, OPCode> prefixedOpcodesMap;
+    OpCodeMap opcodesMap{};
+    OpCodeMap prefixedOpcodesMap{};
     for (const auto &opcode : opcodeData)
     {
         const auto prefixed = opcode.contains("prefix") && opcode["prefix"].get<bool>();
@@ -32,7 +34,7 @@ auto OPCode::constructOpcodes() -> std::pair<std::map<uint8_t, OPCode>, std::map
 
         const auto op = static_cast<uint8_t>(std::strtoul(opcode["opcode"].get<std::string>().c_str(), nullptr, 16));
 
-        if (opcodeMap->find(op) != opcodeMap->end())
+        if (opcodeMap->at(op))
             throw std::runtime_error(std::string("Repeated opcode in opcode data: ") + toHexString(op));
 
         const auto command = opcode["command"].get<std::string>();
@@ -83,8 +85,10 @@ auto OPCode::constructOpcodes() -> std::pair<std::map<uint8_t, OPCode>, std::map
             flags[i] = it->second;
         }
 
-        opcodeMap->insert({op, OPCode(op, command, mnemonic, auxiliaryArguments, operands, bytes, cycles,
-                                      additionalCycles, jumpCondition, flags)});
+        auto opcodePtr = std::make_unique<OPCode>(op, command, mnemonic, auxiliaryArguments, operands, bytes, cycles,
+                                                  additionalCycles, jumpCondition, flags);
+        opcodeMap->at(op) = opcodePtr.get();
+        opcodesStorage_.push_back(std::move(opcodePtr));
     }
 
     return std::make_pair(opcodesMap, prefixedOpcodesMap);
@@ -94,19 +98,19 @@ auto OPCode::opcode() const -> uint8_t
 {
     return opcode_;
 }
-auto OPCode::command() const -> std::string
+auto OPCode::command() const -> const std::string &
 {
     return command_;
 }
-auto OPCode::mnemonic() const -> std::string
+auto OPCode::mnemonic() const -> const std::string &
 {
     return mnemonic_;
 }
-auto OPCode::auxiliaryArguments() const -> std::vector<uint8_t>
+auto OPCode::auxiliaryArguments() const -> const std::vector<uint8_t> &
 {
     return auxiliaryArguments_;
 }
-auto OPCode::operands() const -> std::vector<Operand>
+auto OPCode::operands() const -> const std::vector<Operand> &
 {
     return operands_;
 }

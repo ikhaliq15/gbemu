@@ -8,11 +8,15 @@ namespace gbemu
 RAM::RAM(uint32_t ramSize, uint8_t defaultValue)
 {
     memory_ = std::vector<uint8_t>(ramSize, defaultValue);
+    writeOwners_ = std::vector<WriteOwner *>(ramSize, nullptr);
+    readOwners_ = std::vector<ReadOwner *>(ramSize, nullptr);
 }
 
 RAM::RAM(const RAM &ram)
 {
     memory_ = ram.memory_;
+    writeOwners_ = ram.writeOwners_;
+    readOwners_ = ram.readOwners_;
 }
 
 auto RAM::operator==(const RAM &rhs) const -> bool
@@ -85,10 +89,10 @@ void RAM::set(uint16_t address, uint8_t value)
             set(RAM::OAM + i, get(startAddress + i));
     }
 
-    const auto it = writeOwners_.find(address);
-    if (it != writeOwners_.end())
+    const auto writeOwner = writeOwners_[address];
+    if (writeOwner != nullptr)
     {
-        it->second->onWriteOwnedByte(address, value, get(address));
+        writeOwner->onWriteOwnedByte(address, value, get(address));
         return;
     }
 
@@ -97,27 +101,27 @@ void RAM::set(uint16_t address, uint8_t value)
 
 auto RAM::get(uint16_t address) const -> uint8_t
 {
-    const auto it = readOwners_.find(address);
-    if (it != readOwners_.end())
-        return it->second->onReadOwnedByte(address);
+    const auto readOwner = readOwners_[address];
+    if (readOwner != nullptr)
+        return readOwner->onReadOwnedByte(address);
     return memory_[address];
 }
 
-void RAM::addReadOwner(uint16_t address, std::shared_ptr<ReadOwner> owner)
+void RAM::addReadOwner(uint16_t address, ReadOwner *owner)
 {
-    if (readOwners_.contains(address))
+    if (readOwners_[address] != nullptr)
         throw std::runtime_error("The address " + toHexString(address) + " cannot have multiple read owners.");
-    readOwners_.insert({address, owner});
+    readOwners_[address] = owner;
 }
 
-void RAM::addWriteOwner(uint16_t address, std::shared_ptr<WriteOwner> owner)
+void RAM::addWriteOwner(uint16_t address, WriteOwner *owner)
 {
-    if (writeOwners_.contains(address))
+    if (writeOwners_[address] != nullptr)
         throw std::runtime_error("The address " + toHexString(address) + " cannot have multiple write owners.");
-    writeOwners_.insert({address, owner});
+    writeOwners_[address] = owner;
 }
 
-void RAM::addOwner(uint16_t address, std::shared_ptr<Owner> owner)
+void RAM::addOwner(uint16_t address, Owner *owner)
 {
     addReadOwner(address, owner);
     addWriteOwner(address, owner);
