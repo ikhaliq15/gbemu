@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <string>
 #include <vector>
 
