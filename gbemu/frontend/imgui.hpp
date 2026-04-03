@@ -7,6 +7,12 @@
 
 #include <SDL2/SDL.h>
 
+#include <array>
+#include <optional>
+#include <string>
+
+struct ImVec2;
+
 namespace gbemu::backend
 {
 class Gameboy;
@@ -26,10 +32,22 @@ class ImguiFrontend : public IFrontend
     void startRender();
     void finishRender();
 
+    void applyTheme();
     void setupDockspace();
+    void renderMenuBar();
+    void renderStatusBar();
 
     void renderScreen();
-    void renderDebug();
+    void renderCpuWindow();
+    void renderMemoryWindow();
+    void renderPerformanceWindow();
+    void renderAboutWindow();
+    void renderWelcomeState(const ImVec2 &canvasMin, const ImVec2 &canvasMax);
+
+    void pushFrameTimeSample(float frameTimeMs);
+    void setMemoryViewBase(uint16_t address);
+    void updateWindowTitle();
+    void openRom();
 
   private:
     void pollEvents();
@@ -38,8 +56,11 @@ class ImguiFrontend : public IFrontend
     [[nodiscard]] std::optional<std::string> selectRomFile();
 
   private:
-    bool show_demo_window_ = true;
-    bool show_another_window_ = false;
+    bool show_cpu_window_ = true;
+    bool show_memory_window_ = true;
+    bool show_performance_window_ = true;
+    bool show_about_window_ = false;
+    bool dockspace_initialized_ = false;
 
     bool done_ = false;
 
@@ -50,6 +71,16 @@ class ImguiFrontend : public IFrontend
 
   private:
     std::array<uint32_t, gbemu::backend::WINDOW_WIDTH * gbemu::backend::WINDOW_HEIGHT> screenPixels_;
+    std::array<float, 180> frame_time_history_{};
+
+    size_t frame_time_history_offset_ = 0;
+    bool frame_time_history_full_ = false;
+
+    uint16_t memory_view_base_ = 0xff00;
+    char memory_address_buffer_[5] = "FF00";
+
+    std::string loaded_rom_path_;
+    std::string status_text_ = "Open a Game Boy ROM to start emulation.";
 
   private:
     gbemu::backend::Gameboy *gameboy_;
