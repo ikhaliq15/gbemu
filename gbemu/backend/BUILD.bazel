@@ -58,7 +58,6 @@ cc_library(
         "opcode_data.h",
         "operand.h",
         "ppu.h",
-        "shutdown_listener.h",
         "timer.h",
     ],
     visibility = ["//visibility:public"],
@@ -68,6 +67,5 @@ cc_library(
         ":ram",
         "//gbemu/config",
         "@json",
-        "@stb//:stb_image_write",
     ],
 )

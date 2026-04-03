@@ -10,6 +10,7 @@ cc_binary(
         "//gbemu/backend",
         "//gbemu/frontend",
         "@argparse",
+        "@stb//:stb_image_write",
     ],
 )
 
@@ -23,5 +24,6 @@ cc_library(
         "//gbemu/backend",
         "//gbemu/frontend",
         "@argparse",
+        "@stb//:stb_image_write",
     ],
 )

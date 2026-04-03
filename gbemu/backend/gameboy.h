@@ -6,13 +6,10 @@
 #include "gbemu/backend/joypad.h"
 #include "gbemu/backend/ppu.h"
 #include "gbemu/backend/ram.h"
-#include "gbemu/backend/shutdown_listener.h"
 #include "gbemu/backend/timer.h"
 #include "gbemu/config/config.h"
 
 #include <memory>
-#include <optional>
-#include <vector>
 
 namespace gbemu::backend
 {
@@ -35,12 +32,6 @@ class Gameboy
     {
         return ppu_->consumeCompletedFrame();
     }
-    void getScreenPixels(std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> &outPixels);
-
-    void subscribeToShutDown(ShutDownListener *shutDownListener)
-    {
-        externalShutDownListeners_.push_back(shutDownListener);
-    }
 
     bool cartridgeLoaded() const
     {
@@ -52,21 +43,14 @@ class Gameboy
         return cpu_.get();
     }
 
+    [[nodiscard]] const PPU *ppu() const
+    {
+        return ppu_.get();
+    }
+
     [[nodiscard]] const RAM *ram() const
     {
         return ram_.get();
-    }
-
-  private:
-    void shutdown()
-    {
-        for (const auto &shutDownListener : externalShutDownListeners_)
-            shutDownListener->onShutDown();
-
-        if (ppu_ != nullptr)
-        {
-            ppu_->onShutDown();
-        }
     }
 
   private:
@@ -90,9 +74,6 @@ class Gameboy
     std::unique_ptr<Timer> timer_;
 
     const bool enableBlarggSerialLogging_;
-    const bool runHeadless_;
-    const std::optional<std::string> dumpDisplayPath_;
-    std::vector<ShutDownListener *> externalShutDownListeners_;
 };
 
 } // namespace gbemu::backend

@@ -10,13 +10,6 @@ class JoypadTest : public testing::Test
         joypad_ = std::make_unique<gbemu::backend::Joypad>();
     }
 
-    SDL_KeyboardEvent getKeyboardEvent(const SDL_Keycode keyCode)
-    {
-        auto event = SDL_KeyboardEvent();
-        event.keysym.sym = keyCode;
-        return event;
-    }
-
     uint8_t getButtonsNibble() const
     {
         joypad_->onWriteOwnedByte(gbemu::backend::RAM::JOYP, 0x10, 0x00);
@@ -45,7 +38,7 @@ class JoypadTest : public testing::Test
                                                                                                                        \
         for (int i = 0; i < 3; i++)                                                                                    \
         {                                                                                                              \
-            joypad_->handleKeyDownEvent(getKeyboardEvent(Button));                                                     \
+            joypad_->handleKeyDownEvent(Button);                                                                       \
                                                                                                                        \
             if (isDpad)                                                                                                \
             {                                                                                                          \
@@ -58,7 +51,7 @@ class JoypadTest : public testing::Test
                 ASSERT_EQ(getDpadNibble(), 0x0f);                                                                      \
             }                                                                                                          \
                                                                                                                        \
-            joypad_->handleKeyUpEvent(getKeyboardEvent(Button));                                                       \
+            joypad_->handleKeyUpEvent(Button);                                                                         \
                                                                                                                        \
             ASSERT_EQ(getButtonsNibble(), 0x0f);                                                                       \
             ASSERT_EQ(getDpadNibble(), 0x0f);                                                                          \

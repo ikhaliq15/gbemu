@@ -1,18 +1,14 @@
 #include "gbemu/backend/ppu.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
-#include <ostream>
 #include <queue>
 #include <utility>
 
 namespace gbemu::backend
 {
 
-PPU::PPU(CPU *cpu, bool runHeadless, std::optional<std::string> displayDumpPath)
+PPU::PPU(CPU *cpu)
     : scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00), wy_(0x00), wx_(0x00), windowLy_(0x00),
-      lycCoincidenceCalledOnThisLy_(false), cpu_(cpu), runHeadless_(runHeadless), displayDumpPath_(displayDumpPath)
+      lycCoincidenceCalledOnThisLy_(false), cpu_(cpu)
 {
 }
 
@@ -52,43 +48,7 @@ void PPU::timerTriggerHandler()
     }
     else if (ly_ == 144)
     {
-        // TODO: render frame
-        // if (!runHeadless_)
-        // {
-        //     const auto scaledPixels = scalePixels(WINDOW_SCALE);
-        //     SDL_UpdateTexture(texture_, nullptr, scaledPixels.data(), WINDOW_WIDTH * sizeof(uint32_t));
-        //     SDL_RenderCopy(renderer_, texture_, nullptr, nullptr);
-        //     SDL_RenderPresent(renderer_);
-        // }
-
         completedFrames_ += 1;
-        for (const auto &frameCompleteListener : frameCompleteListeners_)
-            frameCompleteListener->onFrameComplete();
-
-        /* Sleep to achieve desired FPS. */
-        // TODO: this mechanism is causing actual FPS to be a bit lower than desired FPS
-        //       probably due to some overhead from SDL_Delay and the thread sleeping and restarting.
-        //       from a quick test, i was getting approx 56.9 FPS when desired FPS was 60.
-        // if (!runHeadless_)
-        // {
-        //     if (lastFrameTickCount_ > 0)
-        //     {
-        //         constexpr auto timeBetweenFramesMs = static_cast<Uint64>((1.0 / DEVICE_FPS) * 1000);
-        //         const auto timeToSleepUntil = lastFrameTickCount_ + timeBetweenFramesMs;
-
-        //         // TODO: add warning once we keep a moving average of the FPS (otherwise errors are too jiterry)
-        //         // if (timeToSleepUntil < now)
-        //         //     std::cout << "[WARNING] Rendering unable to keep up with desired framerate." << std::endl;
-        //         const auto now = SDL_GetTicks64();
-        //         const auto delayAmount = (timeToSleepUntil > now) ? timeToSleepUntil - now : 0ull;
-        //         SDL_Delay(delayAmount);
-        //     }
-        //     lastFrameTickCount_ = SDL_GetTicks64();
-        // }
-
-        // std::cout << "Drew frame #" << ++frameCount_ << std::endl;
-
-        // TODO: request VBLANK interrupt
         cpu_->requestInterupt(CPU::Interrupt::VBLANK);
     }
 
@@ -153,12 +113,9 @@ void PPU::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentVa
     // TODO: exception?
 }
 
-void PPU::onShutDown()
+const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &PPU::getPixels() const
 {
-    if (displayDumpPath_.has_value())
-    {
-        dumpDisplay(displayDumpPath_.value());
-    }
+    return pixels_;
 }
 
 void PPU::drawScanLine()
@@ -382,59 +339,6 @@ void PPU::drawScanLine()
             }
         }
     }
-}
-
-auto PPU::scalePixels(uint32_t scaleFactor) const -> std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT>
-{
-    // TODO: optimze this function.
-    std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> scaledPixels;
-    for (size_t i = 0; i < LCD_WIDTH; i++)
-    {
-        for (size_t j = 0; j < LCD_HEIGHT; j++)
-        {
-            const auto pixelValue = pixels_[j * LCD_WIDTH + i];
-            for (int scaledI = i * scaleFactor; scaledI < (i + 1) * scaleFactor; scaledI++)
-            {
-                for (int scaledJ = j * scaleFactor; scaledJ < (j + 1) * scaleFactor; scaledJ++)
-                {
-                    scaledPixels[scaledJ * WINDOW_WIDTH + scaledI] = pixelValue;
-                }
-            }
-        }
-    }
-    return scaledPixels;
-}
-
-void PPU::dumpDisplay(const std::string &path)
-{
-    if (path.empty())
-    {
-        return;
-    }
-
-    const auto width = LCD_WIDTH;
-    const auto height = LCD_HEIGHT;
-    constexpr auto channels = 4; // RGBA
-    auto *image_data = static_cast<unsigned char *>(malloc(width * height * channels));
-    if (!image_data)
-    {
-        std::cerr << "Failed to allocate memory for image data." << std::endl;
-        return;
-    }
-
-    for (int i = 0; i < width * height; i++)
-    {
-        const auto pixel = pixels_[i];
-        image_data[i * 4 + 0] = (pixel >> 16) & 0xFF; // Red
-        image_data[i * 4 + 1] = (pixel >> 8) & 0xFF;  // Green
-        image_data[i * 4 + 2] = pixel & 0xFF;         // Blue
-        image_data[i * 4 + 3] = (pixel >> 24) & 0xFF; // Alpha
-    }
-
-    const auto stride_bytes = width * channels * sizeof(unsigned char);
-    stbi_write_png(path.c_str(), width, height, channels, image_data, stride_bytes);
-
-    free(image_data);
 }
 
 } // namespace gbemu::backend

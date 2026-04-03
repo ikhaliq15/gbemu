@@ -23,6 +23,7 @@ TEST_ROM_PASSED_MARKER = "Passed"
 GBEMU_BINARY_LOCATION = os.path.join("gbemu", "gbemu_exe")
 GBEMU_BLARGG_LOGGING_OPTION = "--blarg_console"
 GEBEMU_HEADLESS_MODE_OPTION = "--headless"
+GBEMU_ROM_OPTION = "--rom_file"
 
 
 def process_output_contains_target_before_timeout(
@@ -110,6 +111,7 @@ class BlarggCPUInstrsTest(unittest.TestCase):
 
                 command = [
                     GBEMU_BINARY_LOCATION,
+                    GBEMU_ROM_OPTION,
                     test_rom,
                     GBEMU_BLARGG_LOGGING_OPTION,
                     GEBEMU_HEADLESS_MODE_OPTION,

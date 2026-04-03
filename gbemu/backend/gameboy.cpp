@@ -2,15 +2,13 @@
 
 #include "gbemu/backend/bitutils.h"
 
-#include <algorithm>
 #include <cstdio>
 
 namespace gbemu::backend
 {
 
 Gameboy::Gameboy(const config::Config &cfg)
-    : cartridgeLoaded_(false), enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging()),
-      runHeadless_(cfg.runHeadless()), dumpDisplayPath_(cfg.dumpDisplayOnExitPath())
+    : cartridgeLoaded_(false), enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging())
 {
     resetHardware();
 }
@@ -63,7 +61,6 @@ void Gameboy::update()
 
 void Gameboy::done()
 {
-    shutdown();
 }
 
 void Gameboy::inputDown(int32_t keyCode)
@@ -76,18 +73,12 @@ void Gameboy::inputUp(int32_t keyCode)
     joypad_->handleKeyUpEvent(keyCode);
 }
 
-void Gameboy::getScreenPixels(std::array<uint32_t, WINDOW_WIDTH * WINDOW_HEIGHT> &outPixels)
-{
-    const auto &ppuPixels = ppu_->scalePixels(gbemu::backend::WINDOW_SCALE);
-    std::copy(ppuPixels.begin(), ppuPixels.end(), outPixels.begin());
-}
-
 void Gameboy::resetHardware()
 {
     joypad_ = std::make_unique<Joypad>();
     ram_ = std::make_unique<RAM>(GAMEBOY_RAM_SIZE);
     cpu_ = std::make_unique<CPU>(ram_.get());
-    ppu_ = std::make_unique<PPU>(cpu_.get(), runHeadless_, dumpDisplayPath_);
+    ppu_ = std::make_unique<PPU>(cpu_.get());
     timer_ = std::make_unique<Timer>(cpu_.get());
 
     configureMemoryOwners();

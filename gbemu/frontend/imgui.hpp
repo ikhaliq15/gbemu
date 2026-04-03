@@ -1,6 +1,7 @@
 #ifndef GBEMU_FRONTEND_IMGUI_H
 #define GBEMU_FRONTEND_IMGUI_H
 
+#include "gbemu/backend/ppu.h"
 #include "gbemu/frontend/frontend.hpp"
 
 #include "gbemu/backend/gameboy.h"
@@ -70,7 +71,6 @@ class ImguiFrontend : public IFrontend
     SDL_Texture *texture_ = nullptr;
 
   private:
-    std::array<uint32_t, gbemu::backend::WINDOW_WIDTH * gbemu::backend::WINDOW_HEIGHT> screenPixels_;
     std::array<float, 180> frame_time_history_{};
 
     size_t frame_time_history_offset_ = 0;

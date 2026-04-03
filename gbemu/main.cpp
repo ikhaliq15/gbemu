@@ -2,7 +2,11 @@
 
 #include "gbemu/backend/cartridge.h"
 #include "gbemu/backend/gameboy.h"
+#include "gbemu/frontend/headless.hpp"
 #include "gbemu/frontend/imgui.hpp"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 #include <argparse/argparse.hpp>
 
@@ -22,6 +26,40 @@ void start(gbemu::backend::Gameboy *gameboy, gbemu::frontend::IFrontend *fronten
     gameboy->done();
 }
 
+void dumpDisplay(gbemu::backend::Gameboy *gameboy, const std::string &path)
+{
+    if (path.empty())
+    {
+        return;
+    }
+
+    const auto width = gbemu::backend::LCD_WIDTH;
+    const auto height = gbemu::backend::LCD_HEIGHT;
+
+    const auto &pixels = gameboy->ppu()->getPixels();
+
+    constexpr auto channels = 4; // RGBA
+    auto *image_data = static_cast<unsigned char *>(malloc(width * height * channels));
+    if (!image_data)
+    {
+        std::cerr << "Failed to allocate memory for image data." << std::endl;
+        return;
+    }
+
+    for (int i = 0; i < width * height; i++)
+    {
+        const auto pixel = pixels[i];
+        image_data[i * 4 + 0] = (pixel >> 16) & 0xFF; // Red
+        image_data[i * 4 + 1] = (pixel >> 8) & 0xFF;  // Green
+        image_data[i * 4 + 2] = pixel & 0xFF;         // Blue
+        image_data[i * 4 + 3] = (pixel >> 24) & 0xFF; // Alpha
+    }
+
+    const auto stride_bytes = width * channels * sizeof(unsigned char);
+    stbi_write_png(path.c_str(), width, height, channels, image_data, stride_bytes);
+
+    free(image_data);
+}
 auto main(int argc, char **argv) -> int
 {
     argparse::ArgumentParser args("GBEmu v3");
@@ -56,7 +94,17 @@ auto main(int argc, char **argv) -> int
     const gbemu::config::Config gameboyCfg{enableBlarggConsole, enableHeadlessMode, dumpDisplayOnExitPath};
 
     auto gameboy = std::make_unique<gbemu::backend::Gameboy>(gameboyCfg);
-    auto frontend = std::make_unique<gbemu::frontend::ImguiFrontend>();
+
+    auto frontend = [enableHeadlessMode]() -> std::unique_ptr<gbemu::frontend::IFrontend> {
+        if (enableHeadlessMode)
+        {
+            return std::make_unique<gbemu::frontend::HeadlessFrontend>();
+        }
+        else
+        {
+            return std::make_unique<gbemu::frontend::ImguiFrontend>();
+        }
+    }();
 
     if (args.is_used("--rom_file"))
     {
@@ -66,6 +114,13 @@ auto main(int argc, char **argv) -> int
     }
 
     start(gameboy.get(), frontend.get());
+
+    if (!dumpDisplayOnExitPath.empty())
+    {
+        std::cout << "Dumping display to " << dumpDisplayOnExitPath << "..." << std::endl;
+
+        dumpDisplay(gameboy.get(), dumpDisplayOnExitPath);
+    }
 
     return 0;
 }

@@ -1,6 +1,7 @@
 #include "gbemu/frontend/imgui.hpp"
 
 #include "gbemu/backend/cartridge.h"
+#include "gbemu/backend/ppu.h"
 #include "gbemu/backend/ram.h"
 
 #include "imgui.h"
@@ -137,7 +138,7 @@ bool ImguiFrontend::init(gbemu::backend::Gameboy *gameboy)
 
     renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-                                 gbemu::backend::WINDOW_WIDTH, gbemu::backend::WINDOW_HEIGHT);
+                                 gbemu::backend::LCD_WIDTH, gbemu::backend::LCD_HEIGHT);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -418,17 +419,17 @@ void ImguiFrontend::renderScreen()
         return;
     }
 
-    gameboy_->getScreenPixels(screenPixels_);
-    SDL_UpdateTexture(texture_, nullptr, screenPixels_.data(), gbemu::backend::WINDOW_WIDTH * sizeof(uint32_t));
+    const auto &pixels = gameboy_->ppu()->getPixels();
+    SDL_UpdateTexture(texture_, nullptr, pixels.data(), gbemu::backend::LCD_WIDTH * sizeof(uint32_t));
 
     const float horizontal_padding = 28.0f;
     const float vertical_padding = 32.0f;
     const float max_width = std::max(available.x - horizontal_padding * 2.0f, 1.0f);
     const float max_height = std::max(available.y - vertical_padding * 2.0f, 1.0f);
     const float scale =
-        std::max(0.1f, std::min(max_width / gbemu::backend::WINDOW_WIDTH, max_height / gbemu::backend::WINDOW_HEIGHT));
+        std::max(0.1f, std::min(max_width / gbemu::backend::LCD_WIDTH, max_height / gbemu::backend::LCD_HEIGHT));
 
-    const ImVec2 image_size(gbemu::backend::WINDOW_WIDTH * scale, gbemu::backend::WINDOW_HEIGHT * scale);
+    const ImVec2 image_size(gbemu::backend::LCD_WIDTH * scale, gbemu::backend::LCD_HEIGHT * scale);
     const ImVec2 image_pos(canvas_min.x + (available.x - image_size.x) * 0.5f,
                            canvas_min.y + (available.y - image_size.y) * 0.5f);
     const ImVec2 frame_padding(12.0f, 12.0f);
