@@ -31,10 +31,10 @@ jobs:
             ${{ runner.os }}-bazel-
 
       - name: Build the project
-        run: bazel build //...
+        run: bazel build //... --skip_incompatible_explicit_targets
 
       - name: Run tests
-        run: bazel test //...
+        run: bazel test //... --skip_incompatible_explicit_targets
 
       - name: Upload Bazel test logs
         uses: actions/upload-artifact@v6
@@ -43,3 +43,24 @@ jobs:
           path: bazel-testlogs/
           if-no-files-found: warn
         if: always()
+
+  build_macos_bundle:
+    runs-on: macos-latest
+    needs: [pre-commit]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+
+      - name: Set up Bazel cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ hashFiles('**/*.bazelrc') }}-${{ hashFiles('MODULE.bazel', 'WORKSPACE') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+
+      - name: Build macOS app bundle
+        run: bazel build //dist/macos:GBEmuv3
