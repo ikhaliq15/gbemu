@@ -1,17 +1,4 @@
-cc_binary(
-    name = "imgui_example",
-    srcs = [
-        "test_imgui.cpp",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "@imgui",
-        "@imgui//backends:platform-sdl2",
-        "@imgui//backends:renderer-sdl2",
-        "@native_file_dialog//:nfd",
-        "@sdl2//:SDL2",
-    ],
-)
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "frontend",

@@ -11,5 +11,6 @@ macos_application(
     bundle_id = "com.gbemu.app",
     infoplists = ["Info.plist"],
     minimum_os_version = "10.15",
+    target_compatible_with = ["@platforms//os:macos"],
     deps = ["//gbemu:gbemu_lib"],
 )
