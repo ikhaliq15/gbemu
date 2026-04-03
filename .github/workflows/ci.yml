@@ -19,6 +19,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Install Linux system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev
+
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
 
