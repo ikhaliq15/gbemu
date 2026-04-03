@@ -1,79 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 
-package(default_visibility = ["//gbemu:__subpackages__"])
-
-cc_library(
-    name = "gbemu_bitutils",
-    srcs = [],
-    hdrs = [
-        "bitutils.h",
-    ],
-)
-
-cc_library(
-    name = "gbemu_joypad",
-    srcs = [
-        "joypad.cpp",
-    ],
-    hdrs = [
-        "joypad.h",
-    ],
-    deps = [
-        ":gbemu_bitutils",
-        ":gbemu_ram",
-        "@sdl2//:SDL2",
-    ],
-)
-
-cc_library(
-    name = "gbemu_ram",
-    srcs = [
-        "cartridge.cpp",
-        "ram.cpp",
-    ],
-    hdrs = [
-        "cartridge.h",
-        "ram.h",
-    ],
-    deps = [
-        ":gbemu_bitutils",
-    ],
-)
-
-cc_library(
-    name = "gbemu_lib",
-    srcs = [
-        "alu.cpp",
-        "alu.h",
-        "config.cpp",
-        "cpu.cpp",
-        "gameboy.cpp",
-        "opcode.cpp",
-        "ppu.cpp",
-        "timer.cpp",
-    ],
-    hdrs = [
-        "alu.h",
-        "config.h",
-        "cpu.h",
-        "gameboy.h",
-        "opcode.h",
-        "opcode_data.h",
-        "operand.h",
-        "ppu.h",
-        "shutdown_listener.h",
-        "timer.h",
-    ],
-    deps = [
-        ":gbemu_bitutils",
-        ":gbemu_joypad",
-        ":gbemu_ram",
-        "@json",
-        "@sdl2//:SDL2",
-        "@stb//:stb_image_write",
-    ],
-)
-
 cc_binary(
     name = "gbemu_exe",
     srcs = [
@@ -81,7 +7,21 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":gbemu_lib",
+        "//gbemu/backend",
+        "//gbemu/frontend",
+        "@argparse",
+    ],
+)
+
+cc_library(
+    name = "gbemu_lib",
+    srcs = [
+        "main.cpp",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gbemu/backend",
+        "//gbemu/frontend",
         "@argparse",
     ],
 )

@@ -1,0 +1,37 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "bitutils_test",
+    size = "small",
+    srcs = [
+        "bitutils_test.cpp",
+    ],
+    deps = [
+        "//gbemu/backend:bitutils",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "cpu_test",
+    size = "small",
+    srcs = [
+        "cpu_test.cpp",
+    ],
+    deps = [
+        "//gbemu/backend",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "joypad_test",
+    size = "small",
+    srcs = [
+        "joypad_test.cpp",
+    ],
+    deps = [
+        "//gbemu/backend:joypad",
+        "@googletest//:gtest_main",
+    ],
+)
