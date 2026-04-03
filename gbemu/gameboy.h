@@ -13,7 +13,7 @@
 namespace gbemu
 {
 
-class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_from_this<Gameboy>
+class Gameboy : public PPU::FrameCompleteListener
 {
   public:
     Gameboy(const config::Config &cfg);
@@ -24,7 +24,7 @@ class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_fro
 
     void onFrameComplete();
 
-    void subscribeToShutDown(const std::shared_ptr<ShutDownListener> shutDownListener)
+    void subscribeToShutDown(ShutDownListener *shutDownListener)
     {
         shutDownListeners_.push_back(shutDownListener);
     }
@@ -46,16 +46,16 @@ class Gameboy : public PPU::FrameCompleteListener, public std::enable_shared_fro
     bool cartridgeLoaded_;
     bool quit_;
 
-    std::shared_ptr<Joypad> joypad_;
-    std::shared_ptr<RAM> ram_;
-    std::shared_ptr<CPU> cpu_;
-    std::shared_ptr<PPU> ppu_;
-    std::shared_ptr<Timer> timer_;
+    std::unique_ptr<Joypad> joypad_;
+    std::unique_ptr<RAM> ram_;
+    std::unique_ptr<CPU> cpu_;
+    std::unique_ptr<PPU> ppu_;
+    std::unique_ptr<Timer> timer_;
 
     SDL_Event event_;
 
     const bool enableBlarggSerialLogging_;
-    std::vector<std::shared_ptr<ShutDownListener>> shutDownListeners_;
+    std::vector<ShutDownListener *> shutDownListeners_;
 };
 
 } // namespace gbemu

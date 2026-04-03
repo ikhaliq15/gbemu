@@ -5,7 +5,7 @@
 
 #include <array>
 #include <cstdint>
-#include <map>
+#include <deque>
 #include <string>
 #include <vector>
 
@@ -59,13 +59,14 @@ class OPCode
            const std::vector<uint8_t> auxiliaryArguments, const std::vector<Operand> operands, uint8_t bytes,
            uint8_t cycles, uint8_t additionalCycles, JumpCondition jumpCondition, Flags flags);
 
-    static std::pair<std::map<uint8_t, OPCode>, std::map<uint8_t, OPCode>> constructOpcodes();
+    using OpCodeMap = std::array<OPCode *, 256>;
+    static std::pair<OpCodeMap, OpCodeMap> constructOpcodes();
 
     [[nodiscard]] uint8_t opcode() const;
-    [[nodiscard]] std::string command() const;
-    [[nodiscard]] std::string mnemonic() const;
-    [[nodiscard]] std::vector<uint8_t> auxiliaryArguments() const;
-    [[nodiscard]] std::vector<Operand> operands() const;
+    [[nodiscard]] const std::string &command() const;
+    [[nodiscard]] const std::string &mnemonic() const;
+    [[nodiscard]] const std::vector<uint8_t> &auxiliaryArguments() const;
+    [[nodiscard]] const std::vector<Operand> &operands() const;
     [[nodiscard]] uint8_t bytes() const;
     [[nodiscard]] uint8_t cycles() const;
     [[nodiscard]] uint8_t additionalCycles() const;
@@ -77,16 +78,18 @@ class OPCode
     [[nodiscard]] Flag flagC() const;
 
   private:
-    const uint8_t opcode_;
-    const std::string command_;
-    const std::string mnemonic_;
-    const std::vector<uint8_t> auxiliaryArguments_;
-    const std::vector<Operand> operands_;
-    const uint8_t bytes_;
-    const uint8_t cycles_;
-    const uint8_t additionalCycles_;
-    const JumpCondition jumpCondition_;
-    const Flags flags_;
+    static std::deque<std::unique_ptr<OPCode>> opcodesStorage_;
+
+    uint8_t opcode_;
+    std::string command_;
+    std::string mnemonic_;
+    std::vector<uint8_t> auxiliaryArguments_;
+    std::vector<Operand> operands_;
+    uint8_t bytes_;
+    uint8_t cycles_;
+    uint8_t additionalCycles_;
+    JumpCondition jumpCondition_;
+    Flags flags_;
 };
 
 const std::unordered_map<std::string, OPCode::Flag> FLAGS{

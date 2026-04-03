@@ -39,7 +39,7 @@ auto main(int argc, char **argv) -> int
     const gbemu::config::Config gameboyCfg{enableBlarggConsole, enableHeadlessMode, dumpDisplayOnExitPath};
 
     const auto cartridgeFilename = args.get<std::string>("rom_file");
-    const auto gameboy = std::make_shared<gbemu::Gameboy>(gameboyCfg);
+    const auto gameboy = std::make_unique<gbemu::Gameboy>(gameboyCfg);
 
     const gbemu::Cartridge catridge(cartridgeFilename);
 

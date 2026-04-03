@@ -7,10 +7,10 @@ namespace gbemu
 {
 
 Gameboy::Gameboy(const config::Config &cfg)
-    : cartridgeLoaded_(false), quit_(false), joypad_(std::make_shared<Joypad>()),
-      ram_(std::make_shared<RAM>(GAMEBOY_RAM_SIZE)), cpu_(std::make_shared<CPU>(ram_)),
-      ppu_(std::make_shared<PPU>(cpu_, cfg.runHeadless(), cfg.dumpDisplayOnExitPath())),
-      timer_(std::make_shared<Timer>(cpu_)), enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging())
+    : cartridgeLoaded_(false), quit_(false), joypad_(std::make_unique<Joypad>()),
+      ram_(std::make_unique<RAM>(GAMEBOY_RAM_SIZE)), cpu_(std::make_unique<CPU>(ram_.get())),
+      ppu_(std::make_unique<PPU>(cpu_.get(), cfg.runHeadless(), cfg.dumpDisplayOnExitPath())),
+      timer_(std::make_unique<Timer>(cpu_.get())), enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging())
 {
 }
 
@@ -29,25 +29,25 @@ void Gameboy::start()
     }
 
     /* Setup RAM address owners. */
-    ram_->addOwner(RAM::JOYP, joypad_);
-    ram_->addOwner(RAM::DIV, timer_);
-    ram_->addOwner(RAM::TIMA, timer_);
-    ram_->addOwner(RAM::TMA, timer_);
-    ram_->addOwner(RAM::TAC, timer_);
-    ram_->addOwner(RAM::STAT, ppu_);
-    ram_->addOwner(RAM::SCY, ppu_);
-    ram_->addOwner(RAM::SCX, ppu_);
-    ram_->addOwner(RAM::LY, ppu_);
-    ram_->addOwner(RAM::LYC, ppu_);
-    ram_->addOwner(RAM::WY, ppu_);
-    ram_->addOwner(RAM::WX, ppu_);
+    ram_->addOwner(RAM::JOYP, joypad_.get());
+    ram_->addOwner(RAM::DIV, timer_.get());
+    ram_->addOwner(RAM::TIMA, timer_.get());
+    ram_->addOwner(RAM::TMA, timer_.get());
+    ram_->addOwner(RAM::TAC, timer_.get());
+    ram_->addOwner(RAM::STAT, ppu_.get());
+    ram_->addOwner(RAM::SCY, ppu_.get());
+    ram_->addOwner(RAM::SCX, ppu_.get());
+    ram_->addOwner(RAM::LY, ppu_.get());
+    ram_->addOwner(RAM::LYC, ppu_.get());
+    ram_->addOwner(RAM::WY, ppu_.get());
+    ram_->addOwner(RAM::WX, ppu_.get());
 
     /* Setup timer cycle listeners. */
-    timer_->addTimerListener(ppu_, PPU::CYCLES_PER_SCANLINE);
+    timer_->addTimerListener(ppu_.get(), PPU::CYCLES_PER_SCANLINE);
 
     /* Setup up PPU frame completion listeners. */
-    ppu_->subscribeToCompleteFrames(shared_from_this());
-    subscribeToShutDown(ppu_);
+    ppu_->subscribeToCompleteFrames(this);
+    subscribeToShutDown(ppu_.get());
 
     /* Initialize subcomponents of the gameboy. */
     ppu_->init();

@@ -7,7 +7,7 @@ class JoypadTest : public testing::Test
   protected:
     void SetUp() override
     {
-        joypad_ = std::make_shared<gbemu::Joypad>();
+        joypad_ = std::make_unique<gbemu::Joypad>();
     }
 
     SDL_KeyboardEvent getKeyboardEvent(const SDL_Keycode keyCode)
@@ -33,7 +33,7 @@ class JoypadTest : public testing::Test
         return joyp & 0x0f;
     }
 
-    std::shared_ptr<gbemu::Joypad> joypad_;
+    std::unique_ptr<gbemu::Joypad> joypad_;
 };
 
 #define SINGLE_BUTTON_TEST(TestName, Button, ButtonBitIndex, isDpad)                                                   \

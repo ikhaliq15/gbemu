@@ -4,8 +4,6 @@
 #include "gbemu/cartridge.h"
 
 #include <iostream>
-#include <map>
-#include <memory>
 #include <vector>
 
 namespace gbemu
@@ -73,16 +71,14 @@ class RAM
     [[nodiscard]] uint8_t get(uint16_t address) const;
     void set(uint16_t address, uint8_t value);
 
-    void addReadOwner(uint16_t address, std::shared_ptr<ReadOwner> owner);
-    void addWriteOwner(uint16_t address, std::shared_ptr<WriteOwner> owner);
-    void addOwner(uint16_t address, std::shared_ptr<Owner> owner);
+    void addReadOwner(uint16_t address, ReadOwner *owner);
+    void addWriteOwner(uint16_t address, WriteOwner *owner);
+    void addOwner(uint16_t address, Owner *owner);
 
   private:
     std::vector<uint8_t> memory_;
-
-    // TODO: make unordered maps?
-    std::map<uint16_t, std::shared_ptr<ReadOwner>> readOwners_;
-    std::map<uint16_t, std::shared_ptr<WriteOwner>> writeOwners_;
+    std::vector<ReadOwner *> readOwners_;
+    std::vector<WriteOwner *> writeOwners_;
 };
 
 } // namespace gbemu
