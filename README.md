@@ -12,10 +12,16 @@ Game Boy emulator with a polished desktop UI and built-in CPU, memory, and perfo
   <img src="docs/images/showcase/gbemu-tetris-demo.gif" alt="GBEmu Tetris loading demo" width="900" />
 </p>
 
-<p align="center">
-  <img src="docs/images/showcase/gbemu-welcome-showcase.png" alt="GBEmu welcome screen" width="48%" style="vertical-align: top;" />
-  <img src="docs/images/showcase/gbemu-app-showcase.png" alt="GBEmu running Tetris with debug panels visible" width="48%" style="vertical-align: top;" />
-</p>
+<table align="center">
+  <tr>
+    <td valign="top" width="50%">
+      <img src="docs/images/showcase/gbemu-welcome-showcase.png" alt="GBEmu welcome screen" />
+    </td>
+    <td valign="top" width="50%">
+      <img src="docs/images/showcase/gbemu-app-showcase.png" alt="GBEmu running Tetris with debug panels visible" />
+    </td>
+  </tr>
+</table>
 
 ## Overview
 
