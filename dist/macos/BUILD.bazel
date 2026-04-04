@@ -1,16 +1,29 @@
 load("@rules_apple//apple:macos.bzl", "macos_application")
+load("@rules_apple//apple:versioning.bzl", "apple_bundle_version")
 
 filegroup(
     name = "Assets.xcassets",
     srcs = glob(["Assets.xcassets/**"]),
 )
 
+apple_bundle_version(
+    name = "bundle_version",
+    build_label_pattern = "{version}",
+    build_version = "{version}",
+    capture_groups = {
+        "version": "\\d+\\.\\d+\\.\\d+",
+    },
+    fallback_build_label = "0.0.0",
+    short_version_string = "{version}",
+)
+
 macos_application(
-    name = "GBEmuv3",
+    name = "GBEmu",
     app_icons = [":Assets.xcassets"],
     bundle_id = "com.gbemu.app",
     infoplists = ["Info.plist"],
     minimum_os_version = "10.15",
     target_compatible_with = ["@platforms//os:macos"],
+    version = ":bundle_version",
     deps = ["//gbemu:gbemu_lib"],
 )

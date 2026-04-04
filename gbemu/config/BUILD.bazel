@@ -7,6 +7,7 @@ cc_library(
     ],
     hdrs = [
         "config.h",
+        "version.h",
     ],
     visibility = ["//gbemu:__subpackages__"],
 )
