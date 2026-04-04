@@ -39,21 +39,33 @@ jobs:
       - name: Build the project
         run: |
           PKG_CONFIG_PATH="$(pkg-config --variable pc_path pkg-config)"
+          read -r -a GTK_LINK_FLAGS <<< "$(pkg-config --libs gtk+-3.0)"
+          LINKOPTS=()
+          for flag in "${GTK_LINK_FLAGS[@]}"; do
+            LINKOPTS+=("--linkopt=${flag}")
+          done
           bazel build \
             --action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
             --host_action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
             --action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
             --host_action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            "${LINKOPTS[@]}" \
             --skip_incompatible_explicit_targets -- //... -//dist/...
 
       - name: Run tests
         run: |
           PKG_CONFIG_PATH="$(pkg-config --variable pc_path pkg-config)"
+          read -r -a GTK_LINK_FLAGS <<< "$(pkg-config --libs gtk+-3.0)"
+          LINKOPTS=()
+          for flag in "${GTK_LINK_FLAGS[@]}"; do
+            LINKOPTS+=("--linkopt=${flag}")
+          done
           bazel test \
             --action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
             --host_action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
             --action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
             --host_action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            "${LINKOPTS[@]}" \
             --skip_incompatible_explicit_targets -- //... -//dist/...
 
       - name: Upload Bazel test logs
