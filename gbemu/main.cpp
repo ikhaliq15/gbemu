@@ -2,6 +2,7 @@
 
 #include "gbemu/backend/cartridge.h"
 #include "gbemu/backend/gameboy.h"
+#include "gbemu/config/version.h"
 #include "gbemu/frontend/headless.hpp"
 #include "gbemu/frontend/imgui.hpp"
 
@@ -62,7 +63,7 @@ void dumpDisplay(gbemu::backend::Gameboy *gameboy, const std::string &path)
 }
 auto main(int argc, char **argv) -> int
 {
-    argparse::ArgumentParser args("GBEmu v3");
+    argparse::ArgumentParser args(gbemu::config::kDisplayName);
     args.add_argument("--blarg_console")
         .help("Print output from serial port (useful for Blargg testing)")
         .default_value(false)

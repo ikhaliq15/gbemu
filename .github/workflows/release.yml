@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release_macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+
+      - name: Set up Bazel cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ hashFiles('**/*.bazelrc') }}-${{ hashFiles('MODULE.bazel', 'WORKSPACE') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+
+      - name: Derive release version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+          echo "ASSET_NAME=GBEmu-${GITHUB_REF_NAME}-macos.zip" >> "${GITHUB_ENV}"
+
+      - name: Build macOS app bundle
+        run: |
+          bazel build \
+            --stamp \
+            --embed_label="${VERSION}" \
+            --cxxopt=-DGBEMU_VERSION=\\\"${VERSION}\\\" \
+            //dist/macos:GBEmu
+
+      - name: Prepare release asset
+        run: cp bazel-bin/dist/macos/GBEmu.zip "${ASSET_NAME}"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET_NAME }}
+          generate_release_notes: true

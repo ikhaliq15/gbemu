@@ -3,6 +3,7 @@
 #include "gbemu/backend/cartridge.h"
 #include "gbemu/backend/ppu.h"
 #include "gbemu/backend/ram.h"
+#include "gbemu/config/version.h"
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
@@ -133,8 +134,8 @@ bool ImguiFrontend::init(gbemu::backend::Gameboy *gameboy)
     const auto main_scale = ImGui_ImplSDL2_GetContentScaleForDisplay(0);
 
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    window_ = SDL_CreateWindow("GBEmu v3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, (int)(1440 * main_scale),
-                               (int)(920 * main_scale), window_flags);
+    window_ = SDL_CreateWindow(gbemu::config::kDisplayName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                               (int)(1440 * main_scale), (int)(920 * main_scale), window_flags);
 
     renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
@@ -687,7 +688,8 @@ void ImguiFrontend::renderAboutWindow()
     ImGui::SetNextWindowSize(ImVec2(430.0f, 0.0f), ImGuiCond_FirstUseEver);
     ImGui::Begin("About GBEmu", &show_about_window_, ImGuiWindowFlags_NoCollapse);
 
-    ImGui::TextUnformatted("GBEmu v3");
+    ImGui::TextUnformatted(gbemu::config::kAppName);
+    ImGui::Text("Version %s", gbemu::config::kVersion);
 
     ImGui::SeparatorText("Controls");
     ImGui::BulletText("Open ROM: %s", kOpenShortcut);
@@ -740,7 +742,7 @@ void ImguiFrontend::setMemoryViewBase(uint16_t address)
 
 void ImguiFrontend::updateWindowTitle()
 {
-    std::string title = "GBEmu v3";
+    std::string title = gbemu::config::kDisplayName;
     if (gameboy_ != nullptr && gameboy_->cartridgeLoaded())
     {
         title += " - ";

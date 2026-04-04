@@ -92,4 +92,4 @@ jobs:
             ${{ runner.os }}-bazel-
 
       - name: Build macOS app bundle
-        run: bazel build //dist/macos:GBEmuv3
+        run: bazel build //dist/macos:GBEmu
