@@ -37,7 +37,7 @@ jobs:
           bazel build \
             --stamp \
             --embed_label="${VERSION}" \
-            --cxxopt=-DGBEMU_VERSION=\\\"${VERSION}\\\" \
+            --cxxopt=-DGBEMU_VERSION=\"${VERSION}\" \
             //dist/macos:GBEmu
 
       - name: Prepare release asset
