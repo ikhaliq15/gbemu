@@ -1,0 +1,50 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "frontend",
+    srcs = [
+        "imgui.cpp",
+    ],
+    hdrs = [
+        "frontend.hpp",
+        "headless.hpp",
+        "imgui.hpp",
+    ],
+    linkopts = select({
+        "//conditions:default": [],
+        "@bazel_tools//src/conditions:darwin": [
+            "-framework",
+            "AudioToolbox",
+            "-framework",
+            "IOKit",
+            "-framework",
+            "Carbon",
+            "-framework",
+            "Cocoa",
+            "-framework",
+            "GameController",
+            "-framework",
+            "ForceFeedback",
+            "-framework",
+            "CoreHaptics",
+            "-framework",
+            "Metal",
+            "-framework",
+            "CoreVideo",
+            "-liconv",
+            "-framework",
+            "UniformTypeIdentifiers",
+            "-framework",
+            "AppKit",
+        ],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gbemu/backend",
+        "@imgui",
+        "@imgui//backends:platform-sdl2",
+        "@imgui//backends:renderer-sdl2",
+        "@native_file_dialog//:nfd",
+        "@sdl2//:SDL2",
+    ],
+)

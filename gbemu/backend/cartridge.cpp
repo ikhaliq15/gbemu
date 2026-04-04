@@ -1,0 +1,39 @@
+#include "gbemu/backend/cartridge.h"
+
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+
+namespace gbemu::backend
+{
+
+Cartridge::Cartridge(const std::string &romFileName)
+{
+    std::ifstream source_file{romFileName, std::ios::binary};
+
+    if (!source_file.good())
+    {
+        std::cerr << "Unable to read file " << romFileName << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    const auto length = std::filesystem::file_size(romFileName);
+    cartridgeData_ = std::vector<uint8_t>(length);
+    source_file.read(reinterpret_cast<char *>(cartridgeData_.data()), static_cast<long>(length));
+}
+
+Cartridge::Cartridge(const std::vector<uint8_t> &cartridgeData) : cartridgeData_(cartridgeData)
+{
+}
+
+auto Cartridge::operator[](int i) const -> uint8_t
+{
+    return cartridgeData_[i];
+}
+
+auto Cartridge::size() const -> size_t
+{
+    return cartridgeData_.size();
+}
+
+} // namespace gbemu::backend

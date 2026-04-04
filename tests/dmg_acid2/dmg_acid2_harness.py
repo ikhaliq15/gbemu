@@ -25,6 +25,7 @@ TEST_ROM_PASSED_MARKER = "Passed"
 GBEMU_BINARY_LOCATION = os.path.join("gbemu", "gbemu_exe")
 GBEMU_BLARGG_LOGGING_OPTION = "--blarg_console"
 GEBEMU_HEADLESS_MODE_OPTION = "--headless"
+GBEMU_ROM_OPTION = "--rom_file"
 GEBEMU_DUMP_DISPLAY_ON_EXIT_OPTION = "--dump_display_path"
 OUTPUT_REFERENCE_PNG_OPTION = "output.png"
 
@@ -140,6 +141,7 @@ class DMGAcid2Test(unittest.TestCase):
                     GBEMU_BLARGG_LOGGING_OPTION,
                     GEBEMU_HEADLESS_MODE_OPTION,
                     f"{GEBEMU_DUMP_DISPLAY_ON_EXIT_OPTION}={test_reference_png}",
+                    GBEMU_ROM_OPTION,
                     test_rom,
                 ]
 

@@ -1,0 +1,16 @@
+load("@rules_apple//apple:macos.bzl", "macos_application")
+
+filegroup(
+    name = "Assets.xcassets",
+    srcs = glob(["Assets.xcassets/**"]),
+)
+
+macos_application(
+    name = "GBEmuv3",
+    app_icons = [":Assets.xcassets"],
+    bundle_id = "com.gbemu.app",
+    infoplists = ["Info.plist"],
+    minimum_os_version = "10.15",
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["//gbemu:gbemu_lib"],
+)

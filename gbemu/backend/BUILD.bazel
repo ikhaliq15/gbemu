@@ -1,0 +1,71 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//gbemu:__subpackages__"])
+
+cc_library(
+    name = "bitutils",
+    srcs = [],
+    hdrs = [
+        "bitutils.h",
+    ],
+)
+
+cc_library(
+    name = "joypad",
+    srcs = [
+        "joypad.cpp",
+    ],
+    hdrs = [
+        "joypad.h",
+    ],
+    deps = [
+        ":bitutils",
+        ":ram",
+    ],
+)
+
+cc_library(
+    name = "ram",
+    srcs = [
+        "cartridge.cpp",
+        "ram.cpp",
+    ],
+    hdrs = [
+        "cartridge.h",
+        "ram.h",
+    ],
+    deps = [
+        ":bitutils",
+    ],
+)
+
+cc_library(
+    name = "backend",
+    srcs = [
+        "alu.cpp",
+        "alu.h",
+        "cpu.cpp",
+        "gameboy.cpp",
+        "opcode.cpp",
+        "ppu.cpp",
+        "timer.cpp",
+    ],
+    hdrs = [
+        "alu.h",
+        "cpu.h",
+        "gameboy.h",
+        "opcode.h",
+        "opcode_data.h",
+        "operand.h",
+        "ppu.h",
+        "timer.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":bitutils",
+        ":joypad",
+        ":ram",
+        "//gbemu/config",
+        "@json",
+    ],
+)

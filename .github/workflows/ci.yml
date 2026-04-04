@@ -19,6 +19,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Install Linux system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev
+
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
 
@@ -31,10 +34,36 @@ jobs:
             ${{ runner.os }}-bazel-
 
       - name: Build the project
-        run: bazel build //...
+        run: |
+          PKG_CONFIG_PATH="$(pkg-config --variable pc_path pkg-config)"
+          read -r -a GTK_LINK_FLAGS <<< "$(pkg-config --libs gtk+-3.0)"
+          LINKOPTS=()
+          for flag in "${GTK_LINK_FLAGS[@]}"; do
+            LINKOPTS+=("--linkopt=${flag}")
+          done
+          bazel build \
+            --action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+            --host_action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+            --action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            --host_action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            "${LINKOPTS[@]}" \
+            --skip_incompatible_explicit_targets -- //... -//dist/...
 
       - name: Run tests
-        run: bazel test //...
+        run: |
+          PKG_CONFIG_PATH="$(pkg-config --variable pc_path pkg-config)"
+          read -r -a GTK_LINK_FLAGS <<< "$(pkg-config --libs gtk+-3.0)"
+          LINKOPTS=()
+          for flag in "${GTK_LINK_FLAGS[@]}"; do
+            LINKOPTS+=("--linkopt=${flag}")
+          done
+          bazel test \
+            --action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+            --host_action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+            --action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            --host_action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            "${LINKOPTS[@]}" \
+            --skip_incompatible_explicit_targets -- //... -//dist/...
 
       - name: Upload Bazel test logs
         uses: actions/upload-artifact@v6
@@ -43,3 +72,24 @@ jobs:
           path: bazel-testlogs/
           if-no-files-found: warn
         if: always()
+
+  build_macos_bundle:
+    runs-on: macos-latest
+    needs: [pre-commit]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+
+      - name: Set up Bazel cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ hashFiles('**/*.bazelrc') }}-${{ hashFiles('MODULE.bazel', 'WORKSPACE') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+
+      - name: Build macOS app bundle
+        run: bazel build //dist/macos:GBEmuv3
