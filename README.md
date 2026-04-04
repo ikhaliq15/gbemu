@@ -1,23 +1,27 @@
-# GBEmu
+<p align="center">
+  <img src="dist/macos/Assets.xcassets/AppIcon.appiconset/icon-mac-512x512-2x.png" alt="GBEmu logo" width="120" />
+</p>
 
-GBEmu is a Game Boy emulator with a desktop interface for running ROMs and inspecting emulator state in real time.
+<h1 align="center">GBEmu</h1>
 
-The current release focuses on a polished macOS app experience, pairing live emulation with integrated debugging panels for CPU state, memory inspection, and runtime performance.
+<p align="center">
+Game Boy emulator with a polished desktop UI and built-in CPU, memory, and performance debugging tools.
+</p>
 
 <p align="center">
   <img src="docs/images/showcase/gbemu-tetris-demo.gif" alt="GBEmu Tetris loading demo" width="900" />
 </p>
 
 <p align="center">
-  <img src="docs/images/showcase/gbemu-welcome-showcase.png" alt="GBEmu welcome screen" width="48%" />
-  <img src="docs/images/showcase/gbemu-app-showcase.png" alt="GBEmu running Tetris with debug panels visible" width="48%" />
+  <img src="docs/images/showcase/gbemu-welcome-showcase.png" alt="GBEmu welcome screen" width="48%" style="vertical-align: top;" />
+  <img src="docs/images/showcase/gbemu-app-showcase.png" alt="GBEmu running Tetris with debug panels visible" width="48%" style="vertical-align: top;" />
 </p>
 
 ## Overview
 
 GBEmu combines real-time Game Boy emulation with a debugger-style desktop interface. Rather than treating the emulator as a black box, the app exposes CPU registers, memory contents, and frame timing alongside the running game screen. That makes it useful both as a playable desktop build and as a tool for understanding emulator behavior while a ROM is running.
 
-## Key Features
+## Features
 
 - Real-time Game Boy emulation in a desktop debugging interface
 - Integrated CPU, memory, and performance inspection while a ROM is running
