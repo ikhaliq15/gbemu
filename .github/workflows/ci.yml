@@ -37,10 +37,24 @@ jobs:
             ${{ runner.os }}-bazel-
 
       - name: Build the project
-        run: bazel build --skip_incompatible_explicit_targets -- //... -//dist/...
+        run: |
+          PKG_CONFIG_PATH="$(pkg-config --variable pc_path pkg-config)"
+          bazel build \
+            --action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+            --host_action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+            --action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            --host_action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            --skip_incompatible_explicit_targets -- //... -//dist/...
 
       - name: Run tests
-        run: bazel test --skip_incompatible_explicit_targets -- //... -//dist/...
+        run: |
+          PKG_CONFIG_PATH="$(pkg-config --variable pc_path pkg-config)"
+          bazel test \
+            --action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+            --host_action_env=PKG_CONFIG_PATH="${PKG_CONFIG_PATH}" \
+            --action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            --host_action_env=PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}" \
+            --skip_incompatible_explicit_targets -- //... -//dist/...
 
       - name: Upload Bazel test logs
         uses: actions/upload-artifact@v6
