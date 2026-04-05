@@ -44,9 +44,10 @@ void RAM::loadCartridge(const Cartridge &cartridge)
 
 auto RAM::get(uint16_t address) const -> uint8_t
 {
-    const auto readOwner = readOwners_[address];
-    if (readOwner != nullptr)
+    if (const auto readOwner = readOwners_[address]; readOwner != nullptr)
+    {
         return readOwner->onReadOwnedByte(address);
+    }
     return memory_[address];
 }
 
@@ -63,8 +64,7 @@ void RAM::set(uint16_t address, uint8_t value)
             set(RAM::OAM + i, get(startAddress + i));
     }
 
-    const auto writeOwner = writeOwners_[address];
-    if (writeOwner != nullptr)
+    if (const auto writeOwner = writeOwners_[address]; writeOwner != nullptr)
     {
         writeOwner->onWriteOwnedByte(address, value, get(address));
         return;
