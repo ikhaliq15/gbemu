@@ -15,7 +15,7 @@ PPU::PPU(CPU *cpu, RAM *ram)
 
 void PPU::init()
 {
-    pixels_.fill(0x00000000);
+    std::ranges::fill(pixels_, 0x00000000);
 }
 
 void PPU::update()
