@@ -65,4 +65,4 @@ The current interface is designed around a fixed, analysis-friendly layout: the 
 
 ## Development
 
-Contributor setup, build commands, test commands, and release workflow details live in [DEVELOPMENT.md](/Users/imran/Documents/coding/GBEmu_v3/DEVELOPMENT.md).
+Contributor setup, build commands, test commands, and release workflow details live in [DEVELOPMENT.md](DEVELOPMENT.md).

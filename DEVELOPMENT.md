@@ -1,6 +1,6 @@
 # Development Guide
 
-This document covers the day-to-day development workflow for GBEmu. The public project overview lives in [README.md](/Users/imran/Documents/coding/GBEmu_v3/README.md).
+This document covers the day-to-day development workflow for GBEmu. The public project overview lives in [README.md](README.md).
 
 ## Prerequisites
 
@@ -93,6 +93,6 @@ The main CI workflow runs on pull requests and pushes to `main`. Linux builds ex
 
 ## Repository Hygiene
 
-- Keep user-facing docs in [README.md](/Users/imran/Documents/coding/GBEmu_v3/README.md).
+- Keep user-facing docs in [README.md](README.md).
 - Keep contributor and workflow details in this file.
 - Avoid committing local editor state, generated Bazel outputs, app bundles, or personal ROM collections.
