@@ -380,27 +380,6 @@ void CPU::setFullRegister(FullRegister reg, uint16_t newRegVal)
     }
 }
 
-void CPU::requestInterrupt(Interrupt interrupt)
-{
-    const auto currentIF = ram_->get(RAM::IF);
-
-    const auto newIF = [&currentIF, &interrupt]() -> uint8_t {
-        switch (interrupt)
-        {
-        case Interrupt::VBLANK:
-            return setBit(currentIF, 0, 1);
-        case Interrupt::STAT:
-            return setBit(currentIF, 1, 1);
-        case Interrupt::TIMER:
-            return setBit(currentIF, 2, 1);
-        default:
-            return currentIF;
-        }
-    }();
-
-    ram_->set(RAM::IF, newIF);
-}
-
 void CPU::serviceInterrupts()
 {
     const uint8_t pending = ram_->get(RAM::IF) & ram_->get(RAM::IE);

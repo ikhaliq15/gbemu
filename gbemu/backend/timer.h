@@ -1,7 +1,8 @@
 #ifndef GBEMU_BACKEND_TIMER_H
 #define GBEMU_BACKEND_TIMER_H
 
-#include "gbemu/backend/cpu.h"
+#include "gbemu/backend/bitutils.h"
+#include "gbemu/backend/interrupt_controller.h"
 #include "gbemu/backend/ram.h"
 
 #include <vector>
@@ -36,7 +37,7 @@ class Timer : public RAM::Owner
         T accumulator_;
     };
 
-    explicit Timer(CPU *cpu);
+    explicit Timer(InterruptController *cpu);
 
     void init();
     void update(uint64_t deltaCycles);
@@ -57,8 +58,9 @@ class Timer : public RAM::Owner
     class EnabledTimer : public IListener
     {
       public:
-        EnabledTimer(uint8_t tacId, uint8_t *tima, const uint8_t *tma, const uint8_t *tac, CPU *cpu)
-            : tacId_(tacId), tima_(tima), tma_(tma), tac_(tac), cpu_(cpu)
+        EnabledTimer(uint8_t tacId, uint8_t *tima, const uint8_t *tma, const uint8_t *tac,
+                     InterruptController *interruptController)
+            : tacId_(tacId), tima_(tima), tma_(tma), tac_(tac), interruptController_(interruptController)
         {}
 
         void trigger() override
@@ -69,7 +71,7 @@ class Timer : public RAM::Owner
             if (*tima_ == 0xff)
             {
                 *tima_ = *tma_;
-                cpu_->requestInterrupt(CPU::Interrupt::TIMER);
+                interruptController_->requestInterrupt(InterruptType::Timer);
             }
             else
             {
@@ -84,7 +86,7 @@ class Timer : public RAM::Owner
         uint8_t *tima_;
         const uint8_t *tma_;
         const uint8_t *tac_;
-        CPU *cpu_;
+        InterruptController *interruptController_;
     };
 
     // DIV register

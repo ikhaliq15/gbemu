@@ -71,8 +71,9 @@ void Gameboy::createHardware()
     joypad_ = std::make_unique<Joypad>();
     ram_ = std::make_unique<RAM>(RAM_SIZE);
     cpu_ = std::make_unique<CPU>(ram_.get());
-    ppu_ = std::make_unique<PPU>(cpu_.get(), ram_.get());
-    timer_ = std::make_unique<Timer>(cpu_.get());
+    interruptController_ = std::make_unique<InterruptController>(ram_.get());
+    ppu_ = std::make_unique<PPU>(ram_.get(), interruptController_.get());
+    timer_ = std::make_unique<Timer>(interruptController_.get());
 
     configureMemoryOwners();
     cartridgeLoaded_ = false;

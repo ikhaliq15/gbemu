@@ -51,6 +51,7 @@ class Gameboy
 
     std::unique_ptr<Joypad> joypad_;
     std::unique_ptr<RAM> ram_;
+    std::unique_ptr<InterruptController> interruptController_;
     std::unique_ptr<CPU> cpu_;
     std::unique_ptr<PPU> ppu_;
     std::unique_ptr<Timer> timer_;
