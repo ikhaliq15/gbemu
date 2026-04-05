@@ -65,7 +65,7 @@ auto main(int argc, char **argv) -> int
 {
     argparse::ArgumentParser args(gbemu::config::kDisplayName);
 
-    args.add_argument("--blarg_console")
+    args.add_argument("--dump_serial")
         .help("Print output from serial port (useful for Blargg testing)")
         .default_value(false)
         .implicit_value(true);
@@ -91,11 +91,11 @@ auto main(int argc, char **argv) -> int
     }
 
     const auto headless = args.get<bool>("--headless");
-    const auto blarggConsole = args.get<bool>("--blarg_console");
+    const auto dumpSerial = args.get<bool>("--dump_serial");
     const auto dumpPath = args.is_used("--dump_display_path") ? args.get<std::string>("--dump_display_path") : "";
 
     auto gameboy = std::make_unique<gbemu::backend::Gameboy>();
-    auto frontend = createFrontend(headless, blarggConsole);
+    auto frontend = createFrontend(headless, dumpSerial);
 
     if (args.is_used("--rom_file"))
     {

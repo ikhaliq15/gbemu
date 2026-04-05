@@ -10,9 +10,9 @@ namespace gbemu::config
 class Config
 {
   public:
-    Config(bool enableBlarggSerialLogging, bool runHeadless, std::string dumpDisplayOnExitPath);
+    Config(bool dumpSerial, bool runHeadless, std::string dumpDisplayOnExitPath);
 
-    [[nodiscard]] bool enableBlarggSerialLogging() const { return enableBlarggSerialLogging_; }
+    [[nodiscard]] bool dumpSerial() const { return dumpSerial_; }
 
     [[nodiscard]] bool runHeadless() const { return runHeadless_; }
 
@@ -26,7 +26,7 @@ class Config
     }
 
   private:
-    const bool enableBlarggSerialLogging_;
+    const bool dumpSerial_;
     const bool runHeadless_;
     const std::string dumpDisplayOnExitPath_;
 };
