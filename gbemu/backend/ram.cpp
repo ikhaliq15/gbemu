@@ -52,7 +52,6 @@ auto RAM::get(uint16_t address) const -> uint8_t
 
 void RAM::set(uint16_t address, uint8_t value)
 {
-    // TODO: should we block all write attempts to ROM?
     if (address == 0x2000)
         return;
 
