@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 
 namespace gbemu::backend
 {
@@ -14,7 +15,7 @@ Cartridge::Cartridge(const std::string &romFileName)
     if (!source_file.good())
     {
         std::cerr << "Unable to read file " << romFileName << std::endl;
-        exit(EXIT_FAILURE);
+        throw std::runtime_error{"Unable to read file"};
     }
 
     const auto length = std::filesystem::file_size(romFileName);
