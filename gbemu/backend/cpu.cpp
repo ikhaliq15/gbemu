@@ -447,11 +447,6 @@ auto CPU::operator==(const CPU &rhs) const -> bool
            cycles_ == rhs.cycles_ && IME_ == rhs.IME_ && (*ram_ == *(rhs.ram_));
 }
 
-auto CPU::operator!=(const CPU &rhs) const -> bool
-{
-    return !(*this == rhs);
-}
-
 auto operator<<(std::ostream &os, const CPU &cpu) -> std::ostream &
 {
     os << "A:" << toHexString(cpu.A(), false) << " "

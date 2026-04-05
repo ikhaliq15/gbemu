@@ -101,7 +101,6 @@ class CPU
     void executeInstruction(bool verbose = false);
 
     bool operator==(const CPU &rhs) const;
-    bool operator!=(const CPU &rhs) const;
 
     friend std::ostream &operator<<(std::ostream &os, const CPU &cpu);
 
