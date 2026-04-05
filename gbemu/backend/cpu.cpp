@@ -1,9 +1,18 @@
 #include "gbemu/backend/cpu.h"
 
 #include "gbemu/backend/bitutils.h"
+#include "gbemu/backend/operand.h"
 
 #include <iostream>
 #include <unordered_map>
+
+namespace
+{
+template <class... Ts> struct overloaded : Ts...
+{
+    using Ts::operator()...;
+};
+} // namespace
 
 namespace gbemu::backend
 {
@@ -436,79 +445,45 @@ auto CPU::popFromStack() -> uint16_t
     return concatBytes(upper, lower);
 }
 
-// TODO: cleaner way to handle than if-statement galore?
 auto CPU::getOperand(Operand operand) const -> OperandValue
 {
-    if (std::holds_alternative<Register>(operand))
-    {
-        return getRegister(std::get<Register>(operand));
-    }
-    else if (std::holds_alternative<FullRegister>(operand))
-    {
-        return getFullRegister(std::get<FullRegister>(operand));
-    }
-    else if (std::holds_alternative<SpecialRegister>(operand))
-    {
-        const auto specialRegister = std::get<SpecialRegister>(operand);
-        if (specialRegister == SpecialRegister::SP)
-            return SP();
-        else
-            throw std::runtime_error("Unknown special register.");
-    }
-    else if (std::holds_alternative<DereferencedFullRegister>(operand))
-    {
-        const auto fullRegister = std::get<DereferencedFullRegister>(operand).fullRegister;
-        const auto address = getFullRegister(fullRegister);
-        return ram_->get(address);
-    }
-    else
-    {
-        throw std::runtime_error("Unknown operand type.");
-    }
+    return std::visit(
+        overloaded{
+            [&](Register r) -> OperandValue { return getRegister(r); },
+            [&](FullRegister r) -> OperandValue { return getFullRegister(r); },
+            [&](SpecialRegister r) -> OperandValue {
+                switch (r)
+                {
+                case SpecialRegister::SP:
+                    return SP();
+                }
+                throw std::runtime_error("Unknown special register.");
+            },
+            [&](DereferencedFullRegister r) -> OperandValue { return ram_->get(getFullRegister(r.fullRegister)); },
+        },
+        operand);
 }
 
 void CPU::setOperand(Operand operand, OperandValue newValue)
 {
-    if (std::holds_alternative<Register>(operand))
-    {
-        if (!std::holds_alternative<uint8_t>(newValue))
-            throw std::runtime_error("Cannot set operand type with this operand value type.");
-        setRegister(std::get<Register>(operand), std::get<uint8_t>(newValue));
-        return;
-    }
-    else if (std::holds_alternative<FullRegister>(operand))
-    {
-        if (!std::holds_alternative<uint16_t>(newValue))
-            throw std::runtime_error("Cannot set operand type with this operand value type.");
-        setFullRegister(std::get<FullRegister>(operand), std::get<uint16_t>(newValue));
-        return;
-    }
-    else if (std::holds_alternative<SpecialRegister>(operand))
-    {
-        if (!std::holds_alternative<uint16_t>(newValue))
-            throw std::runtime_error("Cannot set operand type with this operand value type.");
-        const auto specialRegister = std::get<SpecialRegister>(operand);
-        if (specialRegister == SpecialRegister::SP)
-        {
-            setSP(std::get<uint16_t>(newValue));
-            return;
-        }
-        else
-            throw std::runtime_error("Unknown special register.");
-    }
-    else if (std::holds_alternative<DereferencedFullRegister>(operand))
-    {
-        if (!std::holds_alternative<uint8_t>(newValue))
-            throw std::runtime_error("Cannot set operand type with this operand value type.");
-        const auto fullRegister = std::get<DereferencedFullRegister>(operand).fullRegister;
-        const auto address = getFullRegister(fullRegister);
-        ram_->set(address, std::get<uint8_t>(newValue));
-        return;
-    }
-    else
-    {
-        throw std::runtime_error("Unknown operand type.");
-    }
+    std::visit(overloaded{
+                   [&](Register r, uint8_t newVal) { setRegister(r, newVal); },
+                   [&](FullRegister r, uint16_t newVal) { setFullRegister(r, newVal); },
+                   [&](SpecialRegister r, uint16_t newVal) {
+                       switch (r)
+                       {
+                       case SpecialRegister::SP:
+                           setSP(newVal);
+                           return;
+                       }
+                       throw std::runtime_error("Unknown special register.");
+                   },
+                   [&](DereferencedFullRegister r, uint8_t newVal) {
+                       const auto address = getFullRegister(r.fullRegister);
+                       ram_->set(address, newVal);
+                   },
+               },
+               operand, newValue);
 }
 
 void CPU::setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode *opcode)
