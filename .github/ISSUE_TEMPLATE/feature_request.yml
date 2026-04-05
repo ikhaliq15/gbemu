@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest a new emulator capability, tooling improvement, or UX enhancement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests are most helpful when they describe the problem to solve, not only the preferred implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What is missing or frustrating today?
+      placeholder: Describe the workflow or limitation you want to improve.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What would you like GBEmu to do?
+      placeholder: Describe the outcome you want.
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: Why this matters
+      description: Who benefits, and how?
+      placeholder: Explain the impact on users, contributors, or emulator development.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds or other approaches you have considered.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched for existing issues and discussions about this idea.
+          required: true
