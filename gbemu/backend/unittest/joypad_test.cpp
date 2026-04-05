@@ -5,10 +5,7 @@
 class JoypadTest : public testing::Test
 {
   protected:
-    void SetUp() override
-    {
-        joypad_ = std::make_unique<gbemu::backend::Joypad>();
-    }
+    void SetUp() override { joypad_ = std::make_unique<gbemu::backend::Joypad>(); }
 
     uint8_t getButtonsNibble() const
     {

@@ -5,7 +5,6 @@
 
 #include <array>
 #include <cstdint>
-#include <deque>
 #include <memory>
 #include <string>
 #include <vector>
@@ -52,35 +51,30 @@ class OPCode
         NC,
     };
 
-    static constexpr uint8_t PREFIX_OPCODE = 0xcb;
-
     using Flags = std::array<Flag, 4>;
 
-    OPCode(uint8_t opcode, const std::string command, const std::string mnemonic,
-           const std::vector<uint8_t> auxiliaryArguments, const std::vector<Operand> operands, uint8_t bytes,
-           uint8_t cycles, uint8_t additionalCycles, JumpCondition jumpCondition, Flags flags);
+    static constexpr uint8_t PREFIX_OPCODE = 0xcb;
 
-    using OpCodeMap = std::array<OPCode *, 256>;
-    static std::pair<OpCodeMap, OpCodeMap> constructOpcodes();
+    OPCode(uint8_t opcode, std::string command, std::string mnemonic, std::vector<uint8_t> auxiliaryArguments,
+           std::vector<Operand> operands, uint8_t bytes, uint8_t cycles, uint8_t additionalCycles,
+           JumpCondition jumpCondition, Flags flags);
 
-    [[nodiscard]] uint8_t opcode() const;
-    [[nodiscard]] const std::string &command() const;
-    [[nodiscard]] const std::string &mnemonic() const;
-    [[nodiscard]] const std::vector<uint8_t> &auxiliaryArguments() const;
-    [[nodiscard]] const std::vector<Operand> &operands() const;
-    [[nodiscard]] uint8_t bytes() const;
-    [[nodiscard]] uint8_t cycles() const;
-    [[nodiscard]] uint8_t additionalCycles() const;
-    [[nodiscard]] JumpCondition jumpCondition() const;
-    [[nodiscard]] Flags flags() const;
-    [[nodiscard]] Flag flagZ() const;
-    [[nodiscard]] Flag flagN() const;
-    [[nodiscard]] Flag flagH() const;
-    [[nodiscard]] Flag flagC() const;
+    [[nodiscard]] uint8_t opcode() const { return opcode_; }
+    [[nodiscard]] const std::string &command() const { return command_; }
+    [[nodiscard]] const std::string &mnemonic() const { return mnemonic_; }
+    [[nodiscard]] const std::vector<uint8_t> &auxiliaryArguments() const { return auxiliaryArguments_; }
+    [[nodiscard]] const std::vector<Operand> &operands() const { return operands_; }
+    [[nodiscard]] uint8_t bytes() const { return bytes_; }
+    [[nodiscard]] uint8_t cycles() const { return cycles_; }
+    [[nodiscard]] uint8_t additionalCycles() const { return additionalCycles_; }
+    [[nodiscard]] JumpCondition jumpCondition() const { return jumpCondition_; }
+    [[nodiscard]] Flags flags() const { return flags_; }
+    [[nodiscard]] Flag flagZ() const { return flags_[0]; }
+    [[nodiscard]] Flag flagN() const { return flags_[1]; }
+    [[nodiscard]] Flag flagH() const { return flags_[2]; }
+    [[nodiscard]] Flag flagC() const { return flags_[3]; }
 
   private:
-    static std::deque<std::unique_ptr<OPCode>> opcodesStorage_;
-
     uint8_t opcode_;
     std::string command_;
     std::string mnemonic_;
@@ -93,20 +87,23 @@ class OPCode
     Flags flags_;
 };
 
-const std::unordered_map<std::string, OPCode::Flag> FLAGS{
-    {"-", OPCode::Flag::UNTOUCHED}, {"1", OPCode::Flag::ONE},      {"0", OPCode::Flag::ZERO},
-    {"Z", OPCode::Flag::Z},         {"H", OPCode::Flag::H},        {"CY", OPCode::Flag::CY},
-    {"!CY", OPCode::Flag::NOT_CY},  {"A0", OPCode::Flag::A0},      {"A1", OPCode::Flag::A1},
-    {"A2", OPCode::Flag::A2},       {"A3", OPCode::Flag::A3},      {"A4", OPCode::Flag::A4},
-    {"A5", OPCode::Flag::A5},       {"A6", OPCode::Flag::A6},      {"A7", OPCode::Flag::A7},
-    {"!A0", OPCode::Flag::NOT_A0},  {"!A1", OPCode::Flag::NOT_A1}, {"!A2", OPCode::Flag::NOT_A2},
-    {"!A3", OPCode::Flag::NOT_A3},  {"!A4", OPCode::Flag::NOT_A4}, {"!A5", OPCode::Flag::NOT_A5},
-    {"!A6", OPCode::Flag::NOT_A6},  {"!A7", OPCode::Flag::NOT_A7},
-};
+// Singleton table of all opcodes, constructed once from JSON data.
+class OpcodeTable
+{
+  public:
+    using OpCodeMap = std::array<const OPCode *, 256>;
 
-const std::unordered_map<std::string, OPCode::JumpCondition> JUMP_CONDITIONS{
-    {"ALWAYS", OPCode::JumpCondition::ALWAYS}, {"Z", OPCode::JumpCondition::Z},   {"C", OPCode::JumpCondition::C},
-    {"NZ", OPCode::JumpCondition::NZ},         {"NC", OPCode::JumpCondition::NC},
+    static const OpcodeTable &instance();
+
+    [[nodiscard]] const OpCodeMap &opcodes() const { return opcodes_; }
+    [[nodiscard]] const OpCodeMap &prefixedOpcodes() const { return prefixedOpcodes_; }
+
+  private:
+    OpcodeTable();
+
+    std::vector<std::unique_ptr<OPCode>> storage_;
+    OpCodeMap opcodes_{};
+    OpCodeMap prefixedOpcodes_{};
 };
 
 } // namespace gbemu::backend

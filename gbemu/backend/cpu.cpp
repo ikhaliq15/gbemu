@@ -11,9 +11,9 @@ namespace gbemu::backend
 
 CPU::CPU(RAM *ram)
     : IME_(false), PC_(STARTING_PC), SP_(STARTING_SP), AF_(STARTING_AF), BC_(STARTING_BC), DE_(STARTING_DE),
-      HL_(STARTING_HL), ram_(ram), cycles_(0ul), mode_(Mode::NORMAL)
+      HL_(STARTING_HL), ram_(ram), cycles_(0ul), mode_(Mode::NORMAL), opcodes_(OpcodeTable::instance().opcodes()),
+      prefixedOpcodes_(OpcodeTable::instance().prefixedOpcodes())
 {
-    std::tie(opcodes_, prefixedOpcodes_) = OPCode::constructOpcodes();
 
     const std::unordered_map<std::string, OPCodeHandler> opcodeFunctions{
         {"NOP", [this](uint16_t pc, const OPCode *opcode) -> void { NOP(pc, opcode); }},
@@ -105,9 +105,9 @@ CPU::CPU(RAM *ram)
 
 CPU::CPU(const CPU &cpu)
     : IME_(cpu.IME_), PC_(cpu.PC_), SP_(cpu.SP_), AF_(cpu.AF_), BC_(cpu.BC_), DE_(cpu.DE_), HL_(cpu.HL_),
-      ram_(cpu.ram_), cycles_(cpu.cycles_), opcodes_(cpu.opcodes_)
-{
-}
+      ram_(cpu.ram_), cycles_(cpu.cycles_), mode_(cpu.mode_), opcodes_(OpcodeTable::instance().opcodes()),
+      prefixedOpcodes_(OpcodeTable::instance().prefixedOpcodes())
+{}
 
 auto CPU::IME() const -> bool
 {
@@ -399,6 +399,32 @@ void CPU::requestInterrupt(Interrupt interrupt)
     }();
 
     ram_->set(RAM::IF, newIF);
+}
+
+void CPU::serviceInterrupts()
+{
+    const uint8_t pending = ram_->get(RAM::IF) & ram_->get(RAM::IE);
+
+    // Any pending interrupt wakes the CPU from HALT
+    if (pending & 0x1f)
+        setMode(Mode::NORMAL);
+
+    if (!IME_)
+        return;
+
+    // Service the highest-priority pending interrupt
+    constexpr uint8_t INTERRUPT_BITS[] = {0, 1, 2}; // VBLANK, LCD_STAT, TIMER
+    for (const auto bit : INTERRUPT_BITS)
+    {
+        if (getBit(pending, bit))
+        {
+            IME_ = false;
+            pushToStack(PC_);
+            ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), bit, 0));
+            PC_ = 0x40 + 0x08 * bit;
+            return;
+        }
+    }
 }
 
 void CPU::executeInstruction(bool verbose)

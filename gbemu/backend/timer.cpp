@@ -4,21 +4,19 @@ namespace gbemu::backend
 {
 
 Timer::Timer(CPU *cpu)
-    : initialized_(false), cyclesSinceLaunch_(0), divAccumulator_(DIV_REGISTER_START_VALUE), cpu_(cpu), tima_(0x00),
-      tma_(0x00), tac_(0x00), timer0_(TIMER_0_TAC_ID, &tima_, &tma_, &tac_, cpu),
-      timer1_(TIMER_1_TAC_ID, &tima_, &tma_, &tac_, cpu), timer2_(TIMER_2_TAC_ID, &tima_, &tma_, &tac_, cpu),
-      timer3_(TIMER_3_TAC_ID, &tima_, &tma_, &tac_, cpu)
-{
-}
+    : initialized_(false), cyclesSinceLaunch_(0), tima_(0x00), tma_(0x00), tac_(0x00), divAccumulator_(DIV_START_VALUE),
+      timer0_(TAC_ID_0, &tima_, &tma_, &tac_, cpu), timer1_(TAC_ID_1, &tima_, &tma_, &tac_, cpu),
+      timer2_(TAC_ID_2, &tima_, &tma_, &tac_, cpu), timer3_(TAC_ID_3, &tima_, &tma_, &tac_, cpu)
+{}
 
 void Timer::init()
 {
-    addTimerListener(&divAccumulator_, DIV_REGISTER_MODULO);
+    addTimerListener(&divAccumulator_, DIV_MODULO);
 
-    addTimerListener(&timer0_, TIMER_0_MODULO);
-    addTimerListener(&timer1_, TIMER_1_MODULO);
-    addTimerListener(&timer2_, TIMER_2_MODULO);
-    addTimerListener(&timer3_, TIMER_3_MODULO);
+    addTimerListener(&timer0_, TAC_MODULO_0);
+    addTimerListener(&timer1_, TAC_MODULO_1);
+    addTimerListener(&timer2_, TAC_MODULO_2);
+    addTimerListener(&timer3_, TAC_MODULO_3);
 
     initialized_ = true;
 }
@@ -32,14 +30,23 @@ void Timer::update(uint64_t deltaCycles)
 
     for (auto &info : timerListeners_)
     {
-        while (info.nextCycleCountTrigger_ <= targetCycle)
+        while (info.nextTriggerCycle <= targetCycle)
         {
-            info.listener_->trigger();
-            info.nextCycleCountTrigger_ += info.listenerModulo_;
+            info.listener->trigger();
+            info.nextTriggerCycle += info.modulo;
         }
     }
 
     cyclesSinceLaunch_ = targetCycle;
+}
+
+void Timer::addTimerListener(IListener *listener, uint64_t cycleModulo)
+{
+    if (initialized_)
+        throw std::runtime_error("Cannot add timer listener after timer is initialized.");
+    if (cycleModulo == 0)
+        throw std::runtime_error("Cycle modulo must be positive.");
+    timerListeners_.push_back({listener, cycleModulo, cycleModulo});
 }
 
 auto Timer::onReadOwnedByte(uint16_t address) -> uint8_t
@@ -55,7 +62,6 @@ auto Timer::onReadOwnedByte(uint16_t address) -> uint8_t
     case RAM::TAC:
         return tac_;
     }
-    // TODO: throw exception?
     return 0x00;
 }
 
@@ -64,7 +70,7 @@ void Timer::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t current
     switch (address)
     {
     case RAM::DIV:
-        divAccumulator_.resetAccumulator();
+        divAccumulator_.reset();
         break;
     case RAM::TIMA:
         tima_ = newValue;
@@ -76,7 +82,6 @@ void Timer::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t current
         tac_ = newValue;
         break;
     }
-    // TODO: throw exception?
 }
 
 } // namespace gbemu::backend

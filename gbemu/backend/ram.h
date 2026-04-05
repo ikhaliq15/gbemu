@@ -3,7 +3,8 @@
 
 #include "gbemu/backend/cartridge.h"
 
-#include <iostream>
+#include <cstdint>
+#include <iosfwd>
 #include <vector>
 
 namespace gbemu::backend
@@ -12,6 +13,7 @@ namespace gbemu::backend
 class RAM
 {
   public:
+    // Ownership interfaces for memory-mapped IO registers.
     class ReadOwner
     {
       public:
@@ -28,19 +30,31 @@ class RAM
         virtual void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) = 0;
     };
 
-    class Owner : public WriteOwner, public ReadOwner
+    class Owner : public ReadOwner, public WriteOwner
     {
     };
 
+    // Memory-mapped IO addresses
     static constexpr uint16_t OAM = 0xfe00;
+
+    // Joypad
     static constexpr uint16_t JOYP = 0xff00;
+
+    // Serial
     static constexpr uint16_t SB = 0xff01;
     static constexpr uint16_t SC = 0xff02;
+
+    // Timer
     static constexpr uint16_t DIV = 0xff04;
     static constexpr uint16_t TIMA = 0xff05;
     static constexpr uint16_t TMA = 0xff06;
     static constexpr uint16_t TAC = 0xff07;
+
+    // Interrupts
     static constexpr uint16_t IF = 0xff0f;
+    static constexpr uint16_t IE = 0xffff;
+
+    // LCD
     static constexpr uint16_t LCDC = 0xff40;
     static constexpr uint16_t STAT = 0xff41;
     static constexpr uint16_t SCY = 0xff42;
@@ -53,10 +67,9 @@ class RAM
     static constexpr uint16_t OBP1 = 0xff49;
     static constexpr uint16_t WY = 0xff4a;
     static constexpr uint16_t WX = 0xff4b;
-    static constexpr uint16_t IE = 0xffff;
 
-    RAM(uint32_t ramSize, uint8_t defaultValue = 0);
-    RAM(const RAM &ram);
+    explicit RAM(uint32_t ramSize, uint8_t defaultValue = 0);
+    RAM(const RAM &ram) = default;
 
     bool operator==(const RAM &rhs) const;
 
@@ -64,11 +77,11 @@ class RAM
 
     void loadCartridge(const Cartridge &cartridge);
 
-    [[nodiscard]] uint16_t getImmediate16(uint16_t i) const;
-    void setImmediate16(uint16_t i, uint16_t newVal);
-
     [[nodiscard]] uint8_t get(uint16_t address) const;
     void set(uint16_t address, uint8_t value);
+
+    [[nodiscard]] uint16_t getImmediate16(uint16_t address) const;
+    void setImmediate16(uint16_t address, uint16_t value);
 
     void addReadOwner(uint16_t address, ReadOwner *owner);
     void addWriteOwner(uint16_t address, WriteOwner *owner);

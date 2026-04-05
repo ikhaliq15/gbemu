@@ -97,6 +97,7 @@ class CPU
     void setFullRegister(FullRegister reg, uint16_t newRegVal);
 
     void requestInterrupt(Interrupt interrupt);
+    void serviceInterrupts();
 
     void executeInstruction(bool verbose = false);
 
@@ -138,8 +139,8 @@ class CPU
 
     using OPCodeHandler = std::function<void(uint16_t, const OPCode *)>;
     using OPCodeHandlerMap = std::array<OPCodeHandler, 256>;
-    OPCode::OpCodeMap opcodes_;
-    OPCode::OpCodeMap prefixedOpcodes_;
+    const OpcodeTable::OpCodeMap &opcodes_;
+    const OpcodeTable::OpCodeMap &prefixedOpcodes_;
     OPCodeHandlerMap opcodeFunctions_;
     OPCodeHandlerMap prefixedOpcodeFunctions_;
 

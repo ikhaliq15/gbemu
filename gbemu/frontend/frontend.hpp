@@ -18,9 +18,7 @@ class IFrontend
     virtual bool update() = 0;
     virtual void done() = 0;
 
-    virtual ~IFrontend()
-    {
-    }
+    virtual ~IFrontend() {}
 };
 
 } // namespace gbemu::frontend

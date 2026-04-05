@@ -3,7 +3,8 @@
 
 #include "gbemu/backend/ram.h"
 
-#include <map>
+#include <array>
+#include <cstdint>
 
 namespace gbemu::backend
 {
@@ -22,12 +23,13 @@ class Joypad : public RAM::Owner
 
     Joypad();
 
-    void handleKeyDownEvent(uint32_t event);
-    void handleKeyUpEvent(uint32_t event);
+    void handleKeyDownEvent(uint32_t key);
+    void handleKeyUpEvent(uint32_t key);
 
     [[nodiscard]] uint8_t getJoypadRegister() const;
 
-    [[nodiscard]] uint8_t onReadOwnedByte(uint16_t address) override;
+    // RAM::Owner
+    uint8_t onReadOwnedByte(uint16_t address) override;
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
   private:
@@ -37,30 +39,43 @@ class Joypad : public RAM::Owner
     static constexpr uint8_t SELECTED = 0;
     static constexpr uint8_t UNSELECTED = 1;
 
-    static constexpr uint8_t START_BUTTON_BIT = 3;
-    static constexpr uint8_t SELECT_BUTTON_BIT = 2;
-    static constexpr uint8_t B_BUTTON_BIT = 1;
-    static constexpr uint8_t A_BUTTON_BIT = 0;
-    static constexpr uint8_t DOWN_BUTTON_BIT = 3;
-    static constexpr uint8_t UP_BUTTON_BIT = 2;
-    static constexpr uint8_t LEFT_BUTTON_BIT = 1;
-    static constexpr uint8_t RIGHT_BUTTON_BIT = 0;
+    // Bit positions within the button/dpad state bytes
+    static constexpr uint8_t BIT_A = 0;
+    static constexpr uint8_t BIT_B = 1;
+    static constexpr uint8_t BIT_SELECT = 2;
+    static constexpr uint8_t BIT_START = 3;
+    static constexpr uint8_t BIT_RIGHT = 0;
+    static constexpr uint8_t BIT_LEFT = 1;
+    static constexpr uint8_t BIT_UP = 2;
+    static constexpr uint8_t BIT_DOWN = 3;
 
-    static constexpr uint8_t BUTTONS_STATE_BIT = 5;
-    static constexpr uint8_t DPAD_STATE_BIT = 4;
+    // JOYP register select bits
+    static constexpr uint8_t BUTTONS_SELECT_BIT = 5;
+    static constexpr uint8_t DPAD_SELECT_BIT = 4;
 
-    const std::map<uint32_t, uint8_t> BUTTON_TO_BIT_MAP = {
-        {START_BUTTON, START_BUTTON_BIT}, {SELECT_BUTTON, SELECT_BUTTON_BIT}, {B_BUTTON, B_BUTTON_BIT},
-        {A_BUTTON, A_BUTTON_BIT},         {DOWN_BUTTON, DOWN_BUTTON_BIT},     {UP_BUTTON, UP_BUTTON_BIT},
-        {LEFT_BUTTON, LEFT_BUTTON_BIT},   {RIGHT_BUTTON, RIGHT_BUTTON_BIT},
+    struct KeyMapping
+    {
+        uint32_t key;
+        uint8_t bit;
+        bool isDpad;
     };
 
-    uint8_t selectedStates_;
-
-    uint8_t buttonStates_;
-    uint8_t dpadStates_;
+    static constexpr std::array<KeyMapping, 8> KEY_MAPPINGS = {{
+        {A_BUTTON, BIT_A, false},
+        {B_BUTTON, BIT_B, false},
+        {SELECT_BUTTON, BIT_SELECT, false},
+        {START_BUTTON, BIT_START, false},
+        {RIGHT_BUTTON, BIT_RIGHT, true},
+        {LEFT_BUTTON, BIT_LEFT, true},
+        {UP_BUTTON, BIT_UP, true},
+        {DOWN_BUTTON, BIT_DOWN, true},
+    }};
 
     void handleKeyEvent(uint32_t key, uint8_t newButtonState);
+
+    uint8_t selectedStates_;
+    uint8_t buttonStates_;
+    uint8_t dpadStates_;
 };
 
 } // namespace gbemu::backend

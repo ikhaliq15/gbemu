@@ -2,17 +2,17 @@
 #define GBEMU_BACKEND_PPU_H
 
 #include "gbemu/backend/cpu.h"
+#include "gbemu/backend/ram.h"
 #include "gbemu/backend/timer.h"
 
-// TODO: explore why top of window looks cut off (like in blargg tests)
+#include <array>
+
 namespace gbemu::backend
 {
 
-static constexpr uint16_t LCD_WIDTH = 160;
-static constexpr uint16_t LCD_HEIGHT = 144;
-
-// TODO: should technically be ~59.7.
-#define DEVICE_FPS (60.0)
+inline constexpr uint16_t LCD_WIDTH = 160;
+inline constexpr uint16_t LCD_HEIGHT = 144;
+inline constexpr double DEVICE_FPS = 60.0; // TODO: should technically be ~59.7
 
 class PPU : public Timer::IListener, public RAM::Owner
 {
@@ -20,35 +20,41 @@ class PPU : public Timer::IListener, public RAM::Owner
     static constexpr uint64_t SCANLINE_FREQUENCY = 9352;
     static constexpr uint64_t CYCLES_PER_SCANLINE = 114;
 
-    PPU(CPU *cpu);
+    PPU(CPU *cpu, RAM *ram);
 
     void init();
     void update();
-
-  public:
     bool consumeCompletedFrame();
 
-  public:
+    [[nodiscard]] const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &getPixels() const;
+
     // Timer::IListener
     void trigger() override;
 
     // RAM::Owner
-    [[nodiscard]] uint8_t onReadOwnedByte(uint16_t address) override;
+    uint8_t onReadOwnedByte(uint16_t address) override;
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
-  public:
-    const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &getPixels() const;
-
   private:
+    // Display palette (ARGB)
+    static constexpr uint32_t COLOR_WHITE = 0xFFFFFFFF;
+    static constexpr uint32_t COLOR_LIGHT_GRAY = 0xFFAAAAAA;
+    static constexpr uint32_t COLOR_DARK_GRAY = 0xFF555555;
+    static constexpr uint32_t COLOR_BLACK = 0xFF000000;
+
     static constexpr uint16_t MAX_SPRITES_PER_SCANLINE = 10;
 
-    static constexpr uint32_t COLOR_0 = 0xFFFFFFFF;
-    static constexpr uint32_t COLOR_1 = 0xFFAAAAAA;
-    static constexpr uint32_t COLOR_2 = 0xFF555555;
-    static constexpr uint32_t COLOR_3 = 0xFF000000;
+    void drawScanLine();
+    void drawBackground(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap);
+    void drawWindow(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap);
+    void drawSprites(uint16_t spriteHeight);
 
-    std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> pixels_;
+    [[nodiscard]] std::array<uint32_t, 4> buildPalette(uint8_t paletteRegister) const;
 
+    CPU *cpu_;
+    RAM *ram_;
+
+    // LCD registers
     uint8_t scy_;
     uint8_t scx_;
     uint8_t ly_;
@@ -57,15 +63,12 @@ class PPU : public Timer::IListener, public RAM::Owner
     uint8_t wx_;
     uint8_t lcdStatus_;
 
+    // Internal state
     uint8_t windowLy_;
-
     bool lycCoincidenceCalledOnThisLy_;
-
     uint64_t completedFrames_ = 0;
 
-    CPU *cpu_;
-
-    void drawScanLine();
+    std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> pixels_;
 };
 
 } // namespace gbemu::backend
