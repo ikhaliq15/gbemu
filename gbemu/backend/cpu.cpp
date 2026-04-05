@@ -1,70 +1,20 @@
 #include "gbemu/backend/cpu.h"
 
 #include "gbemu/backend/bitutils.h"
-#include "gbemu/backend/operand.h"
 
 #include <iostream>
-#include <unordered_map>
-
-namespace
-{
-template <class... Ts> struct overloaded : Ts...
-{
-    using Ts::operator()...;
-};
-} // namespace
 
 namespace gbemu::backend
 {
 
 CPU::CPU(RAM *ram)
     : IME_(false), PC_(STARTING_PC), SP_(STARTING_SP), AF_(STARTING_AF), BC_(STARTING_BC), DE_(STARTING_DE),
-      HL_(STARTING_HL), ram_(ram), cycles_(0ul), mode_(Mode::NORMAL), opcodes_(OpcodeTable::instance().opcodes()),
-      prefixedOpcodes_(OpcodeTable::instance().prefixedOpcodes())
-{
-    const std::unordered_map<std::string, OPCodeHandler> opcodeFunctions{
-        {"NOP", &CPU::NOP},         {"LD", &CPU::LD},       {"INC", &CPU::INC},         {"DEC", &CPU::DEC},
-        {"RLCA", &CPU::RLCA},       {"LD_SP", &CPU::LD_SP}, {"ADD", &CPU::ADD},         {"RRCA", &CPU::RRCA},
-        {"RLA", &CPU::RLA},         {"JR", &CPU::JR},       {"RRA", &CPU::RRA},         {"LDI", &CPU::LDI},
-        {"DAA", &CPU::DAA},         {"CPL", &CPU::CPL},     {"LDD", &CPU::LDD},         {"SCF", &CPU::SCF},
-        {"CCF", &CPU::CCF},         {"HALT", &CPU::HALT},   {"ADC", &CPU::ADC},         {"SUB", &CPU::SUB},
-        {"SBC", &CPU::SBC},         {"AND", &CPU::AND},     {"XOR", &CPU::XOR},         {"OR", &CPU::OR},
-        {"CP", &CPU::CP},           {"RET", &CPU::RET},     {"POP", &CPU::POP},         {"JP", &CPU::JP},
-        {"CALL", &CPU::CALL},       {"PUSH", &CPU::PUSH},   {"RST", &CPU::RST},         {"RETI", &CPU::RETI},
-        {"LDff8", &CPU::LDff8},     {"LDa16", &CPU::LDa16}, {"LDaff8", &CPU::LDaff8},   {"DI", &CPU::DI},
-        {"EI", &CPU::EI},           {"LDs8", &CPU::LDs8},   {"LDaff16", &CPU::LDaff16}, {"RLC", &CPU::RLC},
-        {"RRC", &CPU::RRC},         {"RL", &CPU::RL},       {"RR", &CPU::RR},           {"SLA", &CPU::SLA},
-        {"SRA", &CPU::SRA},         {"SWAP", &CPU::SWAP},   {"SRL", &CPU::SRL},         {"BIT_GET", &CPU::BIT_GET},
-        {"BIT_SET", &CPU::BIT_SET},
-    };
-
-    const auto buildOpcodeFunctions = [&opcodeFunctions](const auto &opcodes) {
-        std::array<OPCodeHandler, 256> functionMap{};
-        std::ranges::fill(functionMap, &CPU::UNIMPLEMENTED);
-        for (size_t i = 0; i < opcodes.size(); i++)
-        {
-            const auto &opcode = opcodes[i];
-            if (opcode == nullptr)
-            {
-                continue;
-            }
-
-            if (const auto opcodeIt = opcodeFunctions.find(opcode->mnemonic()); opcodeIt != opcodeFunctions.end())
-            {
-                functionMap[i] = opcodeFunctions.at(opcode->mnemonic());
-            }
-        }
-        return functionMap;
-    };
-
-    opcodeFunctions_ = buildOpcodeFunctions(opcodes_);
-    prefixedOpcodeFunctions_ = buildOpcodeFunctions(prefixedOpcodes_);
-}
+      HL_(STARTING_HL), ram_(ram), cycles_(0ul), mode_(Mode::NORMAL)
+{}
 
 CPU::CPU(const CPU &cpu)
     : IME_(cpu.IME_), PC_(cpu.PC_), SP_(cpu.SP_), AF_(cpu.AF_), BC_(cpu.BC_), DE_(cpu.DE_), HL_(cpu.HL_),
-      ram_(cpu.ram_), cycles_(cpu.cycles_), mode_(cpu.mode_), opcodes_(OpcodeTable::instance().opcodes()),
-      prefixedOpcodes_(OpcodeTable::instance().prefixedOpcodes())
+      ram_(cpu.ram_), cycles_(cpu.cycles_), mode_(cpu.mode_)
 {}
 
 auto CPU::IME() const -> bool
@@ -376,22 +326,22 @@ void CPU::executeInstruction(bool verbose)
     const auto firstByte = ram_->get(PC());
     const auto prefixed = firstByte == OPCode::PREFIX_OPCODE;
     const auto opcodeValue = prefixed ? ram_->get(PC() + 1) : firstByte;
-    const auto &opcodeMap = prefixed ? prefixedOpcodes_ : opcodes_;
-    const auto &opCodeHandlerMap = prefixed ? prefixedOpcodeFunctions_ : opcodeFunctions_;
+    const auto &opcodeTable = prefixed ? PREFIXED_OPCODES : OPCODES;
+    const auto &handlerTable = prefixed ? prefixedOpcodeFunctions_ : opcodeFunctions_;
 
-    const auto opcode = opcodeMap[opcodeValue];
-    if (!opcode)
+    const auto &opcode = opcodeTable[opcodeValue];
+    if (!opcode.valid)
     {
         const auto opcodeString = prefixed ? (toHexString(opcodeValue) + " (CB)") : toHexString(opcodeValue);
         throw std::runtime_error("Unknown opcode detected: " + opcodeString + " at PC=" + toHexString(PC()));
     }
 
     const auto oldPC = PC();
-    const auto &opcodeHandler = opCodeHandlerMap[opcodeValue];
+    const auto &opcodeHandler = handlerTable[opcodeValue];
 
-    advancePC(opcode->bytes());
-    (this->*opcodeHandler)(oldPC, opcode);
-    cycles_ += opcode->cycles();
+    advancePC(opcode.bytes);
+    (this->*opcodeHandler)(oldPC, &opcode);
+    cycles_ += opcode.cycles;
 
     if (enableInterruptsAfterInstruction)
     {
@@ -447,48 +397,45 @@ auto CPU::popFromStack() -> uint16_t
 
 auto CPU::getOperand(Operand operand) const -> OperandValue
 {
-    return std::visit(
-        overloaded{
-            [&](Register r) -> OperandValue { return getRegister(r); },
-            [&](FullRegister r) -> OperandValue { return getFullRegister(r); },
-            [&](SpecialRegister r) -> OperandValue {
-                switch (r)
-                {
-                case SpecialRegister::SP:
-                    return SP();
-                }
-                throw std::runtime_error("Unknown special register.");
-            },
-            [&](DereferencedFullRegister r) -> OperandValue { return ram_->get(getFullRegister(r.fullRegister)); },
-        },
-        operand);
+    switch (operand.kind)
+    {
+    case Operand::Kind::REG:
+        return getRegister(operand.asRegister());
+    case Operand::Kind::FULL_REG:
+        return getFullRegister(operand.asFullRegister());
+    case Operand::Kind::SPECIAL_REG:
+        return SP();
+    case Operand::Kind::DEREF_FULL_REG:
+        return ram_->get(getFullRegister(operand.asDereferencedFullRegister()));
+    case Operand::Kind::NONE:
+        throw std::runtime_error("Cannot get value of NONE operand.");
+    }
 }
 
 void CPU::setOperand(Operand operand, OperandValue newValue)
 {
-    std::visit(overloaded{
-                   [&](Register r, uint8_t newVal) { setRegister(r, newVal); },
-                   [&](FullRegister r, uint16_t newVal) { setFullRegister(r, newVal); },
-                   [&](SpecialRegister r, uint16_t newVal) {
-                       switch (r)
-                       {
-                       case SpecialRegister::SP:
-                           setSP(newVal);
-                           return;
-                       }
-                       throw std::runtime_error("Unknown special register.");
-                   },
-                   [&](DereferencedFullRegister r, uint8_t newVal) {
-                       const auto address = getFullRegister(r.fullRegister);
-                       ram_->set(address, newVal);
-                   },
-               },
-               operand, newValue);
+    switch (operand.kind)
+    {
+    case Operand::Kind::REG:
+        setRegister(operand.asRegister(), newValue.as8());
+        return;
+    case Operand::Kind::FULL_REG:
+        setFullRegister(operand.asFullRegister(), newValue.as16());
+        return;
+    case Operand::Kind::SPECIAL_REG:
+        setSP(newValue.as16());
+        return;
+    case Operand::Kind::DEREF_FULL_REG:
+        ram_->set(getFullRegister(operand.asDereferencedFullRegister()), newValue.as8());
+        return;
+    case Operand::Kind::NONE:
+        throw std::runtime_error("Cannot set value of NONE operand.");
+    }
 }
 
 void CPU::setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode *opcode)
 {
-    const auto opcodeFlags = opcode->flags();
+    const auto opcodeFlags = opcode->flags;
 
     std::array<uint8_t, 4> newFlags = {FlagZ(), FlagN(), FlagH(), FlagC()};
 
@@ -518,52 +465,52 @@ void CPU::setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode 
             newFlags[i] = (FlagC() == 1) ? 0 : 1;
             break;
         case OPCode::Flag::A0:
-            newFlags[i] = ((flagResult.bit0Set)) ? 1 : 0;
+            newFlags[i] = (flagResult.bit0Set) ? 1 : 0;
             break;
         case OPCode::Flag::A1:
-            newFlags[i] = ((flagResult.bit1Set)) ? 1 : 0;
+            newFlags[i] = (flagResult.bit1Set) ? 1 : 0;
             break;
         case OPCode::Flag::A2:
-            newFlags[i] = ((flagResult.bit2Set)) ? 1 : 0;
+            newFlags[i] = (flagResult.bit2Set) ? 1 : 0;
             break;
         case OPCode::Flag::A3:
-            newFlags[i] = ((flagResult.bit3Set)) ? 1 : 0;
+            newFlags[i] = (flagResult.bit3Set) ? 1 : 0;
             break;
         case OPCode::Flag::A4:
-            newFlags[i] = ((flagResult.bit4Set)) ? 1 : 0;
+            newFlags[i] = (flagResult.bit4Set) ? 1 : 0;
             break;
         case OPCode::Flag::A5:
-            newFlags[i] = ((flagResult.bit5Set)) ? 1 : 0;
+            newFlags[i] = (flagResult.bit5Set) ? 1 : 0;
             break;
         case OPCode::Flag::A6:
-            newFlags[i] = ((flagResult.bit6Set)) ? 1 : 0;
+            newFlags[i] = (flagResult.bit6Set) ? 1 : 0;
             break;
         case OPCode::Flag::A7:
-            newFlags[i] = ((flagResult.bit7Set)) ? 1 : 0;
+            newFlags[i] = (flagResult.bit7Set) ? 1 : 0;
             break;
         case OPCode::Flag::NOT_A0:
-            newFlags[i] = ((flagResult.bit0Set)) ? 0 : 1;
+            newFlags[i] = (flagResult.bit0Set) ? 0 : 1;
             break;
         case OPCode::Flag::NOT_A1:
-            newFlags[i] = ((flagResult.bit1Set)) ? 0 : 1;
+            newFlags[i] = (flagResult.bit1Set) ? 0 : 1;
             break;
         case OPCode::Flag::NOT_A2:
-            newFlags[i] = ((flagResult.bit2Set)) ? 0 : 1;
+            newFlags[i] = (flagResult.bit2Set) ? 0 : 1;
             break;
         case OPCode::Flag::NOT_A3:
-            newFlags[i] = ((flagResult.bit3Set)) ? 0 : 1;
+            newFlags[i] = (flagResult.bit3Set) ? 0 : 1;
             break;
         case OPCode::Flag::NOT_A4:
-            newFlags[i] = ((flagResult.bit4Set)) ? 0 : 1;
+            newFlags[i] = (flagResult.bit4Set) ? 0 : 1;
             break;
         case OPCode::Flag::NOT_A5:
-            newFlags[i] = ((flagResult.bit5Set)) ? 0 : 1;
+            newFlags[i] = (flagResult.bit5Set) ? 0 : 1;
             break;
         case OPCode::Flag::NOT_A6:
-            newFlags[i] = ((flagResult.bit6Set)) ? 0 : 1;
+            newFlags[i] = (flagResult.bit6Set) ? 0 : 1;
             break;
         case OPCode::Flag::NOT_A7:
-            newFlags[i] = ((flagResult.bit7Set)) ? 0 : 1;
+            newFlags[i] = (flagResult.bit7Set) ? 0 : 1;
             break;
         }
     }
@@ -585,20 +532,18 @@ auto CPU::testJumpCondition(OPCode::JumpCondition jumpCondition) const -> bool
         return FlagZ() == 0;
     case OPCode::JumpCondition::NC:
         return FlagC() == 0;
-    };
-
-    throw std::runtime_error("asked to test unknown jump condition.");
+    }
 }
 
 /*** OPCode Handlers ***/
 
 template <auto Operation> void CPU::unary_alu_operation(uint16_t pc, const OPCode *opcode)
 {
-    const auto operand = opcode->operands()[0];
+    const auto operand = opcode->operands[0];
 
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
+    if (operand.isRegister() || operand.isDereferencedFullRegister())
     {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
+        const auto currentValue = getOperand(operand).as8();
         const auto result = Operation(currentValue);
 
         setOperand(operand, result.result);
@@ -607,18 +552,16 @@ template <auto Operation> void CPU::unary_alu_operation(uint16_t pc, const OPCod
         return;
     }
 
-    throw std::runtime_error("sra not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("unary_alu_operation not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 template <auto Operation> void CPU::binary_alu_operation(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto destOperand = opcode->operands()[0];
+        const auto destOperand = opcode->operands[0];
 
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-
-        const auto firstValue = std::get<uint8_t>(firstOperand);
+        const auto firstValue = getOperand(destOperand).as8();
         const auto secondValue = ram_->get(pc + 1);
         const auto result = Operation(firstValue, secondValue);
 
@@ -627,18 +570,15 @@ template <auto Operation> void CPU::binary_alu_operation(uint16_t pc, const OPCo
 
         return;
     }
-    else if (opcode->operands().size() == 2)
+    else if (opcode->numOperands == 2)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-        const auto secondOperand = getOperand(opcode->operands()[1]);
+        const auto destOperand = opcode->operands[0];
+        const auto firstOperand = getOperand(opcode->operands[0]);
+        const auto secondOperand = getOperand(opcode->operands[1]);
 
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
+        if (firstOperand.is8bit() && secondOperand.is8bit())
         {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = Operation(firstValue, secondValue);
+            const auto result = Operation(firstOperand.as8(), secondOperand.as8());
 
             setOperand(destOperand, result.result);
             setFlagsFromResult(result.flags, opcode);
@@ -647,39 +587,12 @@ template <auto Operation> void CPU::binary_alu_operation(uint16_t pc, const OPCo
         }
     }
 
-    throw std::runtime_error("and not implemented for opcode " + toHexString(opcode->opcode()));
-}
-
-template <int16_t Offset> void CPU::load_and_offset(uint16_t pc, const OPCode *opcode)
-{
-    if (opcode->operands().size() == 2)
-    {
-        const auto destOperand = opcode->operands()[0];
-        const auto sourceOperand = opcode->operands()[1];
-        if (std::holds_alternative<DereferencedFullRegister>(destOperand))
-        {
-            const auto dereferencedFullRegister = std::get<DereferencedFullRegister>(destOperand);
-            setOperand(destOperand, getOperand(sourceOperand));
-
-            const auto currentFullRegisterValue = std::get<uint16_t>(getOperand(dereferencedFullRegister.fullRegister));
-            setOperand(dereferencedFullRegister.fullRegister, static_cast<uint16_t>(currentFullRegisterValue + Offset));
-            return;
-        }
-        else if (std::holds_alternative<DereferencedFullRegister>(sourceOperand))
-        {
-            const auto dereferencedFullRegister = std::get<DereferencedFullRegister>(sourceOperand);
-            setOperand(destOperand, getOperand(sourceOperand));
-
-            const auto currentFullRegisterValue = std::get<uint16_t>(getOperand(dereferencedFullRegister.fullRegister));
-            setOperand(dereferencedFullRegister.fullRegister, static_cast<uint16_t>(currentFullRegisterValue + Offset));
-            return;
-        }
-    }
+    throw std::runtime_error("binary_alu_operation not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::UNIMPLEMENTED(uint16_t pc, const OPCode *opcode)
 {
-    throw std::runtime_error("Unimplemented opcode handler called for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("Unimplemented opcode handler called for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::SUB(uint16_t pc, const OPCode *opcode)
@@ -733,85 +646,73 @@ void CPU::SRL(uint16_t pc, const OPCode *opcode)
 }
 
 void CPU::NOP(uint16_t pc, const OPCode *opcode)
-{
-    return;
-}
+{}
 
 void CPU::LD(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto destOperand = opcode->operands()[0];
-        if (std::holds_alternative<Register>(destOperand) ||
-            std::holds_alternative<DereferencedFullRegister>(destOperand))
+        const auto destOperand = opcode->operands[0];
+        if (destOperand.isRegister() || destOperand.isDereferencedFullRegister())
         {
             const auto immediate = ram_->get(pc + 1);
             setOperand(destOperand, immediate);
             return;
         }
-        else if (std::holds_alternative<FullRegister>(destOperand) ||
-                 std::holds_alternative<SpecialRegister>(destOperand))
+        else if (destOperand.isFullRegister() || destOperand.isSpecialRegister())
         {
             const auto immediate = ram_->getImmediate16(pc + 1);
             setOperand(destOperand, immediate);
             return;
         }
     }
-    else if (opcode->operands().size() == 2)
+    else if (opcode->numOperands == 2)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto srcOperand = opcode->operands()[1];
+        const auto destOperand = opcode->operands[0];
+        const auto srcOperand = opcode->operands[1];
         setOperand(destOperand, getOperand(srcOperand));
         return;
     }
 
-    throw std::runtime_error("load not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("load not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::INC(uint16_t pc, const OPCode *opcode)
 {
-    const auto operand = opcode->operands()[0];
+    const auto operand = opcode->operands[0];
     const auto operandValue = getOperand(operand);
 
-    if (std::holds_alternative<uint8_t>(operandValue))
+    if (operandValue.is8bit())
     {
-        const auto currentValue = std::get<uint8_t>(operandValue);
-        const auto aluResult = alu::add(currentValue, static_cast<uint8_t>(1));
-        setOperand(operand, aluResult.result);
-        setFlagsFromResult(aluResult.flags, opcode);
-    }
-    else if (std::holds_alternative<uint16_t>(operandValue))
-    {
-        const auto currentValue = std::get<uint16_t>(operandValue);
-        const auto aluResult = alu::add(currentValue, static_cast<uint16_t>(1));
+        const auto aluResult = alu::add(operandValue.as8(), static_cast<uint8_t>(1));
         setOperand(operand, aluResult.result);
         setFlagsFromResult(aluResult.flags, opcode);
     }
     else
-        throw std::runtime_error("inc not implemented for opcode " + toHexString(opcode->opcode()));
+    {
+        const auto aluResult = alu::add(operandValue.as16(), static_cast<uint16_t>(1));
+        setOperand(operand, aluResult.result);
+        setFlagsFromResult(aluResult.flags, opcode);
+    }
 }
 
 void CPU::DEC(uint16_t pc, const OPCode *opcode)
 {
-    const auto operand = opcode->operands()[0];
+    const auto operand = opcode->operands[0];
     const auto operandValue = getOperand(operand);
 
-    if (std::holds_alternative<uint8_t>(operandValue))
+    if (operandValue.is8bit())
     {
-        const auto currentValue = std::get<uint8_t>(operandValue);
-        const auto aluResult = alu::sub(currentValue, static_cast<uint8_t>(1));
-        setOperand(operand, aluResult.result);
-        setFlagsFromResult(aluResult.flags, opcode);
-    }
-    else if (std::holds_alternative<uint16_t>(operandValue))
-    {
-        const auto currentValue = std::get<uint16_t>(operandValue);
-        const auto aluResult = alu::sub(currentValue, static_cast<uint16_t>(1));
+        const auto aluResult = alu::sub(operandValue.as8(), static_cast<uint8_t>(1));
         setOperand(operand, aluResult.result);
         setFlagsFromResult(aluResult.flags, opcode);
     }
     else
-        throw std::runtime_error("dec not implemented for opcode " + toHexString(opcode->opcode()));
+    {
+        const auto aluResult = alu::sub(operandValue.as16(), static_cast<uint16_t>(1));
+        setOperand(operand, aluResult.result);
+        setFlagsFromResult(aluResult.flags, opcode);
+    }
 }
 
 void CPU::RLCA(uint16_t pc, const OPCode *opcode)
@@ -833,14 +734,14 @@ void CPU::LD_SP(uint16_t pc, const OPCode *opcode)
 
 void CPU::ADD(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto firstOperand = getOperand(opcode->operands()[0]);
+        const auto destOperand = opcode->operands[0];
+        const auto firstOperand = getOperand(opcode->operands[0]);
 
-        if (std::holds_alternative<uint8_t>(firstOperand))
+        if (firstOperand.is8bit())
         {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
+            const auto firstValue = firstOperand.as8();
             const auto secondValue = ram_->get(pc + 1);
 
             const auto result = alu::add(firstValue, secondValue);
@@ -850,9 +751,9 @@ void CPU::ADD(uint16_t pc, const OPCode *opcode)
 
             return;
         }
-        else if (std::holds_alternative<uint16_t>(firstOperand))
+        else
         {
-            const auto firstValue = std::get<uint16_t>(firstOperand);
+            const auto firstValue = firstOperand.as16();
             const auto secondValue = static_cast<int8_t>(ram_->get(pc + 1));
 
             // TODO: check how half-carry and carry are working for mixed signed and unsigned addition.
@@ -864,30 +765,24 @@ void CPU::ADD(uint16_t pc, const OPCode *opcode)
             return;
         }
     }
-    else if (opcode->operands().size() == 2)
+    else if (opcode->numOperands == 2)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-        const auto secondOperand = getOperand(opcode->operands()[1]);
+        const auto destOperand = opcode->operands[0];
+        const auto firstOperand = getOperand(opcode->operands[0]);
+        const auto secondOperand = getOperand(opcode->operands[1]);
 
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
+        if (firstOperand.is8bit() && secondOperand.is8bit())
         {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = alu::add(firstValue, secondValue);
+            const auto result = alu::add(firstOperand.as8(), secondOperand.as8());
 
             setOperand(destOperand, result.result);
             setFlagsFromResult(result.flags, opcode);
 
             return;
         }
-        else if (std::holds_alternative<uint16_t>(firstOperand) && std::holds_alternative<uint16_t>(secondOperand))
+        else if (firstOperand.is16bit() && secondOperand.is16bit())
         {
-            const auto firstValue = std::get<uint16_t>(firstOperand);
-            const auto secondValue = std::get<uint16_t>(secondOperand);
-
-            const auto result = alu::add(firstValue, secondValue);
+            const auto result = alu::add(firstOperand.as16(), secondOperand.as16());
 
             setOperand(destOperand, result.result);
             setFlagsFromResult(result.flags, opcode);
@@ -896,7 +791,7 @@ void CPU::ADD(uint16_t pc, const OPCode *opcode)
         }
     }
 
-    throw std::runtime_error("add not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("add not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::RRCA(uint16_t pc, const OPCode *opcode)
@@ -919,11 +814,11 @@ void CPU::RLA(uint16_t pc, const OPCode *opcode)
 
 void CPU::JR(uint16_t pc, const OPCode *opcode)
 {
-    if (testJumpCondition(opcode->jumpCondition()))
+    if (testJumpCondition(opcode->jumpCondition))
     {
         const auto immediate = static_cast<int8_t>(ram_->get(pc + 1));
         setPC(PC() + immediate);
-        cycles_ += opcode->additionalCycles();
+        cycles_ += opcode->additionalCycles;
     }
 }
 
@@ -938,7 +833,31 @@ void CPU::RRA(uint16_t pc, const OPCode *opcode)
 
 void CPU::LDI(uint16_t pc, const OPCode *opcode)
 {
-    load_and_offset<1>(pc, opcode);
+    if (opcode->numOperands == 2)
+    {
+        const auto destOperand = opcode->operands[0];
+        const auto sourceOperand = opcode->operands[1];
+        if (destOperand.isDereferencedFullRegister())
+        {
+            const auto fullReg = destOperand.asDereferencedFullRegister();
+            setOperand(destOperand, getOperand(sourceOperand));
+
+            const auto currentFullRegisterValue = getFullRegister(fullReg);
+            setFullRegister(fullReg, static_cast<uint16_t>(currentFullRegisterValue + 1));
+            return;
+        }
+        else if (sourceOperand.isDereferencedFullRegister())
+        {
+            const auto fullReg = sourceOperand.asDereferencedFullRegister();
+            setOperand(destOperand, getOperand(sourceOperand));
+
+            const auto currentFullRegisterValue = getFullRegister(fullReg);
+            setFullRegister(fullReg, static_cast<uint16_t>(currentFullRegisterValue + 1));
+            return;
+        }
+    }
+
+    throw std::runtime_error("load+increment not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::DAA(uint16_t pc, const OPCode *opcode)
@@ -969,8 +888,6 @@ void CPU::DAA(uint16_t pc, const OPCode *opcode)
 
     setFlags(newFlagZ, FlagN(), 0, newFlagC);
     setA(value);
-
-    // throw std::runtime_error("DAA not implemented for opcode " + toHexString(opcode.opcode()));
 }
 
 void CPU::CPL(uint16_t pc, const OPCode *opcode)
@@ -983,7 +900,31 @@ void CPU::CPL(uint16_t pc, const OPCode *opcode)
 
 void CPU::LDD(uint16_t pc, const OPCode *opcode)
 {
-    load_and_offset<-1>(pc, opcode);
+    if (opcode->numOperands == 2)
+    {
+        const auto destOperand = opcode->operands[0];
+        const auto sourceOperand = opcode->operands[1];
+        if (destOperand.isDereferencedFullRegister())
+        {
+            const auto fullReg = destOperand.asDereferencedFullRegister();
+            setOperand(destOperand, getOperand(sourceOperand));
+
+            const auto currentFullRegisterValue = getFullRegister(fullReg);
+            setFullRegister(fullReg, static_cast<uint16_t>(currentFullRegisterValue - 1));
+            return;
+        }
+        else if (sourceOperand.isDereferencedFullRegister())
+        {
+            const auto fullReg = sourceOperand.asDereferencedFullRegister();
+            setOperand(destOperand, getOperand(sourceOperand));
+
+            const auto currentFullRegisterValue = getFullRegister(fullReg);
+            setFullRegister(fullReg, static_cast<uint16_t>(currentFullRegisterValue - 1));
+            return;
+        }
+    }
+
+    throw std::runtime_error("load+decrement not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::SCF(uint16_t pc, const OPCode *opcode)
@@ -1003,12 +944,10 @@ void CPU::HALT(uint16_t pc, const OPCode *opcode)
 
 void CPU::ADC(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-
-        const auto firstValue = std::get<uint8_t>(firstOperand);
+        const auto destOperand = opcode->operands[0];
+        const auto firstValue = getOperand(destOperand).as8();
         const auto secondValue = ram_->get(pc + 1);
 
         const auto result = alu::adc(firstValue, secondValue, FlagC());
@@ -1018,18 +957,15 @@ void CPU::ADC(uint16_t pc, const OPCode *opcode)
 
         return;
     }
-    else if (opcode->operands().size() == 2)
+    else if (opcode->numOperands == 2)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-        const auto secondOperand = getOperand(opcode->operands()[1]);
+        const auto destOperand = opcode->operands[0];
+        const auto firstOperand = getOperand(opcode->operands[0]);
+        const auto secondOperand = getOperand(opcode->operands[1]);
 
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
+        if (firstOperand.is8bit() && secondOperand.is8bit())
         {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = alu::adc(firstValue, secondValue, FlagC());
+            const auto result = alu::adc(firstOperand.as8(), secondOperand.as8(), FlagC());
 
             setOperand(destOperand, result.result);
             setFlagsFromResult(result.flags, opcode);
@@ -1038,17 +974,15 @@ void CPU::ADC(uint16_t pc, const OPCode *opcode)
         }
     }
 
-    throw std::runtime_error("adc not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("adc not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::SBC(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-
-        const auto firstValue = std::get<uint8_t>(firstOperand);
+        const auto destOperand = opcode->operands[0];
+        const auto firstValue = getOperand(destOperand).as8();
         const auto secondValue = ram_->get(pc + 1);
 
         const auto result = alu::sbc(firstValue, secondValue, FlagC());
@@ -1058,18 +992,15 @@ void CPU::SBC(uint16_t pc, const OPCode *opcode)
 
         return;
     }
-    else if (opcode->operands().size() == 2)
+    else if (opcode->numOperands == 2)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-        const auto secondOperand = getOperand(opcode->operands()[1]);
+        const auto destOperand = opcode->operands[0];
+        const auto firstOperand = getOperand(opcode->operands[0]);
+        const auto secondOperand = getOperand(opcode->operands[1]);
 
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
+        if (firstOperand.is8bit() && secondOperand.is8bit())
         {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = alu::sbc(firstValue, secondValue, FlagC());
+            const auto result = alu::sbc(firstOperand.as8(), secondOperand.as8(), FlagC());
 
             setOperand(destOperand, result.result);
             setFlagsFromResult(result.flags, opcode);
@@ -1078,16 +1009,14 @@ void CPU::SBC(uint16_t pc, const OPCode *opcode)
         }
     }
 
-    throw std::runtime_error("sbc not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("sbc not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::CP(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-
-        const auto firstValue = std::get<uint8_t>(firstOperand);
+        const auto firstValue = getOperand(opcode->operands[0]).as8();
         const auto secondValue = ram_->get(pc + 1);
 
         const auto result = alu::sub(firstValue, secondValue);
@@ -1096,17 +1025,14 @@ void CPU::CP(uint16_t pc, const OPCode *opcode)
 
         return;
     }
-    else if (opcode->operands().size() == 2)
+    else if (opcode->numOperands == 2)
     {
-        const auto firstOperand = getOperand(opcode->operands()[0]);
-        const auto secondOperand = getOperand(opcode->operands()[1]);
+        const auto firstOperand = getOperand(opcode->operands[0]);
+        const auto secondOperand = getOperand(opcode->operands[1]);
 
-        if (std::holds_alternative<uint8_t>(firstOperand) && std::holds_alternative<uint8_t>(secondOperand))
+        if (firstOperand.is8bit() && secondOperand.is8bit())
         {
-            const auto firstValue = std::get<uint8_t>(firstOperand);
-            const auto secondValue = std::get<uint8_t>(secondOperand);
-
-            const auto result = alu::sub(firstValue, secondValue);
+            const auto result = alu::sub(firstOperand.as8(), secondOperand.as8());
 
             setFlagsFromResult(result.flags, opcode);
 
@@ -1114,95 +1040,92 @@ void CPU::CP(uint16_t pc, const OPCode *opcode)
         }
     }
 
-    throw std::runtime_error("cp not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("cp not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::RET(uint16_t pc, const OPCode *opcode)
 {
-    if (testJumpCondition(opcode->jumpCondition()))
+    if (testJumpCondition(opcode->jumpCondition))
     {
         const auto immediate = popFromStack();
         setPC(immediate);
-        cycles_ += opcode->additionalCycles();
+        cycles_ += opcode->additionalCycles;
     }
 }
 
 void CPU::POP(uint16_t pc, const OPCode *opcode)
 {
-    const auto destOperand = opcode->operands()[0];
+    const auto destOperand = opcode->operands[0];
 
-    if (std::holds_alternative<FullRegister>(destOperand))
+    if (destOperand.isFullRegister())
     {
         auto stackValue = popFromStack();
 
-        if (std::get<FullRegister>(destOperand) == FullRegister::AF)
+        if (destOperand.asFullRegister() == FullRegister::AF)
             stackValue &= 0xFFF0;
 
         setOperand(destOperand, stackValue);
         return;
     }
 
-    throw std::runtime_error("pop not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("pop not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::JP(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 0)
+    if (opcode->numOperands == 0)
     {
-        if (testJumpCondition(opcode->jumpCondition()))
+        if (testJumpCondition(opcode->jumpCondition))
         {
             const auto immediate = ram_->getImmediate16(pc + 1);
             setPC(immediate);
-            cycles_ += opcode->additionalCycles();
+            cycles_ += opcode->additionalCycles;
         }
         return;
     }
-    else if (opcode->operands().size() == 1)
+    else if (opcode->numOperands == 1)
     {
-        if (testJumpCondition(opcode->jumpCondition()))
+        if (testJumpCondition(opcode->jumpCondition))
         {
-            const auto addressOperand = opcode->operands()[0];
-            const auto newAddress = std::get<uint16_t>(getOperand(addressOperand));
+            const auto newAddress = getOperand(opcode->operands[0]).as16();
             setPC(newAddress);
-            cycles_ += opcode->additionalCycles();
+            cycles_ += opcode->additionalCycles;
         }
         return;
     }
 
-    throw std::runtime_error("jump not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("jump not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::CALL(uint16_t pc, const OPCode *opcode)
 {
-    if (testJumpCondition(opcode->jumpCondition()))
+    if (testJumpCondition(opcode->jumpCondition))
     {
         const auto immediate = ram_->getImmediate16(pc + 1);
         pushToStack(PC());
         setPC(immediate);
-        cycles_ += opcode->additionalCycles();
+        cycles_ += opcode->additionalCycles;
     }
 }
 
 void CPU::PUSH(uint16_t pc, const OPCode *opcode)
 {
-    const auto operand = opcode->operands()[0];
-    const auto operandValue = getOperand(operand);
+    const auto operandValue = getOperand(opcode->operands[0]);
 
-    if (std::holds_alternative<uint16_t>(operandValue))
+    if (operandValue.is16bit())
     {
-        const auto stackValue = std::get<uint16_t>(operandValue);
-        pushToStack(stackValue);
+        pushToStack(operandValue.as16());
         return;
     }
 
-    throw std::runtime_error("push not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("push not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::RST(uint16_t pc, const OPCode *opcode)
 {
-    const auto auxArg = opcode->auxiliaryArguments()[0];
+    const auto auxArg = opcode->auxiliaryArguments[0];
     if (auxArg > 7)
-        throw std::runtime_error("rst not implemented for opcode " + toHexString(opcode->opcode()));
+        throw std::runtime_error("rst not implemented for opcode " + toHexString(opcode->opcode));
 
     pushToStack(PC());
     const uint16_t rstAddress = concatBytes(0x00, auxArg << 3);
@@ -1211,69 +1134,69 @@ void CPU::RST(uint16_t pc, const OPCode *opcode)
 
 void CPU::RETI(uint16_t pc, const OPCode *opcode)
 {
-    if (testJumpCondition(opcode->jumpCondition()))
+    if (testJumpCondition(opcode->jumpCondition))
     {
         const auto immediate = popFromStack();
         setPC(immediate);
         IME_ = true;
-        cycles_ += opcode->additionalCycles();
+        cycles_ += opcode->additionalCycles;
     }
 }
 
 void CPU::LDff8(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto srcOperand = opcode->operands()[0];
-        if (std::holds_alternative<Register>(srcOperand))
+        const auto srcOperand = opcode->operands[0];
+        if (srcOperand.isRegister())
         {
             const auto lowerByte = ram_->get(pc + 1);
             const auto address = concatBytes(0xff, lowerByte);
-            const auto value = std::get<uint8_t>(getOperand(srcOperand));
+            const auto value = getOperand(srcOperand).as8();
             ram_->set(address, value);
             return;
         }
     }
-    else if (opcode->operands().size() == 2)
+    else if (opcode->numOperands == 2)
     {
-        const auto addressOperand = opcode->operands()[0];
-        const auto srcOperand = opcode->operands()[1];
-        if (std::holds_alternative<Register>(addressOperand) && std::holds_alternative<Register>(srcOperand))
+        const auto addressOperand = opcode->operands[0];
+        const auto srcOperand = opcode->operands[1];
+        if (addressOperand.isRegister() && srcOperand.isRegister())
         {
-            const auto lowerByte = std::get<uint8_t>(getOperand(addressOperand));
+            const auto lowerByte = getOperand(addressOperand).as8();
             const auto address = concatBytes(0xff, lowerByte);
-            const auto value = std::get<uint8_t>(getOperand(srcOperand));
+            const auto value = getOperand(srcOperand).as8();
             ram_->set(address, value);
             return;
         }
     }
 
-    throw std::runtime_error("ldff8 not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("ldff8 not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::LDa16(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto srcOperand = opcode->operands()[0];
-        if (std::holds_alternative<Register>(srcOperand))
+        const auto srcOperand = opcode->operands[0];
+        if (srcOperand.isRegister())
         {
             const auto address = ram_->getImmediate16(pc + 1);
-            const auto value = std::get<uint8_t>(getOperand(srcOperand));
+            const auto value = getOperand(srcOperand).as8();
             ram_->set(address, value);
             return;
         }
     }
 
-    throw std::runtime_error("lda16 not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("lda16 not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::LDaff8(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto destOperand = opcode->operands()[0];
-        if (std::holds_alternative<Register>(destOperand))
+        const auto destOperand = opcode->operands[0];
+        if (destOperand.isRegister())
         {
             const auto lowerByte = ram_->get(pc + 1);
             const auto address = concatBytes(0xff, lowerByte);
@@ -1282,13 +1205,13 @@ void CPU::LDaff8(uint16_t pc, const OPCode *opcode)
             return;
         }
     }
-    else if (opcode->operands().size() == 2)
+    else if (opcode->numOperands == 2)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto addressOperand = opcode->operands()[1];
-        if (std::holds_alternative<Register>(destOperand) && std::holds_alternative<Register>(addressOperand))
+        const auto destOperand = opcode->operands[0];
+        const auto addressOperand = opcode->operands[1];
+        if (destOperand.isRegister() && addressOperand.isRegister())
         {
-            const auto lowerByte = std::get<uint8_t>(getOperand(addressOperand));
+            const auto lowerByte = getOperand(addressOperand).as8();
             const auto address = concatBytes(0xff, lowerByte);
             const auto value = ram_->get(address);
             setOperand(destOperand, value);
@@ -1296,7 +1219,7 @@ void CPU::LDaff8(uint16_t pc, const OPCode *opcode)
         }
     }
 
-    throw std::runtime_error("ldaff8 not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("ldaff8 not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::DI(uint16_t pc, const OPCode *opcode)
@@ -1306,10 +1229,10 @@ void CPU::DI(uint16_t pc, const OPCode *opcode)
 
 void CPU::LDaff16(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 1)
+    if (opcode->numOperands == 1)
     {
-        const auto destOperand = opcode->operands()[0];
-        if (std::holds_alternative<Register>(destOperand))
+        const auto destOperand = opcode->operands[0];
+        if (destOperand.isRegister())
         {
             const auto address = ram_->getImmediate16(pc + 1);
             const auto value = ram_->get(address);
@@ -1318,21 +1241,20 @@ void CPU::LDaff16(uint16_t pc, const OPCode *opcode)
         }
     }
 
-    throw std::runtime_error("ldaff16 not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("ldaff16 not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::LDs8(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 2)
+    if (opcode->numOperands == 2)
     {
-        const auto destOperand = opcode->operands()[0];
-        const auto srcOperand = opcode->operands()[1];
+        const auto destOperand = opcode->operands[0];
+        const auto srcOperand = opcode->operands[1];
 
-        if ((std::holds_alternative<FullRegister>(destOperand) ||
-             std::holds_alternative<SpecialRegister>(destOperand)) &&
-            (std::holds_alternative<FullRegister>(srcOperand) || std::holds_alternative<SpecialRegister>(srcOperand)))
+        if ((destOperand.isFullRegister() || destOperand.isSpecialRegister()) &&
+            (srcOperand.isFullRegister() || srcOperand.isSpecialRegister()))
         {
-            const auto srcValue = std::get<uint16_t>(getOperand(srcOperand));
+            const auto srcValue = getOperand(srcOperand).as16();
             const auto offset = static_cast<int8_t>(ram_->get(pc + 1));
 
             const auto result = alu::add(static_cast<uint8_t>(0x00FF & srcValue), static_cast<uint8_t>(offset));
@@ -1344,7 +1266,7 @@ void CPU::LDs8(uint16_t pc, const OPCode *opcode)
         }
     }
 
-    throw std::runtime_error("LDs8 not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("LDs8 not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::EI(uint16_t pc, const OPCode *opcode)
@@ -1354,11 +1276,11 @@ void CPU::EI(uint16_t pc, const OPCode *opcode)
 
 void CPU::RL(uint16_t pc, const OPCode *opcode)
 {
-    const auto operand = opcode->operands()[0];
+    const auto operand = opcode->operands[0];
 
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
+    if (operand.isRegister() || operand.isDereferencedFullRegister())
     {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
+        const auto currentValue = getOperand(operand).as8();
         const auto result = alu::rl(currentValue, FlagC());
 
         setOperand(operand, result.result);
@@ -1367,16 +1289,16 @@ void CPU::RL(uint16_t pc, const OPCode *opcode)
         return;
     }
 
-    throw std::runtime_error("rl not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("rl not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::RR(uint16_t pc, const OPCode *opcode)
 {
-    const auto operand = opcode->operands()[0];
+    const auto operand = opcode->operands[0];
 
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
+    if (operand.isRegister() || operand.isDereferencedFullRegister())
     {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
+        const auto currentValue = getOperand(operand).as8();
         const auto result = alu::rr(currentValue, FlagC());
 
         setOperand(operand, result.result);
@@ -1385,17 +1307,17 @@ void CPU::RR(uint16_t pc, const OPCode *opcode)
         return;
     }
 
-    throw std::runtime_error("sla not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("rr not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::BIT_GET(uint16_t pc, const OPCode *opcode)
 {
-    const auto operand = opcode->operands()[0];
-    const auto bitIndex = opcode->auxiliaryArguments()[0];
+    const auto operand = opcode->operands[0];
+    const auto bitIndex = opcode->auxiliaryArguments[0];
 
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
+    if (operand.isRegister() || operand.isDereferencedFullRegister())
     {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
+        const auto currentValue = getOperand(operand).as8();
         const auto result = alu::bit_get(currentValue, bitIndex);
 
         setFlagsFromResult(result.flags, opcode);
@@ -1403,18 +1325,18 @@ void CPU::BIT_GET(uint16_t pc, const OPCode *opcode)
         return;
     }
 
-    throw std::runtime_error("bit_set not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("bit_get not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 void CPU::BIT_SET(uint16_t pc, const OPCode *opcode)
 {
-    const auto operand = opcode->operands()[0];
-    const auto bitIndex = opcode->auxiliaryArguments()[0];
-    const auto newBit = opcode->auxiliaryArguments()[1];
+    const auto operand = opcode->operands[0];
+    const auto bitIndex = opcode->auxiliaryArguments[0];
+    const auto newBit = opcode->auxiliaryArguments[1];
 
-    if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
+    if (operand.isRegister() || operand.isDereferencedFullRegister())
     {
-        const auto currentValue = std::get<uint8_t>(getOperand(operand));
+        const auto currentValue = getOperand(operand).as8();
         const auto result = alu::bit_set(currentValue, bitIndex, newBit);
 
         setOperand(operand, result.result);
@@ -1423,7 +1345,7 @@ void CPU::BIT_SET(uint16_t pc, const OPCode *opcode)
         return;
     }
 
-    throw std::runtime_error("bit_set not implemented for opcode " + toHexString(opcode->opcode()));
+    throw std::runtime_error("bit_set not implemented for opcode " + toHexString(opcode->opcode));
 }
 
 } // namespace gbemu::backend

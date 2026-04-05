@@ -3,6 +3,7 @@
 
 #include "gbemu/backend/alu.h"
 #include "gbemu/backend/opcode.h"
+#include "gbemu/backend/opcode_data.h"
 #include "gbemu/backend/operand.h"
 #include "gbemu/backend/ram.h"
 
@@ -134,23 +135,9 @@ class CPU
     uint64_t cycles_;
     Mode mode_;
 
+    /*** Constexpr handler dispatch ***/
     using OPCodeHandler = void (CPU::*)(uint16_t, const OPCode *);
     using OPCodeHandlerMap = std::array<OPCodeHandler, 256>;
-    const OpcodeTable::OpCodeMap &opcodes_;
-    const OpcodeTable::OpCodeMap &prefixedOpcodes_;
-    OPCodeHandlerMap opcodeFunctions_;
-    OPCodeHandlerMap prefixedOpcodeFunctions_;
-
-    [[nodiscard]] OperandValue getOperand(Operand operand) const;
-    void setOperand(Operand operand, OperandValue newValue);
-
-    void setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode *opcode);
-    [[nodiscard]] bool testJumpCondition(OPCode::JumpCondition jumpCondition) const;
-
-    /*** OPCode Handlers ***/
-    template <auto Operation> void unary_alu_operation(uint16_t pc, const OPCode *opcode);
-    template <auto Operation> void binary_alu_operation(uint16_t pc, const OPCode *opcode);
-    template <int16_t Offset> void load_and_offset(uint16_t pc, const OPCode *opcode);
 
     void UNIMPLEMENTED(uint16_t pc, const OPCode *opcode);
 
@@ -207,7 +194,58 @@ class CPU
     void RR(uint16_t pc, const OPCode *opcode);
     void BIT_GET(uint16_t pc, const OPCode *opcode);
     void BIT_SET(uint16_t pc, const OPCode *opcode);
+
+    template <auto Operation> void unary_alu_operation(uint16_t pc, const OPCode *opcode);
+    template <auto Operation> void binary_alu_operation(uint16_t pc, const OPCode *opcode);
+
+    [[nodiscard]] OperandValue getOperand(Operand operand) const;
+    void setOperand(Operand operand, OperandValue newValue);
+
+    void setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode *opcode);
+    [[nodiscard]] bool testJumpCondition(OPCode::JumpCondition jumpCondition) const;
+
+    static constexpr std::pair<std::string_view, OPCodeHandler> kHandlers[] = {
+        {"ADC", &CPU::ADC},         {"ADD", &CPU::ADD},         {"AND", &CPU::AND},       {"BIT_GET", &CPU::BIT_GET},
+        {"BIT_SET", &CPU::BIT_SET}, {"CALL", &CPU::CALL},       {"CCF", &CPU::CCF},       {"CP", &CPU::CP},
+        {"CPL", &CPU::CPL},         {"DAA", &CPU::DAA},         {"DEC", &CPU::DEC},       {"DI", &CPU::DI},
+        {"EI", &CPU::EI},           {"HALT", &CPU::HALT},       {"INC", &CPU::INC},       {"JP", &CPU::JP},
+        {"JR", &CPU::JR},           {"LD", &CPU::LD},           {"LDI", &CPU::LDI},       {"LDD", &CPU::LDD},
+        {"LDa16", &CPU::LDa16},     {"LDaff16", &CPU::LDaff16}, {"LDaff8", &CPU::LDaff8}, {"LDff8", &CPU::LDff8},
+        {"LDs8", &CPU::LDs8},       {"LD_SP", &CPU::LD_SP},     {"NOP", &CPU::NOP},       {"OR", &CPU::OR},
+        {"POP", &CPU::POP},         {"PUSH", &CPU::PUSH},       {"RET", &CPU::RET},       {"RETI", &CPU::RETI},
+        {"RL", &CPU::RL},           {"RLA", &CPU::RLA},         {"RLC", &CPU::RLC},       {"RLCA", &CPU::RLCA},
+        {"RR", &CPU::RR},           {"RRA", &CPU::RRA},         {"RRC", &CPU::RRC},       {"RRCA", &CPU::RRCA},
+        {"RST", &CPU::RST},         {"SBC", &CPU::SBC},         {"SCF", &CPU::SCF},       {"SLA", &CPU::SLA},
+        {"SRA", &CPU::SRA},         {"SRL", &CPU::SRL},         {"SUB", &CPU::SUB},       {"SWAP", &CPU::SWAP},
+        {"XOR", &CPU::XOR},
+    };
+
+    static constexpr OPCodeHandler lookupHandler(std::string_view mnemonic)
+    {
+        for (const auto &[name, handler] : kHandlers)
+        {
+            if (name == mnemonic)
+                return handler;
+        }
+        return &CPU::UNIMPLEMENTED;
+    }
+
+    static constexpr OPCodeHandlerMap buildHandlerMap(const std::array<OPCode, 256> &opcodes)
+    {
+        OPCodeHandlerMap map{};
+        for (size_t i = 0; i < 256; i++)
+        {
+            map[i] = opcodes[i].valid ? lookupHandler(opcodes[i].mnemonic) : &CPU::UNIMPLEMENTED;
+        }
+        return map;
+    }
+
+    static const OPCodeHandlerMap opcodeFunctions_;
+    static const OPCodeHandlerMap prefixedOpcodeFunctions_;
 };
+
+inline constexpr CPU::OPCodeHandlerMap CPU::opcodeFunctions_ = CPU::buildHandlerMap(OPCODES);
+inline constexpr CPU::OPCodeHandlerMap CPU::prefixedOpcodeFunctions_ = CPU::buildHandlerMap(PREFIXED_OPCODES);
 
 } // namespace gbemu::backend
 
