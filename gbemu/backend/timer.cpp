@@ -1,5 +1,7 @@
 #include "gbemu/backend/timer.h"
 
+#include <stdexcept>
+
 namespace gbemu::backend
 {
 
