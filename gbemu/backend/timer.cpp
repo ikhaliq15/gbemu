@@ -1,31 +1,22 @@
 #include "gbemu/backend/timer.h"
 
-#include <utility>
-
 namespace gbemu::backend
 {
 
 Timer::Timer(CPU *cpu)
-    : initialized_(false), cyclesSinceLaunch_(0),
-      divAccumulator_(std::make_unique<Accumulator<uint8_t>>(DIV_REGISTER_START_VALUE)), cpu_(cpu),
-      tima_(std::make_unique<uint8_t>(0x00)), tma_(std::make_unique<uint8_t>(0x00)),
-      tac_(std::make_unique<uint8_t>(0x00))
-{
-}
+    : initialized_(false), cyclesSinceLaunch_(0), tima_(0x00), tma_(0x00), tac_(0x00), divAccumulator_(DIV_START_VALUE),
+      timer0_(TAC_ID_0, &tima_, &tma_, &tac_, cpu), timer1_(TAC_ID_1, &tima_, &tma_, &tac_, cpu),
+      timer2_(TAC_ID_2, &tima_, &tma_, &tac_, cpu), timer3_(TAC_ID_3, &tima_, &tma_, &tac_, cpu)
+{}
 
 void Timer::init()
 {
-    addTimerListener(divAccumulator_.get(), DIV_REGISTER_MODULO);
+    addTimerListener(&divAccumulator_, DIV_MODULO);
 
-    timer0_ = std::make_unique<EnabledTimer>(TIMER_0_TAC_ID, tima_.get(), tma_.get(), tac_.get(), cpu_);
-    timer1_ = std::make_unique<EnabledTimer>(TIMER_1_TAC_ID, tima_.get(), tma_.get(), tac_.get(), cpu_);
-    timer2_ = std::make_unique<EnabledTimer>(TIMER_2_TAC_ID, tima_.get(), tma_.get(), tac_.get(), cpu_);
-    timer3_ = std::make_unique<EnabledTimer>(TIMER_3_TAC_ID, tima_.get(), tma_.get(), tac_.get(), cpu_);
-
-    addTimerListener(timer0_.get(), TIMER_0_MODULO);
-    addTimerListener(timer1_.get(), TIMER_1_MODULO);
-    addTimerListener(timer2_.get(), TIMER_2_MODULO);
-    addTimerListener(timer3_.get(), TIMER_3_MODULO);
+    addTimerListener(&timer0_, TAC_MODULO_0);
+    addTimerListener(&timer1_, TAC_MODULO_1);
+    addTimerListener(&timer2_, TAC_MODULO_2);
+    addTimerListener(&timer3_, TAC_MODULO_3);
 
     initialized_ = true;
 }
@@ -33,26 +24,29 @@ void Timer::init()
 void Timer::update(uint64_t deltaCycles)
 {
     if (!initialized_)
-        throw std::runtime_error("Cannot increment an uninitialized tiemr.");
+        throw std::runtime_error("Cannot increment an uninitialized timer.");
 
-    for (uint64_t i = 0; i < deltaCycles; ++i)
+    uint64_t targetCycle = cyclesSinceLaunch_ + deltaCycles;
+
+    for (auto &info : timerListeners_)
     {
-        cyclesSinceLaunch_ += 1;
-
-        if (timerListeners_.empty())
-            return;
-
-        while (timerListeners_.top().nextCycleCountTrigger_ <= cyclesSinceLaunch_)
+        while (info.nextTriggerCycle <= targetCycle)
         {
-            auto info = timerListeners_.top();
-            timerListeners_.pop();
-
-            info.listener_->timerTriggerHandler();
-            info.nextCycleCountTrigger_ = cyclesSinceLaunch_ + info.listenerModulo_;
-
-            timerListeners_.push(info);
+            info.listener->trigger();
+            info.nextTriggerCycle += info.modulo;
         }
     }
+
+    cyclesSinceLaunch_ = targetCycle;
+}
+
+void Timer::addTimerListener(IListener *listener, uint64_t cycleModulo)
+{
+    if (initialized_)
+        throw std::runtime_error("Cannot add timer listener after timer is initialized.");
+    if (cycleModulo == 0)
+        throw std::runtime_error("Cycle modulo must be positive.");
+    timerListeners_.push_back({listener, cycleModulo, cycleModulo});
 }
 
 auto Timer::onReadOwnedByte(uint16_t address) -> uint8_t
@@ -60,16 +54,14 @@ auto Timer::onReadOwnedByte(uint16_t address) -> uint8_t
     switch (address)
     {
     case RAM::DIV:
-        return divAccumulator_->value();
-        break;
+        return divAccumulator_.value();
     case RAM::TIMA:
-        return *tima_;
+        return tima_;
     case RAM::TMA:
-        return *tma_;
+        return tma_;
     case RAM::TAC:
-        return *tac_;
+        return tac_;
     }
-    // TODO: throw exception?
     return 0x00;
 }
 
@@ -78,19 +70,18 @@ void Timer::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t current
     switch (address)
     {
     case RAM::DIV:
-        divAccumulator_->resetAccumulator();
+        divAccumulator_.reset();
         break;
     case RAM::TIMA:
-        *tima_ = newValue;
+        tima_ = newValue;
         break;
     case RAM::TMA:
-        *tma_ = newValue;
+        tma_ = newValue;
         break;
     case RAM::TAC:
-        *tac_ = newValue;
+        tac_ = newValue;
         break;
     }
-    // TODO: throw exception?
 }
 
 } // namespace gbemu::backend

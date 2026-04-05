@@ -1,16 +1,12 @@
 #ifndef GBEMU_FRONTEND_HEADLESS_H
 #define GBEMU_FRONTEND_HEADLESS_H
 
+#include "gbemu/backend/gameboy.h"
 #include "gbemu/frontend/frontend.hpp"
 
 #include <SDL2/SDL.h>
 
-namespace gbemu::backend
-{
-
-class Gameboy;
-
-} // namespace gbemu::backend
+#include <cstdio>
 
 namespace gbemu::frontend
 {
@@ -18,10 +14,12 @@ namespace gbemu::frontend
 class HeadlessFrontend : public IFrontend
 {
   public:
+    explicit HeadlessFrontend(bool logSerial = false) : logSerial_(logSerial) {}
+
     bool init(gbemu::backend::Gameboy *gameboy) override
     {
+        gameboy_ = gameboy;
         SDL_Init(SDL_INIT_GAMECONTROLLER);
-
         return true;
     }
 
@@ -34,13 +32,23 @@ class HeadlessFrontend : public IFrontend
                 return false;
         }
 
+        if (logSerial_)
+        {
+            if (const auto byte = gameboy_->consumeSerialByte())
+            {
+                putc(*byte, stdout);
+                fflush(stdout);
+            }
+        }
+
         return true;
     }
 
-    void done() override
-    {
-        SDL_Quit();
-    }
+    void done() override { SDL_Quit(); }
+
+  private:
+    bool logSerial_;
+    gbemu::backend::Gameboy *gameboy_ = nullptr;
 };
 
 } // namespace gbemu::frontend

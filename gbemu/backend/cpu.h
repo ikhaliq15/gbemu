@@ -96,7 +96,8 @@ class CPU
     void setRegister(Register reg, uint8_t newRegVal);
     void setFullRegister(FullRegister reg, uint16_t newRegVal);
 
-    void requestInterupt(Interrupt interrupt);
+    void requestInterrupt(Interrupt interrupt);
+    void serviceInterrupts();
 
     void executeInstruction(bool verbose = false);
 
@@ -121,7 +122,7 @@ class CPU
     static constexpr uint8_t FLAG_C_BIT = 4;
 
     bool IME_;
-    bool interuptsEnabledQueued_ = false;
+    bool interruptsEnabledQueued_ = false;
 
     uint16_t PC_;
     uint16_t SP_;
@@ -138,8 +139,8 @@ class CPU
 
     using OPCodeHandler = std::function<void(uint16_t, const OPCode *)>;
     using OPCodeHandlerMap = std::array<OPCodeHandler, 256>;
-    OPCode::OpCodeMap opcodes_;
-    OPCode::OpCodeMap prefixedOpcodes_;
+    const OpcodeTable::OpCodeMap &opcodes_;
+    const OpcodeTable::OpCodeMap &prefixedOpcodes_;
     OPCodeHandlerMap opcodeFunctions_;
     OPCodeHandlerMap prefixedOpcodeFunctions_;
 

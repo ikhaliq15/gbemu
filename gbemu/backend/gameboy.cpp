@@ -1,67 +1,55 @@
 #include "gbemu/backend/gameboy.h"
 
-#include "gbemu/backend/bitutils.h"
-
-#include <cstdio>
+#include <utility>
 
 namespace gbemu::backend
 {
 
-Gameboy::Gameboy(const config::Config &cfg)
-    : cartridgeLoaded_(false), enableBlarggSerialLogging_(cfg.enableBlarggSerialLogging())
+Gameboy::Gameboy()
 {
-    resetHardware();
+    createHardware();
 }
 
 void Gameboy::loadCartridge(const Cartridge &cartridge)
 {
-    resetHardware();
+    createHardware();
     ram_->loadCartridge(cartridge);
     cartridgeLoaded_ = true;
+
+    if (initialized_)
+        initSubsystems();
 }
 
 void Gameboy::init()
 {
     if (initialized_)
-    {
         return;
-    }
 
-    /* Setup timer cycle listeners. */
-    timer_->addTimerListener(ppu_.get(), PPU::CYCLES_PER_SCANLINE);
-
-    /* Initialize subcomponents of the gameboy. */
-    ppu_->init();
-    timer_->init();
-    initialized_ = true;
+    initSubsystems();
 }
 
 void Gameboy::update()
 {
     if (!cartridgeLoaded_)
-    {
         return;
-    }
 
     uint64_t deltaCycles = 1;
     if (cpu_->mode() == CPU::Mode::NORMAL)
     {
-        const auto beforeCycleCount = cpu_->cycles();
+        const auto before = cpu_->cycles();
         cpu_->executeInstruction(false);
-        const auto afterCycleCount = cpu_->cycles();
-        deltaCycles = afterCycleCount - beforeCycleCount;
+        deltaCycles = cpu_->cycles() - before;
     }
 
     timer_->update(deltaCycles);
     ppu_->update();
 
-    handleInterrupts();
-    handleSerialPorts();
+    cpu_->serviceInterrupts();
+    pollSerialPort();
 }
 
 void Gameboy::done()
-{
-}
+{}
 
 void Gameboy::inputDown(int32_t keyCode)
 {
@@ -73,31 +61,35 @@ void Gameboy::inputUp(int32_t keyCode)
     joypad_->handleKeyUpEvent(keyCode);
 }
 
-void Gameboy::resetHardware()
+bool Gameboy::consumeCompletedFrame()
+{
+    return ppu_->consumeCompletedFrame();
+}
+
+void Gameboy::createHardware()
 {
     joypad_ = std::make_unique<Joypad>();
-    ram_ = std::make_unique<RAM>(GAMEBOY_RAM_SIZE);
+    ram_ = std::make_unique<RAM>(RAM_SIZE);
     cpu_ = std::make_unique<CPU>(ram_.get());
-    ppu_ = std::make_unique<PPU>(cpu_.get());
+    ppu_ = std::make_unique<PPU>(cpu_.get(), ram_.get());
     timer_ = std::make_unique<Timer>(cpu_.get());
 
     configureMemoryOwners();
-
-    if (initialized_)
-    {
-        timer_->addTimerListener(ppu_.get(), PPU::CYCLES_PER_SCANLINE);
-        ppu_->init();
-        timer_->init();
-    }
+    cartridgeLoaded_ = false;
 }
 
 void Gameboy::configureMemoryOwners()
 {
+    // Joypad
     ram_->addOwner(RAM::JOYP, joypad_.get());
+
+    // Timer
     ram_->addOwner(RAM::DIV, timer_.get());
     ram_->addOwner(RAM::TIMA, timer_.get());
     ram_->addOwner(RAM::TMA, timer_.get());
     ram_->addOwner(RAM::TAC, timer_.get());
+
+    // PPU
     ram_->addOwner(RAM::STAT, ppu_.get());
     ram_->addOwner(RAM::SCY, ppu_.get());
     ram_->addOwner(RAM::SCX, ppu_.get());
@@ -107,48 +99,26 @@ void Gameboy::configureMemoryOwners()
     ram_->addOwner(RAM::WX, ppu_.get());
 }
 
-void Gameboy::handleInterrupts()
+void Gameboy::initSubsystems()
 {
-    if ((ram_->get(RAM::IF) & ram_->get(RAM::IE) & 0x1f) != 0x00)
-        cpu_->setMode(CPU::Mode::NORMAL);
-
-    if (!cpu_->IME())
-        return;
-
-    // TODO: what happens if mulitple interupts fired at same time?
-    const uint8_t interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
-
-    constexpr auto VBLANK_INTERRUPT_BIT = 0;
-    constexpr auto LCD_STAT_INTERRUPT_BIT = 1;
-    constexpr auto TIMER_INTERRUPT_BIT = 2;
-
-    for (const auto interruptBit : {VBLANK_INTERRUPT_BIT, LCD_STAT_INTERRUPT_BIT, TIMER_INTERRUPT_BIT})
-    {
-        if (getBit(interruptsFired, interruptBit))
-        {
-            cpu_->setIME(false);
-            cpu_->pushToStack(cpu_->PC());
-            ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), interruptBit, 0));
-            cpu_->setPC(0x40 + 0x08 * interruptBit);
-            break; // Only handle the first fired interrupt
-        }
-    }
+    timer_->addTimerListener(ppu_.get(), PPU::CYCLES_PER_SCANLINE);
+    ppu_->init();
+    timer_->init();
+    initialized_ = true;
 }
 
-void Gameboy::handleSerialPorts()
+std::optional<uint8_t> Gameboy::consumeSerialByte()
 {
-    const auto currentSC = ram_->get(RAM::SC);
-    if (currentSC == 0x81)
-    {
-        const auto currentSB = ram_->get(RAM::SB);
-        ram_->set(RAM::SC, 0x00);
+    return std::exchange(pendingSerialByte_, std::nullopt);
+}
 
-        if (enableBlarggSerialLogging_)
-        {
-            putc(currentSB, stdout);
-            fflush(stdout);
-        }
-    }
+void Gameboy::pollSerialPort()
+{
+    if (ram_->get(RAM::SC) != 0x81)
+        return;
+
+    pendingSerialByte_ = ram_->get(RAM::SB);
+    ram_->set(RAM::SC, 0x00);
 }
 
 } // namespace gbemu::backend

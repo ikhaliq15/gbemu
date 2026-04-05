@@ -775,8 +775,7 @@ void ImguiFrontend::openRom()
 }
 
 void ImguiFrontend::renderStatusBar()
-{
-}
+{}
 
 void ImguiFrontend::pollEvents()
 {

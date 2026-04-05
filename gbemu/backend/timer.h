@@ -4,8 +4,7 @@
 #include "gbemu/backend/cpu.h"
 #include "gbemu/backend/ram.h"
 
-#include <memory>
-#include <queue>
+#include <vector>
 
 namespace gbemu::backend
 {
@@ -13,144 +12,112 @@ namespace gbemu::backend
 class Timer : public RAM::Owner
 {
   public:
-    class TimerListener
+    class IListener
     {
       public:
-        TimerListener() = default;
-        virtual ~TimerListener() = default;
-        virtual void timerTriggerHandler() = 0;
+        IListener() = default;
+        virtual ~IListener() = default;
+
+        virtual void trigger() = 0;
     };
 
-    template <typename T> class Accumulator : public TimerListener
+    template <typename T> class Accumulator : public IListener
     {
       public:
-        Accumulator(T startValue) : accumulator_(startValue)
-        {
-        }
-        void timerTriggerHandler()
-        {
-            accumulator_ += 1;
-        }
-        T value() const
-        {
-            return accumulator_;
-        }
-        void resetAccumulator()
-        {
-            accumulator_ = 0;
-        }
+        explicit Accumulator(T startValue) : accumulator_(startValue) {}
+
+        void trigger() override { accumulator_ += 1; }
+
+        T value() const { return accumulator_; }
+
+        void reset() { accumulator_ = 0; }
 
       private:
         T accumulator_;
     };
 
-    Timer(CPU *cpu);
+    explicit Timer(CPU *cpu);
 
     void init();
     void update(uint64_t deltaCycles);
+    void addTimerListener(IListener *listener, uint64_t cycleModulo);
 
-    uint8_t onReadOwnedByte(uint16_t address);
-    void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue);
-
-    void addTimerListener(TimerListener *listener, uint64_t cycleModulo)
-    {
-        if (initialized_)
-            throw std::runtime_error("Cannot add timer listener after timer is initalized.");
-        if (cycleModulo == 0)
-            throw std::runtime_error("Cycle modulo most be positive.");
-        timerListeners_.push(TimerListenerInfo{listener, cycleModulo, cycleModulo});
-    }
+    // RAM::Owner
+    uint8_t onReadOwnedByte(uint16_t address) override;
+    void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
   private:
-    class TimerListenerInfo
+    struct TimerListenerInfo
     {
-      public:
-        TimerListener *listener_;
-        uint64_t listenerModulo_;
-        uint64_t nextCycleCountTrigger_;
+        IListener *listener;
+        uint64_t modulo;
+        uint64_t nextTriggerCycle;
     };
 
-    class TimerListenerInfoCompare
+    class EnabledTimer : public IListener
     {
       public:
-        bool operator()(TimerListenerInfo a, TimerListenerInfo b)
-        {
-            return a.nextCycleCountTrigger_ > b.nextCycleCountTrigger_;
-        }
-    };
-
-    class EnabledTimer : public TimerListener
-    {
-      public:
-        EnabledTimer(uint8_t tacId, uint8_t *tima, uint8_t *tma, uint8_t *tac, CPU *cpu)
+        EnabledTimer(uint8_t tacId, uint8_t *tima, const uint8_t *tma, const uint8_t *tac, CPU *cpu)
             : tacId_(tacId), tima_(tima), tma_(tma), tac_(tac), cpu_(cpu)
+        {}
+
+        void trigger() override
         {
-        }
-        void timerTriggerHandler()
-        {
-            if (enabled())
+            if (!enabled())
+                return;
+
+            if (*tima_ == 0xff)
             {
-                if (*tima_ == 0xff)
-                {
-                    *tima_ = *tma_;
-                    cpu_->requestInterupt(CPU::Interrupt::TIMER);
-                    return;
-                }
-                *tima_ = *tima_ + 1;
+                *tima_ = *tma_;
+                cpu_->requestInterrupt(CPU::Interrupt::TIMER);
+            }
+            else
+            {
+                *tima_ += 1;
             }
         }
 
       private:
-        bool enabled() const
-        {
-            const auto masterTACEnabled = getBit(*tac_, 2);
-            if (!masterTACEnabled)
-            {
-                return false;
-            }
-
-            const auto enabledTACId = *tac_ & 0b11;
-            return enabledTACId == tacId_;
-        }
+        bool enabled() const { return getBit(*tac_, 2) && (*tac_ & 0b11) == tacId_; }
 
         const uint8_t tacId_;
-
         uint8_t *tima_;
         const uint8_t *tma_;
         const uint8_t *tac_;
-
         CPU *cpu_;
     };
 
-    static constexpr uint64_t DIV_REGISTER_MODULO = 64;
-    static constexpr uint8_t DIV_REGISTER_START_VALUE = 0xab;
+    // DIV register
+    static constexpr uint64_t DIV_MODULO = 64;
+    static constexpr uint8_t DIV_START_VALUE = 0xab;
 
-    static constexpr uint64_t TIMER_0_MODULO = 256;
-    static constexpr uint8_t TIMER_0_TAC_ID = 0x00;
-    static constexpr uint64_t TIMER_1_MODULO = 4;
-    static constexpr uint8_t TIMER_1_TAC_ID = 0x01;
-    static constexpr uint64_t TIMER_2_MODULO = 16;
-    static constexpr uint8_t TIMER_2_TAC_ID = 0x02;
-    static constexpr uint64_t TIMER_3_MODULO = 64;
-    static constexpr uint8_t TIMER_3_TAC_ID = 0x03;
+    // TAC-controlled timers (id, modulo)
+    static constexpr uint8_t TAC_ID_0 = 0x00;
+    static constexpr uint8_t TAC_ID_1 = 0x01;
+    static constexpr uint8_t TAC_ID_2 = 0x02;
+    static constexpr uint8_t TAC_ID_3 = 0x03;
+
+    static constexpr uint64_t TAC_MODULO_0 = 256;
+    static constexpr uint64_t TAC_MODULO_1 = 4;
+    static constexpr uint64_t TAC_MODULO_2 = 16;
+    static constexpr uint64_t TAC_MODULO_3 = 64;
 
     bool initialized_;
     uint64_t cyclesSinceLaunch_;
 
-    std::unique_ptr<Accumulator<uint8_t>> divAccumulator_;
+    // IO registers
+    uint8_t tima_;
+    uint8_t tma_;
+    uint8_t tac_;
 
-    CPU *cpu_;
+    // Internal timer components
+    Accumulator<uint8_t> divAccumulator_;
+    EnabledTimer timer0_;
+    EnabledTimer timer1_;
+    EnabledTimer timer2_;
+    EnabledTimer timer3_;
 
-    std::unique_ptr<EnabledTimer> timer0_;
-    std::unique_ptr<EnabledTimer> timer1_;
-    std::unique_ptr<EnabledTimer> timer2_;
-    std::unique_ptr<EnabledTimer> timer3_;
-
-    std::unique_ptr<uint8_t> tima_;
-    std::unique_ptr<uint8_t> tma_;
-    std::unique_ptr<uint8_t> tac_;
-
-    std::priority_queue<TimerListenerInfo, std::vector<TimerListenerInfo>, TimerListenerInfoCompare> timerListeners_;
+    std::vector<TimerListenerInfo> timerListeners_;
 };
 
 } // namespace gbemu::backend

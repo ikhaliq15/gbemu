@@ -12,15 +12,9 @@ class Config
   public:
     Config(bool enableBlarggSerialLogging, bool runHeadless, std::string dumpDisplayOnExitPath);
 
-    [[nodiscard]] bool enableBlarggSerialLogging() const
-    {
-        return enableBlarggSerialLogging_;
-    }
+    [[nodiscard]] bool enableBlarggSerialLogging() const { return enableBlarggSerialLogging_; }
 
-    [[nodiscard]] bool runHeadless() const
-    {
-        return runHeadless_;
-    }
+    [[nodiscard]] bool runHeadless() const { return runHeadless_; }
 
     [[nodiscard]] std::optional<std::string> dumpDisplayOnExitPath() const
     {
