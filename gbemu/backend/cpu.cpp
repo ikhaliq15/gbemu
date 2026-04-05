@@ -3,6 +3,7 @@
 #include "gbemu/backend/bitutils.h"
 
 #include <iostream>
+#include <unordered_map>
 
 namespace gbemu::backend
 {
