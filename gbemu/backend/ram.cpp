@@ -33,11 +33,6 @@ auto RAM::operator==(const RAM &rhs) const -> bool
     return true;
 }
 
-auto RAM::operator!=(const RAM &rhs) const -> bool
-{
-    return !(*this == rhs);
-}
-
 auto operator<<(std::ostream &os, const RAM &ram) -> std::ostream &
 {
     for (size_t i = 0; i < ram.memory_.size(); i++)
@@ -54,7 +49,7 @@ auto operator<<(std::ostream &os, const RAM &ram) -> std::ostream &
 
 void RAM::loadCartridge(const Cartridge &cartridge)
 {
-    for (size_t i = 0; i < std::max(cartridge.size(), 0x8000ul); i++)
+    for (size_t i = 0; i < std::min(cartridge.size(), 0x8000ul); i++)
         memory_[i] = cartridge[i];
 }
 

@@ -380,7 +380,7 @@ void CPU::setFullRegister(FullRegister reg, uint16_t newRegVal)
     }
 }
 
-void CPU::requestInterupt(Interrupt interrupt)
+void CPU::requestInterrupt(Interrupt interrupt)
 {
     const auto currentIF = ram_->get(RAM::IF);
 
@@ -406,7 +406,7 @@ void CPU::executeInstruction(bool verbose)
     if (verbose)
         std::cout << *this << std::endl;
 
-    const auto enableInteruptsAfterInstruction = interuptsEnabledQueued_;
+    const auto enableInterruptsAfterInstruction = interruptsEnabledQueued_;
 
     auto opcodeValue = ram_->get(PC());
     auto opcodeMap = &opcodes_;
@@ -438,10 +438,10 @@ void CPU::executeInstruction(bool verbose)
 
     cycles_ += opcode->cycles();
 
-    if (enableInteruptsAfterInstruction)
+    if (enableInterruptsAfterInstruction)
     {
         IME_ = true;
-        interuptsEnabledQueued_ = false;
+        interruptsEnabledQueued_ = false;
     }
 
     // if (verbose)
@@ -1409,7 +1409,7 @@ void CPU::LDs8(uint16_t pc, const OPCode *opcode)
 
 void CPU::EI(uint16_t pc, const OPCode *opcode)
 {
-    interuptsEnabledQueued_ = true;
+    interruptsEnabledQueued_ = true;
 }
 
 void CPU::RL(uint16_t pc, const OPCode *opcode)

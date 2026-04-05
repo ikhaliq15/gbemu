@@ -34,19 +34,12 @@ void dumpDisplay(gbemu::backend::Gameboy *gameboy, const std::string &path)
         return;
     }
 
-    const auto width = gbemu::backend::LCD_WIDTH;
-    const auto height = gbemu::backend::LCD_HEIGHT;
+    constexpr auto width = gbemu::backend::LCD_WIDTH;
+    constexpr auto height = gbemu::backend::LCD_HEIGHT;
+    constexpr auto channels = 4;
 
     const auto &pixels = gameboy->ppu()->getPixels();
-
-    constexpr auto channels = 4; // RGBA
-    auto *image_data = static_cast<unsigned char *>(malloc(width * height * channels));
-    if (!image_data)
-    {
-        std::cerr << "Failed to allocate memory for image data." << std::endl;
-        return;
-    }
-
+    std::vector<unsigned char> image_data(width * height * channels);
     for (int i = 0; i < width * height; i++)
     {
         const auto pixel = pixels[i];
@@ -57,10 +50,9 @@ void dumpDisplay(gbemu::backend::Gameboy *gameboy, const std::string &path)
     }
 
     const auto stride_bytes = width * channels * sizeof(unsigned char);
-    stbi_write_png(path.c_str(), width, height, channels, image_data, stride_bytes);
-
-    free(image_data);
+    stbi_write_png(path.c_str(), width, height, channels, image_data.data(), stride_bytes);
 }
+
 auto main(int argc, char **argv) -> int
 {
     argparse::ArgumentParser args(gbemu::config::kDisplayName);
@@ -110,8 +102,8 @@ auto main(int argc, char **argv) -> int
     if (args.is_used("--rom_file"))
     {
         const auto cartridgeFilename = args.get<std::string>("--rom_file");
-        const gbemu::backend::Cartridge catridge(cartridgeFilename);
-        gameboy->loadCartridge(catridge);
+        const gbemu::backend::Cartridge cartridge(cartridgeFilename);
+        gameboy->loadCartridge(cartridge);
     }
 
     start(gameboy.get(), frontend.get());

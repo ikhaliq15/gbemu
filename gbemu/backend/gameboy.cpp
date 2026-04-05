@@ -115,7 +115,7 @@ void Gameboy::handleInterrupts()
     if (!cpu_->IME())
         return;
 
-    // TODO: what happens if mulitple interupts fired at same time?
+    // TODO: what happens if multiple interrupts fired at same time?
     const uint8_t interruptsFired = ram_->get(RAM::IF) & ram_->get(RAM::IE);
 
     constexpr auto VBLANK_INTERRUPT_BIT = 0;

@@ -87,7 +87,7 @@ class Timer : public RAM::Owner
                 if (*tima_ == 0xff)
                 {
                     *tima_ = *tma_;
-                    cpu_->requestInterupt(CPU::Interrupt::TIMER);
+                    cpu_->requestInterrupt(CPU::Interrupt::TIMER);
                     return;
                 }
                 *tima_ = *tima_ + 1;

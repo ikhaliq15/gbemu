@@ -24,7 +24,7 @@ void PPU::update()
     lcdStatus_ = setBit(lcdStatus_, 2, (lyLycMatch) ? 1 : 0);
     if (lyLycMatch && !lycCoincidenceCalledOnThisLy_)
     {
-        cpu_->requestInterupt(CPU::Interrupt::STAT);
+        cpu_->requestInterrupt(CPU::Interrupt::STAT);
         lycCoincidenceCalledOnThisLy_ = true;
     }
 }
@@ -49,7 +49,7 @@ void PPU::trigger()
     else if (ly_ == 144)
     {
         completedFrames_ += 1;
-        cpu_->requestInterupt(CPU::Interrupt::VBLANK);
+        cpu_->requestInterrupt(CPU::Interrupt::VBLANK);
     }
 
     ly_ += 1;

@@ -59,7 +59,6 @@ class RAM
     RAM(const RAM &ram);
 
     bool operator==(const RAM &rhs) const;
-    bool operator!=(const RAM &rhs) const;
 
     friend std::ostream &operator<<(std::ostream &os, const RAM &ram);
 

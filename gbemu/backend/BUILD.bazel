@@ -43,7 +43,6 @@ cc_library(
     name = "backend",
     srcs = [
         "alu.cpp",
-        "alu.h",
         "cpu.cpp",
         "gameboy.cpp",
         "opcode.cpp",
