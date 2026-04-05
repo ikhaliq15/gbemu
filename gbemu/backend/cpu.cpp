@@ -2,7 +2,6 @@
 
 #include "gbemu/backend/bitutils.h"
 
-#include <iomanip>
 #include <iostream>
 #include <utility>
 
@@ -409,38 +408,30 @@ void CPU::serviceInterrupts()
 void CPU::executeInstruction(bool verbose)
 {
     if (verbose)
+    {
         std::cout << *this << std::endl;
+    }
 
     const auto enableInterruptsAfterInstruction = interruptsEnabledQueued_;
 
-    auto opcodeValue = ram_->get(PC());
-    auto opcodeMap = &opcodes_;
-    auto opCodeHandlerMap = &opcodeFunctions_;
-    auto prefixedOpcode = false;
+    const auto firstByte = ram_->get(PC());
+    const auto prefixed = firstByte == OPCode::PREFIX_OPCODE;
+    const auto opcodeValue = prefixed ? ram_->get(PC() + 1) : firstByte;
+    const auto &opcodeMap = prefixed ? prefixedOpcodes_ : opcodes_;
+    const auto &opCodeHandlerMap = prefixed ? prefixedOpcodeFunctions_ : opcodeFunctions_;
 
-    if (opcodeValue == OPCode::PREFIX_OPCODE)
+    const auto opcode = opcodeMap[opcodeValue];
+    if (!opcode)
     {
-        opcodeValue = ram_->get(PC() + 1);
-        opcodeMap = &prefixedOpcodes_;
-        opCodeHandlerMap = &prefixedOpcodeFunctions_;
-        prefixedOpcode = true;
+        const auto opcodeString = prefixed ? (toHexString(opcodeValue) + " (CB)") : toHexString(opcodeValue);
+        throw std::runtime_error("Unknown opcode detected: " + opcodeString + " at PC=" + toHexString(PC()));
     }
 
-    const auto opcodeString = [&prefixedOpcode, &opcodeValue]() -> std::string {
-        return (prefixedOpcode) ? (toHexString(opcodeValue) + " (CB)") : toHexString(opcodeValue);
-    };
-
-    const auto opcode = opcodeMap->at(opcodeValue);
-    if (!opcode)
-        throw std::runtime_error(std::string("Unknown opcode detected: ") + opcodeString() + std::string(" at PC=") +
-                                 toHexString(PC()));
-
     const auto oldPC = PC();
+    const auto &opcodeHandler = opCodeHandlerMap[opcodeValue];
+
     advancePC(opcode->bytes());
-
-    const auto &opcodeHandler = opCodeHandlerMap->at(opcodeValue);
     opcodeHandler(oldPC, opcode);
-
     cycles_ += opcode->cycles();
 
     if (enableInterruptsAfterInstruction)
@@ -448,20 +439,6 @@ void CPU::executeInstruction(bool verbose)
         IME_ = true;
         interruptsEnabledQueued_ = false;
     }
-
-    // if (verbose)
-    // {
-    // std::cout << std::setw(20) << std::left << opcode->command() << std::setw(17) << ("Opcode=" + opcodeString())
-    //           << "   " << std::setw(9) << ("PC=" + toHexString(PC())) << "   " << std::setw(9)
-    //           << ("SP=" + toHexString(SP())) << "   " << std::setw(9) << ("AF=" + toHexString(AF())) << "   "
-    //           << std::setw(9) << ("BC=" + toHexString(BC())) << "   " << std::setw(9) << ("DE=" + toHexString(DE()))
-    //           << "   " << std::setw(9) << ("HL=" + toHexString(HL())) << "   " << std::setw(9)
-    //           << ("LY=" + std::to_string(ram_->get(RAM::LY))) << "   " << std::setw(11)
-    //           << ("LCDC=" + toHexString(ram_->get(RAM::LCDC))) << "   " << std::setw(9)
-    //           << ("IF=" + toHexString(ram_->get(RAM::IF))) << "   " << std::setw(9)
-    //           << ("IE=" + toHexString(ram_->get(RAM::IE))) << "   " << std::setw(9)
-    //           << ("IME=" + (IME_ ? std::string("true") : std::string("false"))) << "   " << std::endl;
-    // }
 }
 
 auto CPU::operator==(const CPU &rhs) const -> bool
