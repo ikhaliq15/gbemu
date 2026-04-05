@@ -1,4 +1,6 @@
 #include "gbemu/backend/ppu.h"
+
+#include "gbemu/backend/interrupt_controller.h"
 #include "gbemu/backend/ram.h"
 
 #include <algorithm>
@@ -8,24 +10,24 @@
 namespace gbemu::backend
 {
 
-PPU::PPU(CPU *cpu, RAM *ram)
-    : cpu_(cpu), ram_(ram), scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00), wy_(0x00), wx_(0x00), lcdStatus_(0x00),
-      windowLy_(0x00), lycCoincidenceCalledOnThisLy_(false)
+PPU::PPU(RAM *ram, InterruptController *interruptController)
+    : interruptController_(interruptController), ram_(ram), scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00), wy_(0x00),
+      wx_(0x00), lcdStatus_(0x00), windowLy_(0x00), lycCoincidenceCalledOnThisLy_(false)
 {}
 
 void PPU::init()
 {
-    pixels_.fill(0x00000000);
+    std::ranges::fill(pixels_, 0x00000000);
 }
 
 void PPU::update()
 {
     const auto lyLycMatch = ly_ == lyc_;
-    lcdStatus_ = setBit(lcdStatus_, 2, lyLycMatch ? 1 : 0);
+    lcdStatus_ = setBit(lcdStatus_, 2, lyLycMatch);
 
     if (lyLycMatch && !lycCoincidenceCalledOnThisLy_)
     {
-        cpu_->requestInterrupt(CPU::Interrupt::STAT);
+        interruptController_->requestInterrupt(InterruptType::Stat);
         lycCoincidenceCalledOnThisLy_ = true;
     }
 }
@@ -48,7 +50,7 @@ void PPU::trigger()
     else if (ly_ == LCD_HEIGHT)
     {
         completedFrames_ += 1;
-        cpu_->requestInterrupt(CPU::Interrupt::VBLANK);
+        interruptController_->requestInterrupt(InterruptType::VBlank);
     }
 
     ly_ += 1;
@@ -144,7 +146,7 @@ void PPU::drawScanLine()
 
     if (!lcdEnabled)
     {
-        pixels_.fill(0);
+        std::ranges::fill(pixels_, 0xffffffff);
         return;
     }
 
@@ -154,8 +156,7 @@ void PPU::drawScanLine()
         drawBackground(bgPalette, tileData, bgTileMap);
     else
     {
-        for (int x = 0; x < LCD_WIDTH; x++)
-            pixels_[ly_ * LCD_WIDTH + x] = 0xffffffff;
+        std::fill_n(&pixels_[ly_ * LCD_WIDTH], LCD_WIDTH, 0xffffffff);
     }
 
     if (windowEnabled && bgEnabled)

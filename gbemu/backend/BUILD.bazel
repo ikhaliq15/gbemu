@@ -11,6 +11,19 @@ cc_library(
 )
 
 cc_library(
+    name = "interrupt_controller",
+    srcs = [
+        "interrupt_controller.cpp",
+    ],
+    hdrs = [
+        "interrupt_controller.h",
+    ],
+    deps = [
+        ":ram",
+    ],
+)
+
+cc_library(
     name = "joypad",
     srcs = [
         "joypad.cpp",
@@ -62,6 +75,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":bitutils",
+        ":interrupt_controller",
         ":joypad",
         ":ram",
         "//gbemu/config",

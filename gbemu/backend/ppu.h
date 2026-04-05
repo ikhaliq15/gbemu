@@ -1,7 +1,7 @@
 #ifndef GBEMU_BACKEND_PPU_H
 #define GBEMU_BACKEND_PPU_H
 
-#include "gbemu/backend/cpu.h"
+#include "gbemu/backend/interrupt_controller.h"
 #include "gbemu/backend/ram.h"
 #include "gbemu/backend/timer.h"
 
@@ -20,7 +20,7 @@ class PPU : public Timer::IListener, public RAM::Owner
     static constexpr uint64_t SCANLINE_FREQUENCY = 9352;
     static constexpr uint64_t CYCLES_PER_SCANLINE = 114;
 
-    PPU(CPU *cpu, RAM *ram);
+    PPU(RAM *ram, InterruptController *interruptController);
 
     void init();
     void update();
@@ -51,7 +51,7 @@ class PPU : public Timer::IListener, public RAM::Owner
 
     [[nodiscard]] std::array<uint32_t, 4> buildPalette(uint8_t paletteRegister) const;
 
-    CPU *cpu_;
+    InterruptController *interruptController_;
     RAM *ram_;
 
     // LCD registers

@@ -96,7 +96,6 @@ class CPU
     void setRegister(Register reg, uint8_t newRegVal);
     void setFullRegister(FullRegister reg, uint16_t newRegVal);
 
-    void requestInterrupt(Interrupt interrupt);
     void serviceInterrupts();
 
     void executeInstruction(bool verbose = false);
