@@ -392,7 +392,7 @@ void CPU::serviceInterrupts()
         return;
 
     // Service the highest-priority pending interrupt
-    constexpr uint8_t INTERRUPT_BITS[] = {0, 1, 2}; // VBLANK, LCD_STAT, TIMER
+    constexpr std::array<uint8_t, 3> INTERRUPT_BITS = {0, 1, 2}; // VBLANK, LCD_STAT, TIMER
     for (const auto bit : INTERRUPT_BITS)
     {
         if (getBit(pending, bit))
