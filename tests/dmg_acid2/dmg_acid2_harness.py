@@ -23,7 +23,7 @@ TEST_ROM_PASSED_MARKER = "Passed"
 
 # Test data and command information
 GBEMU_BINARY_LOCATION = os.path.join("gbemu", "gbemu_exe")
-GBEMU_BLARGG_LOGGING_OPTION = "--blarg_console"
+GBEMU_DUMP_SERIAL_OPTION = "--dump_serial"
 GEBEMU_HEADLESS_MODE_OPTION = "--headless"
 GBEMU_ROM_OPTION = "--rom_file"
 GEBEMU_DUMP_DISPLAY_ON_EXIT_OPTION = "--dump_display_path"
@@ -138,7 +138,7 @@ class DMGAcid2Test(unittest.TestCase):
 
                 command = [
                     GBEMU_BINARY_LOCATION,
-                    GBEMU_BLARGG_LOGGING_OPTION,
+                    GBEMU_DUMP_SERIAL_OPTION,
                     GEBEMU_HEADLESS_MODE_OPTION,
                     f"{GEBEMU_DUMP_DISPLAY_ON_EXIT_OPTION}={test_reference_png}",
                     GBEMU_ROM_OPTION,
