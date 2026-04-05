@@ -3,7 +3,6 @@
 #include "gbemu/backend/bitutils.h"
 
 #include <iostream>
-#include <utility>
 
 namespace gbemu::backend
 {
@@ -13,7 +12,6 @@ CPU::CPU(RAM *ram)
       HL_(STARTING_HL), ram_(ram), cycles_(0ul), mode_(Mode::NORMAL), opcodes_(OpcodeTable::instance().opcodes()),
       prefixedOpcodes_(OpcodeTable::instance().prefixedOpcodes())
 {
-
     const std::unordered_map<std::string, OPCodeHandler> opcodeFunctions{
         {"NOP", &CPU::NOP},         {"LD", &CPU::LD},       {"INC", &CPU::INC},         {"DEC", &CPU::DEC},
         {"RLCA", &CPU::RLCA},       {"LD_SP", &CPU::LD_SP}, {"ADD", &CPU::ADD},         {"RRCA", &CPU::RRCA},
@@ -30,33 +28,27 @@ CPU::CPU(RAM *ram)
         {"BIT_SET", &CPU::BIT_SET},
     };
 
-    for (size_t i = 0; i < opcodeFunctions_.size(); i++)
-    {
-        opcodeFunctions_[i] = &CPU::UNIMPLEMENTED;
-
-        if (opcodes_[i] == nullptr)
+    const auto buildOpcodeFunctions = [&opcodeFunctions](const auto &opcodes) {
+        std::array<OPCodeHandler, 256> functionMap{};
+        std::ranges::fill(functionMap, &CPU::UNIMPLEMENTED);
+        for (size_t i = 0; i < opcodes.size(); i++)
         {
-            continue;
+            const auto &opcode = opcodes[i];
+            if (opcode == nullptr)
+            {
+                continue;
+            }
+
+            if (const auto opcodeIt = opcodeFunctions.find(opcode->mnemonic()); opcodeIt != opcodeFunctions.end())
+            {
+                functionMap[i] = opcodeFunctions.at(opcode->mnemonic());
+            }
         }
+        return functionMap;
+    };
 
-        const auto opcodeIt = opcodeFunctions.find(opcodes_[i]->mnemonic());
-        if (opcodeIt != opcodeFunctions.end())
-            opcodeFunctions_[i] = opcodeIt->second;
-    }
-
-    for (size_t i = 0; i < prefixedOpcodeFunctions_.size(); i++)
-    {
-        prefixedOpcodeFunctions_[i] = &CPU::UNIMPLEMENTED;
-
-        if (prefixedOpcodes_[i] == nullptr)
-        {
-            continue;
-        }
-
-        const auto opcodeIt = opcodeFunctions.find(prefixedOpcodes_[i]->mnemonic());
-        if (opcodeIt != opcodeFunctions.end())
-            prefixedOpcodeFunctions_[i] = opcodeIt->second;
-    }
+    opcodeFunctions_ = buildOpcodeFunctions(opcodes_);
+    prefixedOpcodeFunctions_ = buildOpcodeFunctions(prefixedOpcodes_);
 }
 
 CPU::CPU(const CPU &cpu)
