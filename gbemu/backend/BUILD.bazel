@@ -3,10 +3,40 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 package(default_visibility = ["//gbemu:__subpackages__"])
 
 cc_library(
+    name = "alu",
+    srcs = [
+        "alu.cpp",
+    ],
+    hdrs = [
+        "alu.h",
+    ],
+    deps = [
+        ":bitutils",
+    ],
+)
+
+cc_library(
     name = "bitutils",
     srcs = [],
     hdrs = [
         "bitutils.h",
+    ],
+)
+
+cc_library(
+    name = "cpu",
+    srcs = [
+        "cpu.cpp",
+    ],
+    hdrs = [
+        "cpu.h",
+    ],
+    deps = [
+        ":alu",
+        ":bitutils",
+        ":interrupt_controller",
+        ":opcode",
+        ":ram",
     ],
 )
 
@@ -38,6 +68,38 @@ cc_library(
 )
 
 cc_library(
+    name = "opcode",
+    srcs = [
+        "opcode.cpp",
+    ],
+    hdrs = [
+        "opcode.h",
+        "opcode_data.h",
+        "operand.h",
+    ],
+    deps = [
+        ":bitutils",
+        "@json",
+    ],
+)
+
+cc_library(
+    name = "ppu",
+    srcs = [
+        "ppu.cpp",
+    ],
+    hdrs = [
+        "ppu.h",
+    ],
+    deps = [
+        ":bitutils",
+        ":interrupt_controller",
+        ":ram",
+        ":timer",
+    ],
+)
+
+cc_library(
     name = "ram",
     srcs = [
         "cartridge.cpp",
@@ -53,32 +115,34 @@ cc_library(
 )
 
 cc_library(
-    name = "backend",
+    name = "timer",
     srcs = [
-        "alu.cpp",
-        "cpu.cpp",
-        "gameboy.cpp",
-        "opcode.cpp",
-        "ppu.cpp",
         "timer.cpp",
     ],
     hdrs = [
-        "alu.h",
-        "cpu.h",
-        "gameboy.h",
-        "opcode.h",
-        "opcode_data.h",
-        "operand.h",
-        "ppu.h",
         "timer.h",
     ],
-    visibility = ["//visibility:public"],
     deps = [
         ":bitutils",
         ":interrupt_controller",
-        ":joypad",
         ":ram",
-        "//gbemu/config",
-        "@json",
+    ],
+)
+
+cc_library(
+    name = "backend",
+    srcs = [
+        "gameboy.cpp",
+    ],
+    hdrs = [
+        "gameboy.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":cpu",
+        ":joypad",
+        ":ppu",
+        ":ram",
+        ":timer",
     ],
 )
