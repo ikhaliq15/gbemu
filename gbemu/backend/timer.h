@@ -4,8 +4,7 @@
 #include "gbemu/backend/cpu.h"
 #include "gbemu/backend/ram.h"
 
-#include <memory>
-#include <queue>
+#include <vector>
 
 namespace gbemu::backend
 {
@@ -59,10 +58,10 @@ class Timer : public RAM::Owner
     void addTimerListener(IListener *listener, uint64_t cycleModulo)
     {
         if (initialized_)
-            throw std::runtime_error("Cannot add timer listener after timer is initalized.");
+            throw std::runtime_error("Cannot add timer listener after timer is initialized.");
         if (cycleModulo == 0)
-            throw std::runtime_error("Cycle modulo most be positive.");
-        timerListeners_.push(TimerListenerInfo{listener, cycleModulo, cycleModulo});
+            throw std::runtime_error("Cycle modulo must be positive.");
+        timerListeners_.push_back(TimerListenerInfo{listener, cycleModulo, cycleModulo});
     }
 
   private:
@@ -72,15 +71,6 @@ class Timer : public RAM::Owner
         IListener *listener_;
         uint64_t listenerModulo_;
         uint64_t nextCycleCountTrigger_;
-    };
-
-    class TimerListenerInfoCompare
-    {
-      public:
-        bool operator()(TimerListenerInfo a, TimerListenerInfo b)
-        {
-            return a.nextCycleCountTrigger_ > b.nextCycleCountTrigger_;
-        }
     };
 
     class EnabledTimer : public IListener
@@ -141,20 +131,20 @@ class Timer : public RAM::Owner
     bool initialized_;
     uint64_t cyclesSinceLaunch_;
 
-    std::unique_ptr<Accumulator<uint8_t>> divAccumulator_;
+    Accumulator<uint8_t> divAccumulator_;
 
     CPU *cpu_;
 
-    std::unique_ptr<EnabledTimer> timer0_;
-    std::unique_ptr<EnabledTimer> timer1_;
-    std::unique_ptr<EnabledTimer> timer2_;
-    std::unique_ptr<EnabledTimer> timer3_;
+    uint8_t tima_;
+    uint8_t tma_;
+    uint8_t tac_;
 
-    std::unique_ptr<uint8_t> tima_;
-    std::unique_ptr<uint8_t> tma_;
-    std::unique_ptr<uint8_t> tac_;
+    EnabledTimer timer0_;
+    EnabledTimer timer1_;
+    EnabledTimer timer2_;
+    EnabledTimer timer3_;
 
-    std::priority_queue<TimerListenerInfo, std::vector<TimerListenerInfo>, TimerListenerInfoCompare> timerListeners_;
+    std::vector<TimerListenerInfo> timerListeners_;
 };
 
 } // namespace gbemu::backend
