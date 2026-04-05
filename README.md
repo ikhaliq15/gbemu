@@ -62,3 +62,7 @@ The current interface is designed around a fixed, analysis-friendly layout: the 
 - ROMs are not included with releases. You will need to provide your own `.gb` files.
 - On macOS, the app may show an unidentified developer warning until the release process includes signing and notarization.
 - The included debug panels are part of the intended experience in this release. GBEmu is not just presenting the game screen; it is also exposing emulator internals while the ROM is running.
+
+## Development
+
+Contributor setup, build commands, test commands, and release workflow details live in [DEVELOPMENT.md](/Users/imran/Documents/coding/GBEmu_v3/DEVELOPMENT.md).
