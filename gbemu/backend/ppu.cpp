@@ -40,7 +40,7 @@ bool PPU::consumeCompletedFrame()
     return true;
 }
 
-void PPU::timerTriggerHandler()
+void PPU::trigger()
 {
     if (ly_ < 144)
     {
@@ -135,15 +135,15 @@ void PPU::drawScanLine()
     /* Draw nothing if lcd is turned off. */
     if (!lcd_enabled)
     {
-        for (unsigned int &pixel : pixels_)
+        for (auto &pixel : pixels_)
             pixel = 0;
         return;
     }
 
     /* Setup background color palette. */
-    std::array<unsigned int, 4> bg_palette;
+    std::array<uint32_t, 4> bg_palette;
     uint8_t bgp = cpu_->ram()->get(RAM::BGP);
-    for (unsigned int &palette : bg_palette)
+    for (auto &palette : bg_palette)
     {
         switch (bgp & 0x03)
         {
@@ -163,7 +163,7 @@ void PPU::drawScanLine()
         bgp >>= 2;
     }
 
-    const uint8_t y = ly_;
+    const auto y = ly_;
 
     /* Draw background for current scan line, if background is enabled. */
     // TODO: if not enabled, background is white
@@ -174,9 +174,9 @@ void PPU::drawScanLine()
             const auto viewPortX = (x + scx_) % 256;
             const auto viewPortY = (y + scy_) % 256;
 
-            int tile_x = viewPortX / 8;
-            int tile_y = viewPortY / 8;
-            int tile_index = tile_y * 32 + tile_x;
+            const int tile_x = viewPortX / 8;
+            const int tile_y = viewPortY / 8;
+            const int tile_index = tile_y * 32 + tile_x;
 
             uint16_t tile;
             if (tile_data == 0x8000)
@@ -189,20 +189,20 @@ void PPU::drawScanLine()
                 tile = tile_data + 16 * static_cast<int8_t>(cpu_->ram()->get(bg_tile_map + tile_index));
             }
 
-            int inner_tile_x = viewPortX % 8;
-            int inner_tile_y = viewPortY % 8;
+            const int inner_tile_x = viewPortX % 8;
+            const int inner_tile_y = viewPortY % 8;
 
-            uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
-            uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
+            const uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
+            const uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
 
             pixels_[y * LCD_WIDTH + x] = bg_palette[(msb << 1) | lsb];
         }
     }
     else
     {
-        for (int x = 0; x < LCD_WIDTH; x++)
+        for (int x = y * LCD_WIDTH; x < (y * LCD_WIDTH + LCD_WIDTH); x++)
         {
-            pixels_[y * LCD_WIDTH + x] = 0xffffffff;
+            pixels_[x] = 0xffffffff;
         }
     }
 
@@ -220,10 +220,11 @@ void PPU::drawScanLine()
 
             if (!(0 <= window_x && window_x < LCD_WIDTH && 0 <= window_y && window_y < LCD_HEIGHT))
                 continue;
+            windowVisible = true;
 
-            int tile_x = window_x / 8;
-            int tile_y = window_pixel_y / 8;
-            int tile_index = tile_y * 32 + tile_x;
+            const int tile_x = window_x / 8;
+            const int tile_y = window_pixel_y / 8;
+            const int tile_index = tile_y * 32 + tile_x;
 
             uint16_t tile;
             if (tile_data == 0x8000)
@@ -236,13 +237,12 @@ void PPU::drawScanLine()
                 tile = tile_data + 16 * static_cast<int8_t>(cpu_->ram()->get(window_tilemap + tile_index));
             }
 
-            int inner_tile_x = window_x % 8;
-            int inner_tile_y = window_pixel_y % 8;
+            const int inner_tile_x = window_x % 8;
+            const int inner_tile_y = window_pixel_y % 8;
 
-            uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
-            uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
+            const uint8_t lsb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y)), 7 - inner_tile_x);
+            const uint8_t msb = getBit(cpu_->ram()->get(tile + (2 * inner_tile_y) + 1), 7 - inner_tile_x);
 
-            windowVisible = true;
             pixels_[y * LCD_WIDTH + x] = bg_palette[(msb << 1) | lsb];
         }
         if (windowVisible)
@@ -252,27 +252,31 @@ void PPU::drawScanLine()
     /* Draw sprites for current scan line, if sprites are enabled. */
     if (sprite_enabled)
     {
-        // TODO: handle sprite drawing priority case where sprites overlap at same x,y but starting x are not the same.
-        std::priority_queue<std::pair<uint8_t, int>> selectedSprites;
-        for (uint16_t i = 0; i < 40 && selectedSprites.size() < MAX_SPRITES_PER_SCANLINE; i++)
+        std::vector<std::pair<uint8_t, int>> selectedSprites;
+        selectedSprites.reserve(MAX_SPRITES_PER_SCANLINE);
+
+        for (uint16_t spriteIndex = 0; spriteIndex < 40 && selectedSprites.size() < MAX_SPRITES_PER_SCANLINE;
+             spriteIndex++)
         {
-            const uint16_t spriteAddress = RAM::OAM + (i * 4);
+            const uint16_t spriteAddress = RAM::OAM + (spriteIndex * 4);
             const uint8_t spriteY = cpu_->ram()->get(spriteAddress) - 16;
             const uint8_t spriteX = cpu_->ram()->get(spriteAddress + 1) - 8;
 
-            /* If sprite does not appear on current scanline, then skip. */
+            // Skip sprites not visible on current scan line.
             if (!(spriteY <= y && y < spriteY + sprite_height))
                 continue;
 
-            selectedSprites.emplace(spriteX, i);
+            selectedSprites.push_back(std::make_pair(spriteX, spriteIndex));
         }
 
-        while (!selectedSprites.empty())
-        {
-            const auto selectedSprite = selectedSprites.top();
-            selectedSprites.pop();
+        // Sprites with lower x coordinate have higher priority, so sort in descending order of x coordinate,
+        // so that sprites with higher x coordinate are drawn first, and can be overwritten by sprites with lower x
+        // coordinate.
+        std::ranges::sort(selectedSprites, std::greater<std::pair<uint8_t, int>>{});
 
-            const uint16_t spriteAddress = RAM::OAM + (std::get<1>(selectedSprite) * 4);
+        for (const auto [spriteX, spriteIndex] : selectedSprites)
+        {
+            const uint16_t spriteAddress = RAM::OAM + (spriteIndex * 4);
 
             const auto sprite_y = cpu_->ram()->get(spriteAddress) - 16;
             const auto sprite_x = cpu_->ram()->get(spriteAddress + 1) - 8;
@@ -283,9 +287,9 @@ void PPU::drawScanLine()
 
             const auto sprite_attributes = cpu_->ram()->get(spriteAddress + 3);
 
-            const auto sprite_priority = getBit(sprite_attributes, 7) == 1;
-            const auto sprite_y_flip = getBit(sprite_attributes, 6) == 1;
-            const auto sprite_x_flip = getBit(sprite_attributes, 5) == 1;
+            const auto sprite_priority = getBit(sprite_attributes, 7);
+            const auto sprite_y_flip = getBit(sprite_attributes, 6);
+            const auto sprite_x_flip = getBit(sprite_attributes, 5);
             const auto sprite_palette_flag = getBit(sprite_attributes, 4);
             const auto sprite_palette = (sprite_palette_flag == 0) ? RAM::OBP0 : RAM::OBP1;
 

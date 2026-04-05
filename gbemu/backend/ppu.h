@@ -14,7 +14,7 @@ static constexpr uint16_t LCD_HEIGHT = 144;
 // TODO: should technically be ~59.7.
 #define DEVICE_FPS (60.0)
 
-class PPU : public Timer::TimerListener, public RAM::Owner
+class PPU : public Timer::IListener, public RAM::Owner
 {
   public:
     static constexpr uint64_t SCANLINE_FREQUENCY = 9352;
@@ -29,8 +29,8 @@ class PPU : public Timer::TimerListener, public RAM::Owner
     bool consumeCompletedFrame();
 
   public:
-    // Timer::TimerListener
-    void timerTriggerHandler() override;
+    // Timer::IListener
+    void trigger() override;
 
     // RAM::Owner
     [[nodiscard]] uint8_t onReadOwnedByte(uint16_t address) override;

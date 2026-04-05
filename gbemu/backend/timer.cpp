@@ -1,7 +1,5 @@
 #include "gbemu/backend/timer.h"
 
-#include <utility>
-
 namespace gbemu::backend
 {
 
@@ -33,26 +31,24 @@ void Timer::init()
 void Timer::update(uint64_t deltaCycles)
 {
     if (!initialized_)
-        throw std::runtime_error("Cannot increment an uninitialized tiemr.");
+        throw std::runtime_error("Cannot increment an uninitialized timer.");
 
-    for (uint64_t i = 0; i < deltaCycles; ++i)
+    uint64_t targetCycle = cyclesSinceLaunch_ + deltaCycles;
+
+    while (!timerListeners_.empty() && timerListeners_.top().nextCycleCountTrigger_ <= targetCycle)
     {
-        cyclesSinceLaunch_ += 1;
+        auto info = timerListeners_.top();
+        timerListeners_.pop();
 
-        if (timerListeners_.empty())
-            return;
+        // Fast-forward to trigger point
+        cyclesSinceLaunch_ = info.nextCycleCountTrigger_;
+        info.listener_->trigger();
+        info.nextCycleCountTrigger_ += info.listenerModulo_;
 
-        while (timerListeners_.top().nextCycleCountTrigger_ <= cyclesSinceLaunch_)
-        {
-            auto info = timerListeners_.top();
-            timerListeners_.pop();
-
-            info.listener_->timerTriggerHandler();
-            info.nextCycleCountTrigger_ = cyclesSinceLaunch_ + info.listenerModulo_;
-
-            timerListeners_.push(info);
-        }
+        timerListeners_.push(info);
     }
+
+    cyclesSinceLaunch_ = targetCycle;
 }
 
 auto Timer::onReadOwnedByte(uint16_t address) -> uint8_t

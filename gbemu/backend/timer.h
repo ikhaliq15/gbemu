@@ -13,28 +13,32 @@ namespace gbemu::backend
 class Timer : public RAM::Owner
 {
   public:
-    class TimerListener
+    class IListener
     {
       public:
-        TimerListener() = default;
-        virtual ~TimerListener() = default;
-        virtual void timerTriggerHandler() = 0;
+        IListener() = default;
+        virtual ~IListener() = default;
+
+        virtual void trigger() = 0;
     };
 
-    template <typename T> class Accumulator : public TimerListener
+    template <typename T> class Accumulator : public IListener
     {
       public:
         Accumulator(T startValue) : accumulator_(startValue)
         {
         }
-        void timerTriggerHandler()
+
+        void trigger()
         {
             accumulator_ += 1;
         }
+
         T value() const
         {
             return accumulator_;
         }
+
         void resetAccumulator()
         {
             accumulator_ = 0;
@@ -52,7 +56,7 @@ class Timer : public RAM::Owner
     uint8_t onReadOwnedByte(uint16_t address);
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue);
 
-    void addTimerListener(TimerListener *listener, uint64_t cycleModulo)
+    void addTimerListener(IListener *listener, uint64_t cycleModulo)
     {
         if (initialized_)
             throw std::runtime_error("Cannot add timer listener after timer is initalized.");
@@ -65,7 +69,7 @@ class Timer : public RAM::Owner
     class TimerListenerInfo
     {
       public:
-        TimerListener *listener_;
+        IListener *listener_;
         uint64_t listenerModulo_;
         uint64_t nextCycleCountTrigger_;
     };
@@ -79,14 +83,14 @@ class Timer : public RAM::Owner
         }
     };
 
-    class EnabledTimer : public TimerListener
+    class EnabledTimer : public IListener
     {
       public:
         EnabledTimer(uint8_t tacId, uint8_t *tima, uint8_t *tma, uint8_t *tac, CPU *cpu)
             : tacId_(tacId), tima_(tima), tma_(tma), tac_(tac), cpu_(cpu)
         {
         }
-        void timerTriggerHandler()
+        void trigger()
         {
             if (enabled())
             {
