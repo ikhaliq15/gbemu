@@ -1,5 +1,7 @@
 #include "gbemu/backend/gameboy.h"
 
+#include <utility>
+
 namespace gbemu::backend
 {
 
