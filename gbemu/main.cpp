@@ -10,10 +10,10 @@
 
 #include <argparse/argparse.hpp>
 
+#include <array>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <vector>
 
 namespace
 {
@@ -37,7 +37,7 @@ void dumpDisplay(const gbemu::backend::Gameboy &gameboy, const std::string &path
     constexpr auto channels = 4; // RGBA
 
     const auto &pixels = gameboy.ppu()->getPixels();
-    std::vector<unsigned char> imageData(width * height * channels);
+    std::array<unsigned char, width * height * channels> imageData{};
 
     for (size_t i = 0; i < pixels.size(); i++)
     {
