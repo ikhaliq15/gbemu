@@ -85,9 +85,7 @@ OpcodeTable::OpcodeTable()
         const auto bytes = entry["bytes"].get<uint8_t>();
         const auto cycles = entry["cycles"].get<uint8_t>();
 
-        uint8_t additionalCycles = 0;
-        if (entry.contains("additionalCycles"))
-            additionalCycles = entry["additionalCycles"].get<uint8_t>();
+        const uint8_t additionalCycles = entry.value("additionalCycles", 0);
 
         OPCode::JumpCondition jumpCondition = OPCode::JumpCondition::ALWAYS;
         if (entry.contains("jumpCondition"))
@@ -108,9 +106,7 @@ OpcodeTable::OpcodeTable()
             operands.push_back(it->second);
         }
 
-        std::vector<uint8_t> auxiliaryArguments;
-        if (entry.contains("aux_args"))
-            auxiliaryArguments = entry["aux_args"].get<std::vector<uint8_t>>();
+        const std::vector<uint8_t> auxiliaryArguments = entry.value("aux_args", std::vector<uint8_t>{});
 
         const auto opcodeFlags = entry["flagsZNHC"].get<std::vector<std::string>>();
         if (opcodeFlags.size() != 4)

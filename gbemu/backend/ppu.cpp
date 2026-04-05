@@ -21,7 +21,7 @@ void PPU::init()
 void PPU::update()
 {
     const auto lyLycMatch = ly_ == lyc_;
-    lcdStatus_ = setBit(lcdStatus_, 2, lyLycMatch ? 1 : 0);
+    lcdStatus_ = setBit(lcdStatus_, 2, lyLycMatch);
 
     if (lyLycMatch && !lycCoincidenceCalledOnThisLy_)
     {
@@ -144,7 +144,7 @@ void PPU::drawScanLine()
 
     if (!lcdEnabled)
     {
-        pixels_.fill(0);
+        std::ranges::fill(pixels_, 0xffffffff);
         return;
     }
 
@@ -154,8 +154,7 @@ void PPU::drawScanLine()
         drawBackground(bgPalette, tileData, bgTileMap);
     else
     {
-        for (int x = 0; x < LCD_WIDTH; x++)
-            pixels_[ly_ * LCD_WIDTH + x] = 0xffffffff;
+        std::fill_n(&pixels_[ly_ * LCD_WIDTH], LCD_WIDTH, 0xffffffff);
     }
 
     if (windowEnabled && bgEnabled)

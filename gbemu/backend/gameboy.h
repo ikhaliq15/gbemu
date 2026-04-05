@@ -7,6 +7,7 @@
 #include "gbemu/backend/ppu.h"
 #include "gbemu/backend/ram.h"
 #include "gbemu/backend/timer.h"
+
 #include <memory>
 #include <optional>
 
