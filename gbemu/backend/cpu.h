@@ -7,7 +7,6 @@
 #include "gbemu/backend/ram.h"
 
 #include <cstdint>
-#include <functional>
 
 namespace gbemu::backend
 {
