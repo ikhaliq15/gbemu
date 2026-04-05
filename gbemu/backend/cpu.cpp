@@ -2,9 +2,8 @@
 
 #include "gbemu/backend/bitutils.h"
 
-#include <iomanip>
 #include <iostream>
-#include <utility>
+#include <unordered_map>
 
 namespace gbemu::backend
 {
@@ -14,93 +13,43 @@ CPU::CPU(RAM *ram)
       HL_(STARTING_HL), ram_(ram), cycles_(0ul), mode_(Mode::NORMAL), opcodes_(OpcodeTable::instance().opcodes()),
       prefixedOpcodes_(OpcodeTable::instance().prefixedOpcodes())
 {
-
     const std::unordered_map<std::string, OPCodeHandler> opcodeFunctions{
-        {"NOP", [this](uint16_t pc, const OPCode *opcode) -> void { NOP(pc, opcode); }},
-        {"LD", [this](uint16_t pc, const OPCode *opcode) -> void { LD(pc, opcode); }},
-        {"INC", [this](uint16_t pc, const OPCode *opcode) -> void { INC(pc, opcode); }},
-        {"DEC", [this](uint16_t pc, const OPCode *opcode) -> void { DEC(pc, opcode); }},
-        {"RLCA", [this](uint16_t pc, const OPCode *opcode) -> void { RLCA(pc, opcode); }},
-        {"LD_SP", [this](uint16_t pc, const OPCode *opcode) -> void { LD_SP(pc, opcode); }},
-        {"ADD", [this](uint16_t pc, const OPCode *opcode) -> void { ADD(pc, opcode); }},
-        {"RRCA", [this](uint16_t pc, const OPCode *opcode) -> void { RRCA(pc, opcode); }},
-        {"RLA", [this](uint16_t pc, const OPCode *opcode) -> void { RLA(pc, opcode); }},
-        {"JR", [this](uint16_t pc, const OPCode *opcode) -> void { JR(pc, opcode); }},
-        {"RRA", [this](uint16_t pc, const OPCode *opcode) -> void { RRA(pc, opcode); }},
-        {"LDI", [this](uint16_t pc, const OPCode *opcode) -> void { LDI(pc, opcode); }},
-        {"DAA", [this](uint16_t pc, const OPCode *opcode) -> void { DAA(pc, opcode); }},
-        {"CPL", [this](uint16_t pc, const OPCode *opcode) -> void { CPL(pc, opcode); }},
-        {"LDD", [this](uint16_t pc, const OPCode *opcode) -> void { LDD(pc, opcode); }},
-        {"SCF", [this](uint16_t pc, const OPCode *opcode) -> void { SCF(pc, opcode); }},
-        {"CCF", [this](uint16_t pc, const OPCode *opcode) -> void { CCF(pc, opcode); }},
-        {"HALT", [this](uint16_t pc, const OPCode *opcode) -> void { HALT(pc, opcode); }},
-        {"ADC", [this](uint16_t pc, const OPCode *opcode) -> void { ADC(pc, opcode); }},
-        {"SUB",
-         [this](uint16_t pc, const OPCode *opcode) -> void {
-             binary_alu_operation(pc, opcode, alu::sub<uint8_t, uint8_t>);
-         }},
-        {"SBC", [this](uint16_t pc, const OPCode *opcode) -> void { SBC(pc, opcode); }},
-        {"AND", [this](uint16_t pc, const OPCode *opcode) -> void { binary_alu_operation(pc, opcode, alu::bit_and); }},
-        {"XOR", [this](uint16_t pc, const OPCode *opcode) -> void { binary_alu_operation(pc, opcode, alu::bit_xor); }},
-        {"OR", [this](uint16_t pc, const OPCode *opcode) -> void { binary_alu_operation(pc, opcode, alu::bit_or); }},
-        {"CP", [this](uint16_t pc, const OPCode *opcode) -> void { CP(pc, opcode); }},
-        {"RET", [this](uint16_t pc, const OPCode *opcode) -> void { RET(pc, opcode); }},
-        {"POP", [this](uint16_t pc, const OPCode *opcode) -> void { POP(pc, opcode); }},
-        {"JP", [this](uint16_t pc, const OPCode *opcode) -> void { JP(pc, opcode); }},
-        {"CALL", [this](uint16_t pc, const OPCode *opcode) -> void { CALL(pc, opcode); }},
-        {"PUSH", [this](uint16_t pc, const OPCode *opcode) -> void { PUSH(pc, opcode); }},
-        {"RST", [this](uint16_t pc, const OPCode *opcode) -> void { RST(pc, opcode); }},
-        {"RETI", [this](uint16_t pc, const OPCode *opcode) -> void { RETI(pc, opcode); }},
-        {"LDff8", [this](uint16_t pc, const OPCode *opcode) -> void { LDff8(pc, opcode); }},
-        {"LDa16", [this](uint16_t pc, const OPCode *opcode) -> void { LDa16(pc, opcode); }},
-        {"LDaff8", [this](uint16_t pc, const OPCode *opcode) -> void { LDaff8(pc, opcode); }},
-        {"DI", [this](uint16_t pc, const OPCode *opcode) -> void { DI(pc, opcode); }},
-        {"EI", [this](uint16_t pc, const OPCode *opcode) -> void { EI(pc, opcode); }},
-        {"LDs8", [this](uint16_t pc, const OPCode *opcode) -> void { LDs8(pc, opcode); }},
-        {"LDaff16", [this](uint16_t pc, const OPCode *opcode) -> void { LDaff16(pc, opcode); }},
-        {"RLC", [this](uint16_t pc, const OPCode *opcode) -> void { unary_alu_operation(pc, opcode, alu::rlc); }},
-        {"RRC", [this](uint16_t pc, const OPCode *opcode) -> void { unary_alu_operation(pc, opcode, alu::rrc); }},
-        {"RL", [this](uint16_t pc, const OPCode *opcode) -> void { RL(pc, opcode); }},
-        {"RR", [this](uint16_t pc, const OPCode *opcode) -> void { RR(pc, opcode); }},
-        {"SLA", [this](uint16_t pc, const OPCode *opcode) -> void { unary_alu_operation(pc, opcode, alu::bit_sla); }},
-        {"SRA", [this](uint16_t pc, const OPCode *opcode) -> void { unary_alu_operation(pc, opcode, alu::bit_sra); }},
-        {"SWAP", [this](uint16_t pc, const OPCode *opcode) -> void { unary_alu_operation(pc, opcode, alu::bit_swap); }},
-        {"SRL", [this](uint16_t pc, const OPCode *opcode) -> void { unary_alu_operation(pc, opcode, alu::bit_srl); }},
-        {"BIT_GET", [this](uint16_t pc, const OPCode *opcode) -> void { BIT_GET(pc, opcode); }},
-        {"BIT_SET", [this](uint16_t pc, const OPCode *opcode) -> void { BIT_SET(pc, opcode); }},
+        {"NOP", &CPU::NOP},         {"LD", &CPU::LD},       {"INC", &CPU::INC},         {"DEC", &CPU::DEC},
+        {"RLCA", &CPU::RLCA},       {"LD_SP", &CPU::LD_SP}, {"ADD", &CPU::ADD},         {"RRCA", &CPU::RRCA},
+        {"RLA", &CPU::RLA},         {"JR", &CPU::JR},       {"RRA", &CPU::RRA},         {"LDI", &CPU::LDI},
+        {"DAA", &CPU::DAA},         {"CPL", &CPU::CPL},     {"LDD", &CPU::LDD},         {"SCF", &CPU::SCF},
+        {"CCF", &CPU::CCF},         {"HALT", &CPU::HALT},   {"ADC", &CPU::ADC},         {"SUB", &CPU::SUB},
+        {"SBC", &CPU::SBC},         {"AND", &CPU::AND},     {"XOR", &CPU::XOR},         {"OR", &CPU::OR},
+        {"CP", &CPU::CP},           {"RET", &CPU::RET},     {"POP", &CPU::POP},         {"JP", &CPU::JP},
+        {"CALL", &CPU::CALL},       {"PUSH", &CPU::PUSH},   {"RST", &CPU::RST},         {"RETI", &CPU::RETI},
+        {"LDff8", &CPU::LDff8},     {"LDa16", &CPU::LDa16}, {"LDaff8", &CPU::LDaff8},   {"DI", &CPU::DI},
+        {"EI", &CPU::EI},           {"LDs8", &CPU::LDs8},   {"LDaff16", &CPU::LDaff16}, {"RLC", &CPU::RLC},
+        {"RRC", &CPU::RRC},         {"RL", &CPU::RL},       {"RR", &CPU::RR},           {"SLA", &CPU::SLA},
+        {"SRA", &CPU::SRA},         {"SWAP", &CPU::SWAP},   {"SRL", &CPU::SRL},         {"BIT_GET", &CPU::BIT_GET},
+        {"BIT_SET", &CPU::BIT_SET},
     };
 
-    for (size_t i = 0; i < opcodeFunctions_.size(); i++)
-    {
-        opcodeFunctions_[i] = [](uint16_t, const OPCode *) -> void {
-            throw std::runtime_error("Unimplemented opcode handler called.");
-        };
-
-        if (opcodes_[i] == nullptr)
+    const auto buildOpcodeFunctions = [&opcodeFunctions](const auto &opcodes) {
+        std::array<OPCodeHandler, 256> functionMap{};
+        std::ranges::fill(functionMap, &CPU::UNIMPLEMENTED);
+        for (size_t i = 0; i < opcodes.size(); i++)
         {
-            continue;
+            const auto &opcode = opcodes[i];
+            if (opcode == nullptr)
+            {
+                continue;
+            }
+
+            if (const auto opcodeIt = opcodeFunctions.find(opcode->mnemonic()); opcodeIt != opcodeFunctions.end())
+            {
+                functionMap[i] = opcodeFunctions.at(opcode->mnemonic());
+            }
         }
+        return functionMap;
+    };
 
-        const auto opcodeIt = opcodeFunctions.find(opcodes_[i]->mnemonic());
-        if (opcodeIt != opcodeFunctions.end())
-            opcodeFunctions_[i] = opcodeIt->second;
-    }
-
-    for (size_t i = 0; i < prefixedOpcodeFunctions_.size(); i++)
-    {
-        prefixedOpcodeFunctions_[i] = [](uint16_t, const OPCode *) -> void {
-            throw std::runtime_error("Unimplemented opcode handler called.");
-        };
-
-        if (prefixedOpcodes_[i] == nullptr)
-        {
-            continue;
-        }
-
-        const auto opcodeIt = opcodeFunctions.find(prefixedOpcodes_[i]->mnemonic());
-        if (opcodeIt != opcodeFunctions.end())
-            prefixedOpcodeFunctions_[i] = opcodeIt->second;
-    }
+    opcodeFunctions_ = buildOpcodeFunctions(opcodes_);
+    prefixedOpcodeFunctions_ = buildOpcodeFunctions(prefixedOpcodes_);
 }
 
 CPU::CPU(const CPU &cpu)
@@ -409,38 +358,30 @@ void CPU::serviceInterrupts()
 void CPU::executeInstruction(bool verbose)
 {
     if (verbose)
+    {
         std::cout << *this << std::endl;
+    }
 
     const auto enableInterruptsAfterInstruction = interruptsEnabledQueued_;
 
-    auto opcodeValue = ram_->get(PC());
-    auto opcodeMap = &opcodes_;
-    auto opCodeHandlerMap = &opcodeFunctions_;
-    auto prefixedOpcode = false;
+    const auto firstByte = ram_->get(PC());
+    const auto prefixed = firstByte == OPCode::PREFIX_OPCODE;
+    const auto opcodeValue = prefixed ? ram_->get(PC() + 1) : firstByte;
+    const auto &opcodeMap = prefixed ? prefixedOpcodes_ : opcodes_;
+    const auto &opCodeHandlerMap = prefixed ? prefixedOpcodeFunctions_ : opcodeFunctions_;
 
-    if (opcodeValue == OPCode::PREFIX_OPCODE)
+    const auto opcode = opcodeMap[opcodeValue];
+    if (!opcode)
     {
-        opcodeValue = ram_->get(PC() + 1);
-        opcodeMap = &prefixedOpcodes_;
-        opCodeHandlerMap = &prefixedOpcodeFunctions_;
-        prefixedOpcode = true;
+        const auto opcodeString = prefixed ? (toHexString(opcodeValue) + " (CB)") : toHexString(opcodeValue);
+        throw std::runtime_error("Unknown opcode detected: " + opcodeString + " at PC=" + toHexString(PC()));
     }
 
-    const auto opcodeString = [&prefixedOpcode, &opcodeValue]() -> std::string {
-        return (prefixedOpcode) ? (toHexString(opcodeValue) + " (CB)") : toHexString(opcodeValue);
-    };
-
-    const auto opcode = opcodeMap->at(opcodeValue);
-    if (!opcode)
-        throw std::runtime_error(std::string("Unknown opcode detected: ") + opcodeString() + std::string(" at PC=") +
-                                 toHexString(PC()));
-
     const auto oldPC = PC();
+    const auto &opcodeHandler = opCodeHandlerMap[opcodeValue];
+
     advancePC(opcode->bytes());
-
-    const auto &opcodeHandler = opCodeHandlerMap->at(opcodeValue);
-    opcodeHandler(oldPC, opcode);
-
+    (this->*opcodeHandler)(oldPC, opcode);
     cycles_ += opcode->cycles();
 
     if (enableInterruptsAfterInstruction)
@@ -448,31 +389,12 @@ void CPU::executeInstruction(bool verbose)
         IME_ = true;
         interruptsEnabledQueued_ = false;
     }
-
-    // if (verbose)
-    // {
-    // std::cout << std::setw(20) << std::left << opcode->command() << std::setw(17) << ("Opcode=" + opcodeString())
-    //           << "   " << std::setw(9) << ("PC=" + toHexString(PC())) << "   " << std::setw(9)
-    //           << ("SP=" + toHexString(SP())) << "   " << std::setw(9) << ("AF=" + toHexString(AF())) << "   "
-    //           << std::setw(9) << ("BC=" + toHexString(BC())) << "   " << std::setw(9) << ("DE=" + toHexString(DE()))
-    //           << "   " << std::setw(9) << ("HL=" + toHexString(HL())) << "   " << std::setw(9)
-    //           << ("LY=" + std::to_string(ram_->get(RAM::LY))) << "   " << std::setw(11)
-    //           << ("LCDC=" + toHexString(ram_->get(RAM::LCDC))) << "   " << std::setw(9)
-    //           << ("IF=" + toHexString(ram_->get(RAM::IF))) << "   " << std::setw(9)
-    //           << ("IE=" + toHexString(ram_->get(RAM::IE))) << "   " << std::setw(9)
-    //           << ("IME=" + (IME_ ? std::string("true") : std::string("false"))) << "   " << std::endl;
-    // }
 }
 
 auto CPU::operator==(const CPU &rhs) const -> bool
 {
     return PC_ == rhs.PC_ && SP_ == rhs.SP_ && AF_ == rhs.AF_ && BC_ == rhs.BC_ && DE_ == rhs.DE_ && HL_ == rhs.HL_ &&
            cycles_ == rhs.cycles_ && IME_ == rhs.IME_ && (*ram_ == *(rhs.ram_));
-}
-
-auto CPU::operator!=(const CPU &rhs) const -> bool
-{
-    return !(*this == rhs);
 }
 
 auto operator<<(std::ostream &os, const CPU &cpu) -> std::ostream &
@@ -691,14 +613,14 @@ auto CPU::testJumpCondition(OPCode::JumpCondition jumpCondition) const -> bool
 
 /*** OPCode Handlers ***/
 
-template <typename F> void CPU::unary_alu_operation(uint16_t pc, const OPCode *opcode, F operation)
+template <auto Operation> void CPU::unary_alu_operation(uint16_t pc, const OPCode *opcode)
 {
     const auto operand = opcode->operands()[0];
 
     if (std::holds_alternative<Register>(operand) || std::holds_alternative<DereferencedFullRegister>(operand))
     {
         const auto currentValue = std::get<uint8_t>(getOperand(operand));
-        const auto result = operation(currentValue);
+        const auto result = Operation(currentValue);
 
         setOperand(operand, result.result);
         setFlagsFromResult(result.flags, opcode);
@@ -709,7 +631,7 @@ template <typename F> void CPU::unary_alu_operation(uint16_t pc, const OPCode *o
     throw std::runtime_error("sra not implemented for opcode " + toHexString(opcode->opcode()));
 }
 
-template <typename F> void CPU::binary_alu_operation(uint16_t pc, const OPCode *opcode, F operation)
+template <auto Operation> void CPU::binary_alu_operation(uint16_t pc, const OPCode *opcode)
 {
     if (opcode->operands().size() == 1)
     {
@@ -719,7 +641,7 @@ template <typename F> void CPU::binary_alu_operation(uint16_t pc, const OPCode *
 
         const auto firstValue = std::get<uint8_t>(firstOperand);
         const auto secondValue = ram_->get(pc + 1);
-        const auto result = operation(firstValue, secondValue);
+        const auto result = Operation(firstValue, secondValue);
 
         setOperand(destOperand, result.result);
         setFlagsFromResult(result.flags, opcode);
@@ -737,7 +659,7 @@ template <typename F> void CPU::binary_alu_operation(uint16_t pc, const OPCode *
             const auto firstValue = std::get<uint8_t>(firstOperand);
             const auto secondValue = std::get<uint8_t>(secondOperand);
 
-            const auto result = operation(firstValue, secondValue);
+            const auto result = Operation(firstValue, secondValue);
 
             setOperand(destOperand, result.result);
             setFlagsFromResult(result.flags, opcode);
@@ -747,6 +669,61 @@ template <typename F> void CPU::binary_alu_operation(uint16_t pc, const OPCode *
     }
 
     throw std::runtime_error("and not implemented for opcode " + toHexString(opcode->opcode()));
+}
+
+void CPU::UNIMPLEMENTED(uint16_t pc, const OPCode *opcode)
+{
+    throw std::runtime_error("Unimplemented opcode handler called for opcode " + toHexString(opcode->opcode()));
+}
+
+void CPU::SUB(uint16_t pc, const OPCode *opcode)
+{
+    binary_alu_operation<&alu::sub<uint8_t, uint8_t>>(pc, opcode);
+}
+
+void CPU::AND(uint16_t pc, const OPCode *opcode)
+{
+    binary_alu_operation<&alu::bit_and>(pc, opcode);
+}
+
+void CPU::XOR(uint16_t pc, const OPCode *opcode)
+{
+    binary_alu_operation<&alu::bit_xor>(pc, opcode);
+}
+
+void CPU::OR(uint16_t pc, const OPCode *opcode)
+{
+    binary_alu_operation<&alu::bit_or>(pc, opcode);
+}
+
+void CPU::RLC(uint16_t pc, const OPCode *opcode)
+{
+    unary_alu_operation<&alu::rlc>(pc, opcode);
+}
+
+void CPU::RRC(uint16_t pc, const OPCode *opcode)
+{
+    unary_alu_operation<&alu::rrc>(pc, opcode);
+}
+
+void CPU::SLA(uint16_t pc, const OPCode *opcode)
+{
+    unary_alu_operation<&alu::bit_sla>(pc, opcode);
+}
+
+void CPU::SRA(uint16_t pc, const OPCode *opcode)
+{
+    unary_alu_operation<&alu::bit_sra>(pc, opcode);
+}
+
+void CPU::SWAP(uint16_t pc, const OPCode *opcode)
+{
+    unary_alu_operation<&alu::bit_swap>(pc, opcode);
+}
+
+void CPU::SRL(uint16_t pc, const OPCode *opcode)
+{
+    unary_alu_operation<&alu::bit_srl>(pc, opcode);
 }
 
 void CPU::NOP(uint16_t pc, const OPCode *opcode)

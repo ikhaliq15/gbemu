@@ -7,7 +7,6 @@
 #include "gbemu/backend/ram.h"
 
 #include <cstdint>
-#include <functional>
 
 namespace gbemu::backend
 {
@@ -101,7 +100,6 @@ class CPU
     void executeInstruction(bool verbose = false);
 
     bool operator==(const CPU &rhs) const;
-    bool operator!=(const CPU &rhs) const;
 
     friend std::ostream &operator<<(std::ostream &os, const CPU &cpu);
 
@@ -136,7 +134,7 @@ class CPU
     uint64_t cycles_;
     Mode mode_;
 
-    using OPCodeHandler = std::function<void(uint16_t, const OPCode *)>;
+    using OPCodeHandler = void (CPU::*)(uint16_t, const OPCode *);
     using OPCodeHandlerMap = std::array<OPCodeHandler, 256>;
     const OpcodeTable::OpCodeMap &opcodes_;
     const OpcodeTable::OpCodeMap &prefixedOpcodes_;
@@ -150,8 +148,22 @@ class CPU
     [[nodiscard]] bool testJumpCondition(OPCode::JumpCondition jumpCondition) const;
 
     /*** OPCode Handlers ***/
-    template <typename F> void unary_alu_operation(uint16_t pc, const OPCode *opcode, F operation);
-    template <typename F> void binary_alu_operation(uint16_t pc, const OPCode *opcode, F operation);
+    template <auto Operation> void unary_alu_operation(uint16_t pc, const OPCode *opcode);
+    template <auto Operation> void binary_alu_operation(uint16_t pc, const OPCode *opcode);
+
+    void UNIMPLEMENTED(uint16_t pc, const OPCode *opcode);
+
+    void SUB(uint16_t pc, const OPCode *opcode);
+    void AND(uint16_t pc, const OPCode *opcode);
+    void XOR(uint16_t pc, const OPCode *opcode);
+    void OR(uint16_t pc, const OPCode *opcode);
+
+    void RLC(uint16_t pc, const OPCode *opcode);
+    void RRC(uint16_t pc, const OPCode *opcode);
+    void SLA(uint16_t pc, const OPCode *opcode);
+    void SRA(uint16_t pc, const OPCode *opcode);
+    void SWAP(uint16_t pc, const OPCode *opcode);
+    void SRL(uint16_t pc, const OPCode *opcode);
 
     void NOP(uint16_t pc, const OPCode *opcode);
     void LD(uint16_t pc, const OPCode *opcode);

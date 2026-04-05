@@ -37,7 +37,7 @@ class Timer : public RAM::Owner
         T accumulator_;
     };
 
-    explicit Timer(InterruptController *cpu);
+    explicit Timer(InterruptController *interruptController);
 
     void init();
     void update(uint64_t deltaCycles);

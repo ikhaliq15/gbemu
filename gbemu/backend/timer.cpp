@@ -5,10 +5,12 @@
 namespace gbemu::backend
 {
 
-Timer::Timer(InterruptController *cpu)
+Timer::Timer(InterruptController *interruptController)
     : initialized_(false), cyclesSinceLaunch_(0), tima_(0x00), tma_(0x00), tac_(0x00), divAccumulator_(DIV_START_VALUE),
-      timer0_(TAC_ID_0, &tima_, &tma_, &tac_, cpu), timer1_(TAC_ID_1, &tima_, &tma_, &tac_, cpu),
-      timer2_(TAC_ID_2, &tima_, &tma_, &tac_, cpu), timer3_(TAC_ID_3, &tima_, &tma_, &tac_, cpu)
+      timer0_(TAC_ID_0, &tima_, &tma_, &tac_, interruptController),
+      timer1_(TAC_ID_1, &tima_, &tma_, &tac_, interruptController),
+      timer2_(TAC_ID_2, &tima_, &tma_, &tac_, interruptController),
+      timer3_(TAC_ID_3, &tima_, &tma_, &tac_, interruptController)
 {}
 
 void Timer::init()
