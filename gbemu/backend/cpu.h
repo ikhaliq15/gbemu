@@ -150,6 +150,7 @@ class CPU
     /*** OPCode Handlers ***/
     template <auto Operation> void unary_alu_operation(uint16_t pc, const OPCode *opcode);
     template <auto Operation> void binary_alu_operation(uint16_t pc, const OPCode *opcode);
+    template <int16_t Offset> void load_and_offset(uint16_t pc, const OPCode *opcode);
 
     void UNIMPLEMENTED(uint16_t pc, const OPCode *opcode);
 

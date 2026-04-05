@@ -573,16 +573,20 @@ void CPU::setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode 
 
 auto CPU::testJumpCondition(OPCode::JumpCondition jumpCondition) const -> bool
 {
-    if (jumpCondition == OPCode::JumpCondition::ALWAYS)
+    switch (jumpCondition)
+    {
+    case OPCode::JumpCondition::ALWAYS:
         return true;
-    else if (jumpCondition == OPCode::JumpCondition::Z)
+    case OPCode::JumpCondition::Z:
         return FlagZ() == 1;
-    else if (jumpCondition == OPCode::JumpCondition::C)
+    case OPCode::JumpCondition::C:
         return FlagC() == 1;
-    else if (jumpCondition == OPCode::JumpCondition::NZ)
+    case OPCode::JumpCondition::NZ:
         return FlagZ() == 0;
-    else if (jumpCondition == OPCode::JumpCondition::NC)
+    case OPCode::JumpCondition::NC:
         return FlagC() == 0;
+    };
+
     throw std::runtime_error("asked to test unknown jump condition.");
 }
 
@@ -644,6 +648,33 @@ template <auto Operation> void CPU::binary_alu_operation(uint16_t pc, const OPCo
     }
 
     throw std::runtime_error("and not implemented for opcode " + toHexString(opcode->opcode()));
+}
+
+template <int16_t Offset> void CPU::load_and_offset(uint16_t pc, const OPCode *opcode)
+{
+    if (opcode->operands().size() == 2)
+    {
+        const auto destOperand = opcode->operands()[0];
+        const auto sourceOperand = opcode->operands()[1];
+        if (std::holds_alternative<DereferencedFullRegister>(destOperand))
+        {
+            const auto dereferencedFullRegister = std::get<DereferencedFullRegister>(destOperand);
+            setOperand(destOperand, getOperand(sourceOperand));
+
+            const auto currentFullRegisterValue = std::get<uint16_t>(getOperand(dereferencedFullRegister.fullRegister));
+            setOperand(dereferencedFullRegister.fullRegister, static_cast<uint16_t>(currentFullRegisterValue + Offset));
+            return;
+        }
+        else if (std::holds_alternative<DereferencedFullRegister>(sourceOperand))
+        {
+            const auto dereferencedFullRegister = std::get<DereferencedFullRegister>(sourceOperand);
+            setOperand(destOperand, getOperand(sourceOperand));
+
+            const auto currentFullRegisterValue = std::get<uint16_t>(getOperand(dereferencedFullRegister.fullRegister));
+            setOperand(dereferencedFullRegister.fullRegister, static_cast<uint16_t>(currentFullRegisterValue + Offset));
+            return;
+        }
+    }
 }
 
 void CPU::UNIMPLEMENTED(uint16_t pc, const OPCode *opcode)
@@ -907,31 +938,7 @@ void CPU::RRA(uint16_t pc, const OPCode *opcode)
 
 void CPU::LDI(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 2)
-    {
-        const auto destOperand = opcode->operands()[0];
-        const auto sourceOperand = opcode->operands()[1];
-        if (std::holds_alternative<DereferencedFullRegister>(destOperand))
-        {
-            const auto dereferencedFullRegister = std::get<DereferencedFullRegister>(destOperand);
-            setOperand(destOperand, getOperand(sourceOperand));
-
-            const auto currentFullRegisterValue = std::get<uint16_t>(getOperand(dereferencedFullRegister.fullRegister));
-            setOperand(dereferencedFullRegister.fullRegister, static_cast<uint16_t>(currentFullRegisterValue + 1));
-            return;
-        }
-        else if (std::holds_alternative<DereferencedFullRegister>(sourceOperand))
-        {
-            const auto dereferencedFullRegister = std::get<DereferencedFullRegister>(sourceOperand);
-            setOperand(destOperand, getOperand(sourceOperand));
-
-            const auto currentFullRegisterValue = std::get<uint16_t>(getOperand(dereferencedFullRegister.fullRegister));
-            setOperand(dereferencedFullRegister.fullRegister, static_cast<uint16_t>(currentFullRegisterValue + 1));
-            return;
-        }
-    }
-
-    throw std::runtime_error("load+increment not implemented for opcode " + toHexString(opcode->opcode()));
+    load_and_offset<1>(pc, opcode);
 }
 
 void CPU::DAA(uint16_t pc, const OPCode *opcode)
@@ -976,31 +983,7 @@ void CPU::CPL(uint16_t pc, const OPCode *opcode)
 
 void CPU::LDD(uint16_t pc, const OPCode *opcode)
 {
-    if (opcode->operands().size() == 2)
-    {
-        const auto destOperand = opcode->operands()[0];
-        const auto sourceOperand = opcode->operands()[1];
-        if (std::holds_alternative<DereferencedFullRegister>(destOperand))
-        {
-            const auto dereferencedFullRegister = std::get<DereferencedFullRegister>(destOperand);
-            setOperand(destOperand, getOperand(sourceOperand));
-
-            const auto currentFullRegisterValue = std::get<uint16_t>(getOperand(dereferencedFullRegister.fullRegister));
-            setOperand(dereferencedFullRegister.fullRegister, static_cast<uint16_t>(currentFullRegisterValue - 1));
-            return;
-        }
-        else if (std::holds_alternative<DereferencedFullRegister>(sourceOperand))
-        {
-            const auto dereferencedFullRegister = std::get<DereferencedFullRegister>(sourceOperand);
-            setOperand(destOperand, getOperand(sourceOperand));
-
-            const auto currentFullRegisterValue = std::get<uint16_t>(getOperand(dereferencedFullRegister.fullRegister));
-            setOperand(dereferencedFullRegister.fullRegister, static_cast<uint16_t>(currentFullRegisterValue - 1));
-            return;
-        }
-    }
-
-    throw std::runtime_error("load+decrement not implemented for opcode " + toHexString(opcode->opcode()));
+    load_and_offset<-1>(pc, opcode);
 }
 
 void CPU::SCF(uint16_t pc, const OPCode *opcode)
