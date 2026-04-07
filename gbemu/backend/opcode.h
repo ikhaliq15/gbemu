@@ -5,16 +5,13 @@
 
 #include <array>
 #include <cstdint>
-#include <memory>
-#include <string>
-#include <vector>
+#include <string_view>
 
 namespace gbemu::backend
 {
 
-class OPCode
+struct OPCode
 {
-  public:
     enum class Flag
     {
         UNTOUCHED,
@@ -54,56 +51,22 @@ class OPCode
     using Flags = std::array<Flag, 4>;
 
     static constexpr uint8_t PREFIX_OPCODE = 0xcb;
+    static constexpr uint8_t MAX_OPERANDS = 2;
+    static constexpr uint8_t MAX_AUX_ARGS = 2;
 
-    OPCode(uint8_t opcode, std::string command, std::string mnemonic, std::vector<uint8_t> auxiliaryArguments,
-           std::vector<Operand> operands, uint8_t bytes, uint8_t cycles, uint8_t additionalCycles,
-           JumpCondition jumpCondition, Flags flags);
-
-    [[nodiscard]] uint8_t opcode() const { return opcode_; }
-    [[nodiscard]] const std::string &command() const { return command_; }
-    [[nodiscard]] const std::string &mnemonic() const { return mnemonic_; }
-    [[nodiscard]] const std::vector<uint8_t> &auxiliaryArguments() const { return auxiliaryArguments_; }
-    [[nodiscard]] const std::vector<Operand> &operands() const { return operands_; }
-    [[nodiscard]] uint8_t bytes() const { return bytes_; }
-    [[nodiscard]] uint8_t cycles() const { return cycles_; }
-    [[nodiscard]] uint8_t additionalCycles() const { return additionalCycles_; }
-    [[nodiscard]] JumpCondition jumpCondition() const { return jumpCondition_; }
-    [[nodiscard]] Flags flags() const { return flags_; }
-    [[nodiscard]] Flag flagZ() const { return flags_[0]; }
-    [[nodiscard]] Flag flagN() const { return flags_[1]; }
-    [[nodiscard]] Flag flagH() const { return flags_[2]; }
-    [[nodiscard]] Flag flagC() const { return flags_[3]; }
-
-  private:
-    uint8_t opcode_;
-    std::string command_;
-    std::string mnemonic_;
-    std::vector<uint8_t> auxiliaryArguments_;
-    std::vector<Operand> operands_;
-    uint8_t bytes_;
-    uint8_t cycles_;
-    uint8_t additionalCycles_;
-    JumpCondition jumpCondition_;
-    Flags flags_;
-};
-
-// Singleton table of all opcodes, constructed once from JSON data.
-class OpcodeTable
-{
-  public:
-    using OpCodeMap = std::array<const OPCode *, 256>;
-
-    static const OpcodeTable &instance();
-
-    [[nodiscard]] const OpCodeMap &opcodes() const { return opcodes_; }
-    [[nodiscard]] const OpCodeMap &prefixedOpcodes() const { return prefixedOpcodes_; }
-
-  private:
-    OpcodeTable();
-
-    std::vector<std::unique_ptr<OPCode>> storage_;
-    OpCodeMap opcodes_{};
-    OpCodeMap prefixedOpcodes_{};
+    uint8_t opcode{};
+    std::string_view command{};
+    std::string_view mnemonic{};
+    std::array<Operand, MAX_OPERANDS> operands{};
+    uint8_t numOperands{};
+    std::array<uint8_t, MAX_AUX_ARGS> auxiliaryArguments{};
+    uint8_t numAuxArgs{};
+    uint8_t bytes{};
+    uint8_t cycles{};
+    uint8_t additionalCycles{};
+    JumpCondition jumpCondition{JumpCondition::ALWAYS};
+    Flags flags{};
+    bool valid{false};
 };
 
 } // namespace gbemu::backend

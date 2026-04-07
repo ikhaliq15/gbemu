@@ -1,7 +1,6 @@
 #ifndef GBEMU_FRONTEND_IMGUI_H
 #define GBEMU_FRONTEND_IMGUI_H
 
-#include "gbemu/backend/ppu.h"
 #include "gbemu/frontend/frontend.hpp"
 
 #include "gbemu/backend/gameboy.h"

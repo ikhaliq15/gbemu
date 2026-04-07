@@ -15,10 +15,7 @@ PPU::PPU(RAM *ram, InterruptController *interruptController)
       wx_(0x00), lcdStatus_(0x00), windowLy_(0x00), lycCoincidenceCalledOnThisLy_(false)
 {}
 
-void PPU::init()
-{
-    std::ranges::fill(pixels_, 0x00000000);
-}
+void PPU::init() { std::ranges::fill(pixels_, 0x00000000); }
 
 void PPU::update()
 {
@@ -67,20 +64,13 @@ auto PPU::onReadOwnedByte(uint16_t address) -> uint8_t
 {
     switch (address)
     {
-    case RAM::SCY:
-        return scy_;
-    case RAM::SCX:
-        return scx_;
-    case RAM::LY:
-        return ly_;
-    case RAM::LYC:
-        return lyc_;
-    case RAM::STAT:
-        return lcdStatus_;
-    case RAM::WY:
-        return wy_;
-    case RAM::WX:
-        return wx_;
+    case RAM::SCY: return scy_;
+    case RAM::SCX: return scx_;
+    case RAM::LY: return ly_;
+    case RAM::LYC: return lyc_;
+    case RAM::STAT: return lcdStatus_;
+    case RAM::WY: return wy_;
+    case RAM::WX: return wx_;
     }
     return 0x00;
 }
@@ -89,33 +79,17 @@ void PPU::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentVa
 {
     switch (address)
     {
-    case RAM::SCY:
-        scy_ = newValue;
-        break;
-    case RAM::SCX:
-        scx_ = newValue;
-        break;
-    case RAM::LY:
-        break; // read-only
-    case RAM::LYC:
-        lyc_ = newValue;
-        break;
-    case RAM::STAT:
-        lcdStatus_ = (newValue & 0xf8) | (lcdStatus_ & 0x03);
-        break;
-    case RAM::WY:
-        wy_ = newValue;
-        break;
-    case RAM::WX:
-        wx_ = newValue;
-        break;
+    case RAM::SCY: scy_ = newValue; break;
+    case RAM::SCX: scx_ = newValue; break;
+    case RAM::LY: break; // read-only
+    case RAM::LYC: lyc_ = newValue; break;
+    case RAM::STAT: lcdStatus_ = (newValue & 0xf8) | (lcdStatus_ & 0x03); break;
+    case RAM::WY: wy_ = newValue; break;
+    case RAM::WX: wx_ = newValue; break;
     }
 }
 
-const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &PPU::getPixels() const
-{
-    return pixels_;
-}
+const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &PPU::getPixels() const { return pixels_; }
 
 std::array<uint32_t, 4> PPU::buildPalette(uint8_t paletteRegister) const
 {

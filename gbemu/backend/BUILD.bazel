@@ -69,17 +69,10 @@ cc_library(
 
 cc_library(
     name = "opcode",
-    srcs = [
-        "opcode.cpp",
-    ],
     hdrs = [
         "opcode.h",
         "opcode_data.h",
         "operand.h",
-    ],
-    deps = [
-        ":bitutils",
-        "@json",
     ],
 )
 
