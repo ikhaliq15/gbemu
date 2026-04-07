@@ -1,8 +1,7 @@
-load("//tests/blargg:blargg.bzl", "blargg_test")
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
 
-blargg_test(
+gb_rom_test(
     name = "instr_timing",
-    roms = [
-        "@blargg_test_roms//:instr_timing/instr_timing.gb",
-    ],
+    rom = "@blargg_test_roms//:instr_timing/instr_timing.gb",
+    mode = "serial",
 )

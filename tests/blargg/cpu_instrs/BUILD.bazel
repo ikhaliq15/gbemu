@@ -1,11 +1,10 @@
-load("//tests/blargg:blargg.bzl", "blargg_test")
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
 
 [
-    blargg_test(
+    gb_rom_test(
         name = test.replace(" ", "-").replace(",", "-").replace(".", "-"),
-        roms = [
-            "@blargg_test_roms//:cpu_instrs/individual/{}.gb".format(test),
-        ],
+        rom = "@blargg_test_roms//:cpu_instrs/individual/{}.gb".format(test),
+        mode = "serial",
     )
     for test in [
         "01-special",
