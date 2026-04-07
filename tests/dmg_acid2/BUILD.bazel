@@ -1,17 +1,10 @@
-load("@rules_python//python:defs.bzl", "py_test")
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
 
-py_test(
+gb_rom_test(
     name = "dmg_acid2",
-    srcs = ["dmg_acid2_harness.py"],
-    data = [
-        "//gbemu:gbemu_exe",
-        "@dmg_acid2//:img/reference-dmg.png",
-        "@dmg_acid2_rom//file",
-    ],
-    main = "dmg_acid2_harness.py",
-    deps = [
-        "//gbemu:gbemu_exe",
-        "@gbemu_pip//pillow",
-        "@rules_python//python/runfiles",
-    ],
+    rom = "@dmg_acid2_rom//file",
+    mode = "image",
+    reference_image = "@dmg_acid2//:img/reference-dmg.png",
+    rom_timeout_seconds = 10,
+    size = "small",
 )
