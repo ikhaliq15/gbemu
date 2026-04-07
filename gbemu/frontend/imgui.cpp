@@ -84,21 +84,19 @@ auto fileDisplayName(const std::string &path) -> std::string
     return std::filesystem::path(path).filename().string();
 }
 
-auto isGameplayKey(SDL_Keycode key) -> bool
+auto keycodeToButton(SDL_Keycode key) -> std::optional<gbemu::backend::Joypad::Button>
 {
     switch (key)
     {
-    case SDLK_a:
-    case SDLK_b:
-    case SDLK_RETURN:
-    case SDLK_SPACE:
-    case SDLK_UP:
-    case SDLK_DOWN:
-    case SDLK_LEFT:
-    case SDLK_RIGHT:
-        return true;
-    default:
-        return false;
+    case SDLK_a: return gbemu::backend::Joypad::Button::A;
+    case SDLK_b: return gbemu::backend::Joypad::Button::B;
+    case SDLK_RETURN: return gbemu::backend::Joypad::Button::START;
+    case SDLK_SPACE: return gbemu::backend::Joypad::Button::SELECT;
+    case SDLK_UP: return gbemu::backend::Joypad::Button::UP;
+    case SDLK_DOWN: return gbemu::backend::Joypad::Button::DOWN;
+    case SDLK_LEFT: return gbemu::backend::Joypad::Button::LEFT;
+    case SDLK_RIGHT: return gbemu::backend::Joypad::Button::RIGHT;
+    default: return std::nullopt;
     }
 }
 
@@ -774,8 +772,7 @@ void ImguiFrontend::openRom()
     }
 }
 
-void ImguiFrontend::renderStatusBar()
-{}
+void ImguiFrontend::renderStatusBar() {}
 
 void ImguiFrontend::pollEvents()
 {
@@ -806,40 +803,29 @@ void ImguiFrontend::pollEvents()
             {
                 switch (event.key.keysym.sym)
                 {
-                case SDLK_o:
-                    openRom();
-                    continue;
-                case SDLK_q:
-                    done_ = true;
-                    continue;
-                case SDLK_1:
-                    show_cpu_window_ = !show_cpu_window_;
-                    continue;
-                case SDLK_2:
-                    show_memory_window_ = !show_memory_window_;
-                    continue;
-                case SDLK_3:
-                    show_performance_window_ = !show_performance_window_;
-                    continue;
-                default:
-                    break;
+                case SDLK_o: openRom(); continue;
+                case SDLK_q: done_ = true; continue;
+                case SDLK_1: show_cpu_window_ = !show_cpu_window_; continue;
+                case SDLK_2: show_memory_window_ = !show_memory_window_; continue;
+                case SDLK_3: show_performance_window_ = !show_performance_window_; continue;
+                default: break;
                 }
             }
 
-            const bool allow_gameplay_input = isGameplayKey(event.key.keysym.sym) && !io.WantTextInput;
-            if (allow_gameplay_input || !io.WantCaptureKeyboard)
+            const auto joypadButton = keycodeToButton(event.key.keysym.sym);
+            if (joypadButton.has_value() && !io.WantCaptureKeyboard)
             {
-                gameboy_->inputDown(event.key.keysym.sym);
+                gameboy_->buttonPressed(joypadButton.value());
             }
             continue;
         }
 
         if (event.type == SDL_KEYUP)
         {
-            const bool allow_gameplay_input = isGameplayKey(event.key.keysym.sym) && !io.WantTextInput;
-            if (allow_gameplay_input || !io.WantCaptureKeyboard)
+            const auto joypadButton = keycodeToButton(event.key.keysym.sym);
+            if (joypadButton.has_value() && !io.WantCaptureKeyboard)
             {
-                gameboy_->inputUp(event.key.keysym.sym);
+                gameboy_->buttonReleased(joypadButton.value());
             }
         }
     }

@@ -5,10 +5,7 @@
 namespace gbemu::backend
 {
 
-Gameboy::Gameboy()
-{
-    createHardware();
-}
+Gameboy::Gameboy() { createHardware(); }
 
 void Gameboy::loadCartridge(const Cartridge &cartridge)
 {
@@ -48,23 +45,13 @@ void Gameboy::update()
     pollSerialPort();
 }
 
-void Gameboy::done()
-{}
+void Gameboy::done() {}
 
-void Gameboy::inputDown(int32_t keyCode)
-{
-    joypad_->handleKeyDownEvent(keyCode);
-}
+void Gameboy::buttonPressed(Joypad::Button button) { joypad_->buttonPressed(button); }
 
-void Gameboy::inputUp(int32_t keyCode)
-{
-    joypad_->handleKeyUpEvent(keyCode);
-}
+void Gameboy::buttonReleased(Joypad::Button button) { joypad_->buttonReleased(button); }
 
-bool Gameboy::consumeCompletedFrame()
-{
-    return ppu_->consumeCompletedFrame();
-}
+bool Gameboy::consumeCompletedFrame() { return ppu_->consumeCompletedFrame(); }
 
 void Gameboy::createHardware()
 {
@@ -108,10 +95,7 @@ void Gameboy::initSubsystems()
     initialized_ = true;
 }
 
-std::optional<uint8_t> Gameboy::consumeSerialByte()
-{
-    return std::exchange(pendingSerialByte_, std::nullopt);
-}
+std::optional<uint8_t> Gameboy::consumeSerialByte() { return std::exchange(pendingSerialByte_, std::nullopt); }
 
 void Gameboy::pollSerialPort()
 {

@@ -25,8 +25,8 @@ class Gameboy
     void update();
     void done();
 
-    void inputDown(int32_t keyCode);
-    void inputUp(int32_t keyCode);
+    void buttonPressed(Joypad::Button button);
+    void buttonReleased(Joypad::Button button);
 
     [[nodiscard]] bool cartridgeLoaded() const { return cartridgeLoaded_; }
     bool consumeCompletedFrame();

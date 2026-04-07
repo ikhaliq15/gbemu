@@ -57,14 +57,10 @@ auto Timer::onReadOwnedByte(uint16_t address) -> uint8_t
 {
     switch (address)
     {
-    case RAM::DIV:
-        return divAccumulator_.value();
-    case RAM::TIMA:
-        return tima_;
-    case RAM::TMA:
-        return tma_;
-    case RAM::TAC:
-        return tac_;
+    case RAM::DIV: return divAccumulator_.value();
+    case RAM::TIMA: return tima_;
+    case RAM::TMA: return tma_;
+    case RAM::TAC: return tac_;
     }
     return 0x00;
 }
@@ -73,18 +69,10 @@ void Timer::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t current
 {
     switch (address)
     {
-    case RAM::DIV:
-        divAccumulator_.reset();
-        break;
-    case RAM::TIMA:
-        tima_ = newValue;
-        break;
-    case RAM::TMA:
-        tma_ = newValue;
-        break;
-    case RAM::TAC:
-        tac_ = newValue;
-        break;
+    case RAM::DIV: divAccumulator_.reset(); break;
+    case RAM::TIMA: tima_ = newValue; break;
+    case RAM::TMA: tma_ = newValue; break;
+    case RAM::TAC: tac_ = newValue; break;
     }
 }
 

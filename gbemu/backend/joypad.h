@@ -12,33 +12,28 @@ namespace gbemu::backend
 class Joypad : public RAM::Owner
 {
   public:
-    static constexpr uint32_t START_BUTTON = '\r';
-    static constexpr uint32_t SELECT_BUTTON = ' ';
-    static constexpr uint32_t B_BUTTON = 'b';
-    static constexpr uint32_t A_BUTTON = 'a';
-    static constexpr uint32_t DOWN_BUTTON = 81 | (1 << 30);
-    static constexpr uint32_t UP_BUTTON = 82 | (1 << 30);
-    static constexpr uint32_t LEFT_BUTTON = 80 | (1 << 30);
-    static constexpr uint32_t RIGHT_BUTTON = 79 | (1 << 30);
+    enum class Button : uint8_t
+    {
+        A,
+        B,
+        SELECT,
+        START,
+        RIGHT,
+        LEFT,
+        UP,
+        DOWN
+    };
 
     Joypad();
 
-    void handleKeyDownEvent(uint32_t key);
-    void handleKeyUpEvent(uint32_t key);
-
-    [[nodiscard]] uint8_t getJoypadRegister() const;
+    void buttonPressed(Button key) { handleButtonEvent(key, true); }
+    void buttonReleased(Button key) { handleButtonEvent(key, false); }
 
     // RAM::Owner
     uint8_t onReadOwnedByte(uint16_t address) override;
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
   private:
-    static constexpr uint8_t BUTTON_DOWN = 0;
-    static constexpr uint8_t BUTTON_UP = 1;
-
-    static constexpr uint8_t SELECTED = 0;
-    static constexpr uint8_t UNSELECTED = 1;
-
     // Bit positions within the button/dpad state bytes
     static constexpr uint8_t BIT_A = 0;
     static constexpr uint8_t BIT_B = 1;
@@ -53,25 +48,26 @@ class Joypad : public RAM::Owner
     static constexpr uint8_t BUTTONS_SELECT_BIT = 5;
     static constexpr uint8_t DPAD_SELECT_BIT = 4;
 
-    struct KeyMapping
+    struct KeyData final
     {
-        uint32_t key;
-        uint8_t bit;
-        bool isDpad;
+        Button key_;
+        uint8_t bit_;
+        bool isDpad_;
     };
 
-    static constexpr std::array<KeyMapping, 8> KEY_MAPPINGS = {{
-        {A_BUTTON, BIT_A, false},
-        {B_BUTTON, BIT_B, false},
-        {SELECT_BUTTON, BIT_SELECT, false},
-        {START_BUTTON, BIT_START, false},
-        {RIGHT_BUTTON, BIT_RIGHT, true},
-        {LEFT_BUTTON, BIT_LEFT, true},
-        {UP_BUTTON, BIT_UP, true},
-        {DOWN_BUTTON, BIT_DOWN, true},
+    static constexpr std::array<KeyData, 8> KEY_MAPPINGS = {{
+        {Button::A, BIT_A, false},
+        {Button::B, BIT_B, false},
+        {Button::SELECT, BIT_SELECT, false},
+        {Button::START, BIT_START, false},
+        {Button::RIGHT, BIT_RIGHT, true},
+        {Button::LEFT, BIT_LEFT, true},
+        {Button::UP, BIT_UP, true},
+        {Button::DOWN, BIT_DOWN, true},
     }};
 
-    void handleKeyEvent(uint32_t key, uint8_t newButtonState);
+    [[nodiscard]] uint8_t joypadRegister() const;
+    void handleButtonEvent(Button key, bool pressed);
 
     uint8_t selectedStates_;
     uint8_t buttonStates_;

@@ -22,10 +22,7 @@ TEST(BitUtilsTest, SetUpperLowerByte)
     EXPECT_EQ(uint16_t{0x12CD}, setLowerByte(v, uint8_t{0xCD}));
 }
 
-TEST(BitUtilsTest, ConcatBytes)
-{
-    EXPECT_EQ(uint16_t{0xABCD}, concatBytes(uint8_t{0xAB}, uint8_t{0xCD}));
-}
+TEST(BitUtilsTest, ConcatBytes) { EXPECT_EQ(uint16_t{0xABCD}, concatBytes(uint8_t{0xAB}, uint8_t{0xCD})); }
 
 TEST(BitUtilsTest, SwapNibbles)
 {

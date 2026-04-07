@@ -10,12 +10,9 @@ constexpr uint8_t interruptMask(InterruptType interrupt)
 {
     switch (interrupt)
     {
-    case InterruptType::VBlank:
-        return 1 << 0;
-    case InterruptType::Stat:
-        return 1 << 1;
-    case InterruptType::Timer:
-        return 1 << 2;
+    case InterruptType::VBlank: return 1 << 0;
+    case InterruptType::Stat: return 1 << 1;
+    case InterruptType::Timer: return 1 << 2;
     }
 
     return 0;
@@ -23,8 +20,7 @@ constexpr uint8_t interruptMask(InterruptType interrupt)
 
 } // namespace
 
-InterruptController::InterruptController(RAM *ram) : ram_(ram)
-{}
+InterruptController::InterruptController(RAM *ram) : ram_(ram) {}
 
 void InterruptController::requestInterrupt(InterruptType interrupt)
 {
@@ -38,9 +34,6 @@ void InterruptController::clearInterrupt(InterruptType interrupt)
     ram_->set(RAM::IF, static_cast<uint8_t>(current & ~interruptMask(interrupt)));
 }
 
-auto InterruptController::pendingInterrupts() const -> uint8_t
-{
-    return ram_->get(RAM::IF);
-}
+auto InterruptController::pendingInterrupts() const -> uint8_t { return ram_->get(RAM::IF); }
 
 } // namespace gbemu::backend

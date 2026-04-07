@@ -10,58 +10,29 @@ namespace gbemu::backend::alu
 
 struct AluFlagResult final
 {
-    const bool isZero;
-    const bool operationIsSubtraction;
-    const bool hadHalfCarry;
-    const bool hadCarry;
-    const bool bit0Set;
-    const bool bit1Set;
-    const bool bit2Set;
-    const bool bit3Set;
-    const bool bit4Set;
-    const bool bit5Set;
-    const bool bit6Set;
-    const bool bit7Set;
+    bool isZero;
+    bool operationIsSubtraction;
+    bool hadHalfCarry;
+    bool hadCarry;
+    uint8_t flagBits; // individual bits referenced by Flag::A0..A7
 };
 
 template <typename T> struct AluResult final
 {
-    const T result;
-    const AluFlagResult flags;
+    T result;
+    AluFlagResult flags;
 };
 
 template <typename T, typename V> AluResult<T> add(T a, V b)
 {
     const T result = a + b;
-    return AluResult{
-        .result = result,
-        .flags =
-            {
-                .isZero = result == 0,
-                .operationIsSubtraction = false,
-                .hadHalfCarry = addHadHalfCarry(a, b),
-                .hadCarry = addHadCarry(a, b),
-                .bit0Set = getBit(result, 0) == 1,
-                .bit7Set = getBit(result, 7) == 1,
-            },
-    };
+    return {result, {result == 0, false, addHadHalfCarry(a, b), addHadCarry(a, b), static_cast<uint8_t>(result)}};
 }
 
 template <typename T, typename V> AluResult<T> sub(T a, V b)
 {
     const T result = a - b;
-    return AluResult{
-        .result = result,
-        .flags =
-            {
-                .isZero = result == 0,
-                .operationIsSubtraction = true,
-                .hadHalfCarry = subHadHalfCarry(a, b),
-                .hadCarry = subHadCarry(a, b),
-                .bit0Set = getBit(result, 0) == 1,
-                .bit7Set = getBit(result, 7) == 1,
-            },
-    };
+    return {result, {result == 0, true, subHadHalfCarry(a, b), subHadCarry(a, b), static_cast<uint8_t>(result)}};
 }
 
 AluResult<uint8_t> adc(uint8_t a, uint8_t b, uint8_t carry);

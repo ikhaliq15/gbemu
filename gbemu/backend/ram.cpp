@@ -73,10 +73,7 @@ void RAM::set(uint16_t address, uint8_t value)
     memory_[address] = value;
 }
 
-auto RAM::getImmediate16(uint16_t address) const -> uint16_t
-{
-    return concatBytes(get(address + 1), get(address));
-}
+auto RAM::getImmediate16(uint16_t address) const -> uint16_t { return concatBytes(get(address + 1), get(address)); }
 
 void RAM::setImmediate16(uint16_t address, uint16_t value)
 {
