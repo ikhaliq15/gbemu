@@ -35,7 +35,7 @@ class JoypadTest : public testing::Test
                                                                                                                        \
         for (int i = 0; i < 3; i++)                                                                                    \
         {                                                                                                              \
-            joypad_->handleKeyDownEvent(Button);                                                                       \
+            joypad_->buttonPressed(Button);                                                                            \
                                                                                                                        \
             if (isDpad)                                                                                                \
             {                                                                                                          \
@@ -48,7 +48,7 @@ class JoypadTest : public testing::Test
                 ASSERT_EQ(getDpadNibble(), 0x0f);                                                                      \
             }                                                                                                          \
                                                                                                                        \
-            joypad_->handleKeyUpEvent(Button);                                                                         \
+            joypad_->buttonReleased(Button);                                                                           \
                                                                                                                        \
             ASSERT_EQ(getButtonsNibble(), 0x0f);                                                                       \
             ASSERT_EQ(getDpadNibble(), 0x0f);                                                                          \
@@ -67,12 +67,12 @@ TEST_F(JoypadTest, NoButtonsPressed)
     ASSERT_EQ(joypad_->onReadOwnedByte(gbemu::backend::RAM::JOYP), 0x2f);
 }
 
-SINGLE_BUTTON_TEST(Down, gbemu::backend::Joypad::DOWN_BUTTON, 3, true);
-SINGLE_BUTTON_TEST(Up, gbemu::backend::Joypad::UP_BUTTON, 2, true);
-SINGLE_BUTTON_TEST(Left, gbemu::backend::Joypad::LEFT_BUTTON, 1, true);
-SINGLE_BUTTON_TEST(Right, gbemu::backend::Joypad::RIGHT_BUTTON, 0, true);
+SINGLE_BUTTON_TEST(Down, gbemu::backend::Joypad::Button::DOWN, 3, true);
+SINGLE_BUTTON_TEST(Up, gbemu::backend::Joypad::Button::UP, 2, true);
+SINGLE_BUTTON_TEST(Left, gbemu::backend::Joypad::Button::LEFT, 1, true);
+SINGLE_BUTTON_TEST(Right, gbemu::backend::Joypad::Button::RIGHT, 0, true);
 
-SINGLE_BUTTON_TEST(Start, gbemu::backend::Joypad::START_BUTTON, 3, false);
-SINGLE_BUTTON_TEST(Select, gbemu::backend::Joypad::SELECT_BUTTON, 2, false);
-SINGLE_BUTTON_TEST(B, gbemu::backend::Joypad::B_BUTTON, 1, false);
-SINGLE_BUTTON_TEST(A, gbemu::backend::Joypad::A_BUTTON, 0, false);
+SINGLE_BUTTON_TEST(Start, gbemu::backend::Joypad::Button::START, 3, false);
+SINGLE_BUTTON_TEST(Select, gbemu::backend::Joypad::Button::SELECT, 2, false);
+SINGLE_BUTTON_TEST(B, gbemu::backend::Joypad::Button::B, 1, false);
+SINGLE_BUTTON_TEST(A, gbemu::backend::Joypad::Button::A, 0, false);
