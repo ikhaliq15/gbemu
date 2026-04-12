@@ -77,7 +77,14 @@ class RAM
 
     void loadCartridge(const Cartridge &cartridge);
 
-    [[nodiscard]] uint8_t get(uint16_t address) const;
+    [[nodiscard]] auto get(uint16_t address) const -> uint8_t
+    {
+        if (const auto readOwner = readOwners_[address]; readOwner != nullptr)
+        {
+            return readOwner->onReadOwnedByte(address);
+        }
+        return memory_[address];
+    }
     void set(uint16_t address, uint8_t value);
 
     [[nodiscard]] uint16_t getImmediate16(uint16_t address) const;

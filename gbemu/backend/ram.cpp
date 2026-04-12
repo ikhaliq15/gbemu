@@ -42,15 +42,6 @@ void RAM::loadCartridge(const Cartridge &cartridge)
         memory_[i] = cartridge[i];
 }
 
-auto RAM::get(uint16_t address) const -> uint8_t
-{
-    if (const auto readOwner = readOwners_[address]; readOwner != nullptr)
-    {
-        return readOwner->onReadOwnedByte(address);
-    }
-    return memory_[address];
-}
-
 void RAM::set(uint16_t address, uint8_t value)
 {
     if (address == 0x2000)
