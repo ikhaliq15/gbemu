@@ -150,13 +150,21 @@ void PPU::drawScanLine()
 
 void PPU::drawBackground(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap)
 {
-    for (int x = 0; x < LCD_WIDTH; x++)
+    const auto viewPortY = (ly_ + scy_) % 256;
+    const int tileRow = viewPortY / 8;
+    const int innerY = viewPortY % 8;
+    const int rowBase = tileRow * 32;
+    auto *scanline = &pixels_[ly_ * LCD_WIDTH];
+
+    int x = 0;
+    while (x < LCD_WIDTH)
     {
         const auto viewPortX = (x + scx_) % 256;
-        const auto viewPortY = (ly_ + scy_) % 256;
+        const int tileCol = viewPortX / 8;
+        const int startInnerX = viewPortX % 8;
+        const int pixelsInTile = std::min(8 - startInnerX, LCD_WIDTH - x);
 
-        const int tileIndex = (viewPortY / 8) * 32 + (viewPortX / 8);
-
+        const int tileIndex = rowBase + tileCol;
         uint16_t tile;
         if (tileData == 0x8000)
         {
@@ -167,13 +175,17 @@ void PPU::drawBackground(const std::array<uint32_t, 4> &palette, uint16_t tileDa
             tile = tileData + 16 * static_cast<int8_t>(ram_->get(tileMap + tileIndex));
         }
 
-        const int innerX = viewPortX % 8;
-        const int innerY = viewPortY % 8;
+        const uint8_t lo = ram_->get(tile + 2 * innerY);
+        const uint8_t hi = ram_->get(tile + 2 * innerY + 1);
 
-        const uint8_t lsb = getBit(ram_->get(tile + (2 * innerY)), 7 - innerX);
-        const uint8_t msb = getBit(ram_->get(tile + (2 * innerY) + 1), 7 - innerX);
+        for (int i = 0; i < pixelsInTile; i++)
+        {
+            const int bit = 7 - (startInnerX + i);
+            const uint8_t colorId = ((hi >> bit) & 1) << 1 | ((lo >> bit) & 1);
+            scanline[x + i] = palette[colorId];
+        }
 
-        pixels_[ly_ * LCD_WIDTH + x] = palette[(msb << 1) | lsb];
+        x += pixelsInTile;
     }
 }
 
