@@ -5,7 +5,8 @@
 #include "gbemu/backend/interrupt_controller.h"
 #include "gbemu/backend/ram.h"
 
-#include <vector>
+#include <array>
+#include <cstdint>
 
 namespace gbemu::backend
 {
@@ -119,7 +120,9 @@ class Timer : public RAM::Owner
     EnabledTimer timer2_;
     EnabledTimer timer3_;
 
-    std::vector<TimerListenerInfo> timerListeners_;
+    static constexpr size_t MAX_LISTENERS = 8;
+    std::array<TimerListenerInfo, MAX_LISTENERS> timerListeners_{};
+    size_t timerListenerCount_ = 0;
 };
 
 } // namespace gbemu::backend
