@@ -1,6 +1,13 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
+    name = "fps_regulator",
+    srcs = [],
+    hdrs = ["fps_regulator.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "frontend",
     srcs = [
         "imgui.cpp",

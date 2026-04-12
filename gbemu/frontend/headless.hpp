@@ -34,7 +34,7 @@ class HeadlessFrontend : public IFrontend
 
         if (logSerial_)
         {
-            if (const auto byte = gameboy_->consumeSerialByte())
+            while (const auto byte = gameboy_->consumeSerialByte())
             {
                 putc(*byte, stdout);
                 fflush(stdout);

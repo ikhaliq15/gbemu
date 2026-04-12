@@ -1,18 +1,21 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 
+DEPS = [
+    "//gbemu/backend",
+    "//gbemu/config",
+    "//gbemu/frontend",
+    "//gbemu/frontend:fps_regulator",
+    "@argparse",
+    "@stb//:stb_image_write",
+]
+
 cc_binary(
     name = "gbemu_exe",
     srcs = [
         "main.cpp",
     ],
     visibility = ["//visibility:public"],
-    deps = [
-        "//gbemu/backend",
-        "//gbemu/config",
-        "//gbemu/frontend",
-        "@argparse",
-        "@stb//:stb_image_write",
-    ],
+    deps = DEPS,
 )
 
 cc_library(
@@ -21,11 +24,5 @@ cc_library(
         "main.cpp",
     ],
     visibility = ["//visibility:public"],
-    deps = [
-        "//gbemu/backend",
-        "//gbemu/config",
-        "//gbemu/frontend",
-        "@argparse",
-        "@stb//:stb_image_write",
-    ],
+    deps = DEPS,
 )

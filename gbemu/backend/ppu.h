@@ -12,7 +12,6 @@ namespace gbemu::backend
 
 inline constexpr uint16_t LCD_WIDTH = 160;
 inline constexpr uint16_t LCD_HEIGHT = 144;
-inline constexpr double DEVICE_FPS = 60.0; // TODO: should technically be ~59.7
 
 class PPU : public Timer::IListener, public RAM::Owner
 {

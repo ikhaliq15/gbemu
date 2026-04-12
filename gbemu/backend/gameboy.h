@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <optional>
+#include <queue>
 
 namespace gbemu::backend
 {
@@ -24,6 +25,8 @@ class Gameboy
     void init();
     void update();
     void done();
+
+    [[nodiscard]] constexpr auto targetFPS() const -> double { return 59.7275; }
 
     void buttonPressed(Joypad::Button button);
     void buttonReleased(Joypad::Button button);
@@ -47,7 +50,7 @@ class Gameboy
 
     bool cartridgeLoaded_ = false;
     bool initialized_ = false;
-    std::optional<uint8_t> pendingSerialByte_;
+    std::queue<uint8_t> pendingSerialBytes_;
 
     std::unique_ptr<Joypad> joypad_;
     std::unique_ptr<RAM> ram_;

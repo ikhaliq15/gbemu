@@ -2,6 +2,7 @@
 #include "gbemu/backend/gameboy.h"
 #include "gbemu/backend/ppu.h"
 #include "gbemu/config/version.h"
+#include "gbemu/frontend/fps_regulator.h"
 #include "gbemu/frontend/headless.hpp"
 #include "gbemu/frontend/imgui.hpp"
 
@@ -18,13 +19,27 @@
 namespace
 {
 
-void runEmulationLoop(gbemu::backend::Gameboy &gameboy, gbemu::frontend::IFrontend &frontend)
+void runEmulationLoop(gbemu::backend::Gameboy &gameboy, gbemu::frontend::IFrontend &frontend,
+                      gbemu::frontend::FPSRegulator &fpsRegulator)
 {
     gameboy.init();
     frontend.init(&gameboy);
 
-    while (frontend.update())
-        gameboy.update();
+    bool running = true;
+    while (running)
+    {
+        if (gameboy.cartridgeLoaded())
+        {
+            while (!gameboy.consumeCompletedFrame())
+            {
+                gameboy.update();
+            }
+        }
+
+        running = frontend.update();
+
+        fpsRegulator.waitForNextFrame();
+    }
 
     frontend.done();
     gameboy.done();
@@ -103,7 +118,13 @@ auto main(int argc, char **argv) -> int
         gameboy->loadCartridge(cartridge);
     }
 
-    runEmulationLoop(*gameboy, *frontend);
+    gbemu::frontend::FPSRegulator fpsRegulator(gameboy->targetFPS());
+    if (headless)
+    {
+        fpsRegulator.disable();
+    }
+
+    runEmulationLoop(*gameboy, *frontend, fpsRegulator);
 
     if (!dumpPath.empty())
     {

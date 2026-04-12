@@ -95,14 +95,26 @@ void Gameboy::initSubsystems()
     initialized_ = true;
 }
 
-std::optional<uint8_t> Gameboy::consumeSerialByte() { return std::exchange(pendingSerialByte_, std::nullopt); }
+std::optional<uint8_t> Gameboy::consumeSerialByte()
+{
+    if (pendingSerialBytes_.empty())
+    {
+        return std::nullopt;
+    }
+
+    const auto serialByte = pendingSerialBytes_.front();
+    pendingSerialBytes_.pop();
+    return serialByte;
+}
 
 void Gameboy::pollSerialPort()
 {
     if (ram_->get(RAM::SC) != 0x81)
+    {
         return;
+    }
 
-    pendingSerialByte_ = ram_->get(RAM::SB);
+    pendingSerialBytes_.push(ram_->get(RAM::SB));
     ram_->set(RAM::SC, 0x00);
 }
 

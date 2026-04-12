@@ -135,7 +135,7 @@ bool ImguiFrontend::init(gbemu::backend::Gameboy *gameboy)
     window_ = SDL_CreateWindow(gbemu::config::kDisplayName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                (int)(1440 * main_scale), (int)(920 * main_scale), window_flags);
 
-    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
     texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
                                  gbemu::backend::LCD_WIDTH, gbemu::backend::LCD_HEIGHT);
 
@@ -181,13 +181,6 @@ bool ImguiFrontend::update()
     if (done_)
     {
         return false;
-    }
-
-    const bool frame_ready = gameboy_->consumeCompletedFrame();
-
-    if (!frame_ready && gameboy_->cartridgeLoaded())
-    {
-        return true;
     }
 
     pollEvents();
