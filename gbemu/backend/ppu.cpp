@@ -32,7 +32,9 @@ void PPU::update()
 bool PPU::consumeCompletedFrame()
 {
     if (completedFrames_ == 0)
+    {
         return false;
+    }
 
     completedFrames_ -= 1;
     return true;
@@ -127,17 +129,23 @@ void PPU::drawScanLine()
     const auto bgPalette = buildPalette(ram_->get(RAM::BGP));
 
     if (bgEnabled)
+    {
         drawBackground(bgPalette, tileData, bgTileMap);
+    }
     else
     {
         std::fill_n(&pixels_[ly_ * LCD_WIDTH], LCD_WIDTH, 0xffffffff);
     }
 
     if (windowEnabled && bgEnabled)
+    {
         drawWindow(bgPalette, tileData, windowTileMap);
+    }
 
     if (spriteEnabled)
+    {
         drawSprites(spriteHeight);
+    }
 }
 
 void PPU::drawBackground(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap)
@@ -151,9 +159,13 @@ void PPU::drawBackground(const std::array<uint32_t, 4> &palette, uint16_t tileDa
 
         uint16_t tile;
         if (tileData == 0x8000)
+        {
             tile = tileData + 16 * ram_->get(tileMap + tileIndex);
+        }
         else
+        {
             tile = tileData + 16 * static_cast<int8_t>(ram_->get(tileMap + tileIndex));
+        }
 
         const int innerX = viewPortX % 8;
         const int innerY = viewPortY % 8;
@@ -176,17 +188,22 @@ void PPU::drawWindow(const std::array<uint32_t, 4> &palette, uint16_t tileData, 
         const int windowX = x - wx_ + 7;
 
         if (!(0 <= windowX && windowX < LCD_WIDTH && 0 <= windowY && windowY < LCD_HEIGHT))
+        {
             continue;
+        }
         windowVisible = true;
 
         const int tileIndex = (windowPixelY / 8) * 32 + (windowX / 8);
 
         uint16_t tile;
         if (tileData == 0x8000)
+        {
             tile = tileData + 16 * ram_->get(tileMap + tileIndex);
+        }
         else
+        {
             tile = tileData + 16 * static_cast<int8_t>(ram_->get(tileMap + tileIndex));
-
+        }
         const int innerX = windowX % 8;
         const int innerY = windowPixelY % 8;
 
@@ -197,7 +214,9 @@ void PPU::drawWindow(const std::array<uint32_t, 4> &palette, uint16_t tileData, 
     }
 
     if (windowVisible)
+    {
         windowLy_ += 1;
+    }
 }
 
 void PPU::drawSprites(uint16_t spriteHeight)
@@ -213,7 +232,9 @@ void PPU::drawSprites(uint16_t spriteHeight)
         const uint8_t spriteY = ram_->get(addr) - 16;
 
         if (spriteY <= ly_ && ly_ < spriteY + spriteHeight)
+        {
             selectedSprites.emplace_back(ram_->get(addr + 1) - 8, i);
+        }
     }
 
     // Lower x = higher priority; draw high-x first so low-x overwrites
@@ -229,7 +250,9 @@ void PPU::drawSprites(uint16_t spriteHeight)
 
         auto tileIndex = ram_->get(addr + 2);
         if (spriteHeight == 16)
+        {
             tileIndex = setBit(tileIndex, 0, 0);
+        }
 
         const auto attributes = ram_->get(addr + 3);
         const auto priority = getBit(attributes, 7);
@@ -243,7 +266,9 @@ void PPU::drawSprites(uint16_t spriteHeight)
         for (int x = xPos; x < xPos + 8; x++)
         {
             if (x < 0 || x >= LCD_WIDTH)
+            {
                 continue;
+            }
 
             int innerX = (x - xPos) % 8;
             if (xFlip)
@@ -258,10 +283,14 @@ void PPU::drawSprites(uint16_t spriteHeight)
             const uint8_t colorId = (msb << 1) | lsb;
 
             if (colorId == 0)
+            {
                 continue;
+            }
 
             if (!priority || pixels_[ly_ * LCD_WIDTH + x] == bgPalette[0])
+            {
                 pixels_[ly_ * LCD_WIDTH + x] = palette[colorId];
+            }
         }
     }
 }
