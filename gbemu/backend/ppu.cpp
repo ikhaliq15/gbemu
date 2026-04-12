@@ -4,8 +4,7 @@
 #include "gbemu/backend/ram.h"
 
 #include <algorithm>
-#include <utility>
-#include <vector>
+#include <span>
 
 namespace gbemu::backend
 {
@@ -192,21 +191,41 @@ void PPU::drawBackground(const std::array<uint32_t, 4> &palette, uint16_t tileDa
 void PPU::drawWindow(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap)
 {
     const int windowY = ly_ - wy_;
+    if (windowY < 0 || windowY >= LCD_HEIGHT)
+    {
+        return;
+    }
+
     const int windowPixelY = windowLy_;
+    const int tileRow = windowPixelY / 8;
+    const int innerY = windowPixelY % 8;
+    const int rowBase = tileRow * 32;
+    auto *scanline = &pixels_[ly_ * LCD_WIDTH];
+
+    // The window starts at screen x = wx_ - 7
+    const int screenStart = std::max(0, static_cast<int>(wx_) - 7);
+    if (screenStart >= LCD_WIDTH)
+    {
+        return;
+    }
 
     bool windowVisible = false;
-    for (int x = 0; x < LCD_WIDTH; x++)
+    int x = screenStart;
+    while (x < LCD_WIDTH)
     {
         const int windowX = x - wx_ + 7;
-
-        if (!(0 <= windowX && windowX < LCD_WIDTH && 0 <= windowY && windowY < LCD_HEIGHT))
+        if (windowX < 0 || windowX >= LCD_WIDTH)
         {
+            x++;
             continue;
         }
         windowVisible = true;
 
-        const int tileIndex = (windowPixelY / 8) * 32 + (windowX / 8);
+        const int tileCol = windowX / 8;
+        const int startInnerX = windowX % 8;
+        const int pixelsInTile = std::min(8 - startInnerX, LCD_WIDTH - x);
 
+        const int tileIndex = rowBase + tileCol;
         uint16_t tile;
         if (tileData == 0x8000)
         {
@@ -216,13 +235,18 @@ void PPU::drawWindow(const std::array<uint32_t, 4> &palette, uint16_t tileData, 
         {
             tile = tileData + 16 * static_cast<int8_t>(ram_->get(tileMap + tileIndex));
         }
-        const int innerX = windowX % 8;
-        const int innerY = windowPixelY % 8;
 
-        const uint8_t lsb = getBit(ram_->get(tile + (2 * innerY)), 7 - innerX);
-        const uint8_t msb = getBit(ram_->get(tile + (2 * innerY) + 1), 7 - innerX);
+        const uint8_t lo = ram_->get(tile + 2 * innerY);
+        const uint8_t hi = ram_->get(tile + 2 * innerY + 1);
 
-        pixels_[ly_ * LCD_WIDTH + x] = palette[(msb << 1) | lsb];
+        for (int i = 0; i < pixelsInTile; i++)
+        {
+            const int bit = 7 - (startInnerX + i);
+            const uint8_t colorId = ((hi >> bit) & 1) << 1 | ((lo >> bit) & 1);
+            scanline[x + i] = palette[colorId];
+        }
+
+        x += pixelsInTile;
     }
 
     if (windowVisible)
@@ -233,49 +257,79 @@ void PPU::drawWindow(const std::array<uint32_t, 4> &palette, uint16_t tileData, 
 
 void PPU::drawSprites(uint16_t spriteHeight)
 {
+    struct SpriteInfo final
+    {
+        int yPos;
+        int xPos;
+        uint8_t tileIndex;
+        uint8_t attributes;
+        uint16_t oamPriority;
+    };
+
     constexpr uint16_t SPRITE_TILE_DATA = 0x8000;
 
-    std::vector<std::pair<uint8_t, int>> selectedSprites;
-    selectedSprites.reserve(MAX_SPRITES_PER_SCANLINE);
+    std::array<SpriteInfo, MAX_SPRITES_PER_SCANLINE> selectedSprites;
+    uint16_t spriteCount = 0;
 
-    for (uint16_t i = 0; i < 40 && selectedSprites.size() < MAX_SPRITES_PER_SCANLINE; i++)
+    uint16_t oamIndex = 0;
+    while (spriteCount < MAX_SPRITES_PER_SCANLINE && oamIndex < 40)
     {
-        const uint16_t addr = RAM::OAM + (i * 4);
-        const uint8_t spriteY = ram_->get(addr) - 16;
+        const uint16_t addr = RAM::OAM + (oamIndex * 4);
+        const auto yPos = ram_->get(addr) - 16;
 
-        if (spriteY <= ly_ && ly_ < spriteY + spriteHeight)
+        if (yPos <= ly_ && ly_ < yPos + spriteHeight)
         {
-            selectedSprites.emplace_back(ram_->get(addr + 1) - 8, i);
+            const auto xPos = ram_->get(addr + 1) - 8;
+
+            selectedSprites[spriteCount++] = SpriteInfo{
+                .yPos = yPos,
+                .xPos = xPos,
+                .tileIndex = ram_->get(addr + 2),
+                .attributes = ram_->get(addr + 3),
+                .oamPriority = oamIndex,
+            };
         }
+        oamIndex += 1;
     }
 
     // Lower x = higher priority; draw high-x first so low-x overwrites
-    std::ranges::sort(selectedSprites, std::greater<>{});
+    auto spriteSpan = std::span(selectedSprites.data(), spriteCount);
+    std::ranges::sort(spriteSpan, [](const auto &a, const auto &b) {
+        if (a.xPos == b.xPos)
+        {
+            return a.oamPriority > b.oamPriority;
+        }
+        return a.xPos > b.xPos;
+    });
 
     const auto bgPalette = buildPalette(ram_->get(RAM::BGP));
+    const auto objPalette0 = buildPalette(ram_->get(RAM::OBP0));
+    const auto objPalette1 = buildPalette(ram_->get(RAM::OBP1));
 
-    for (const auto [spriteX, spriteIndex] : selectedSprites)
+    for (const auto &sprite : spriteSpan)
     {
-        const uint16_t addr = RAM::OAM + (spriteIndex * 4);
-        const auto yPos = ram_->get(addr) - 16;
-        const auto xPos = ram_->get(addr + 1) - 8;
+        const auto yPos = sprite.yPos;
+        const auto xPos = sprite.xPos;
 
-        auto tileIndex = ram_->get(addr + 2);
+        auto tileIndex = sprite.tileIndex;
         if (spriteHeight == 16)
         {
             tileIndex = setBit(tileIndex, 0, 0);
         }
 
-        const auto attributes = ram_->get(addr + 3);
+        const auto attributes = sprite.attributes;
         const auto priority = getBit(attributes, 7);
         const auto yFlip = getBit(attributes, 6);
         const auto xFlip = getBit(attributes, 5);
-        const auto paletteAddr = getBit(attributes, 4) ? RAM::OBP1 : RAM::OBP0;
+        const auto &palette = getBit(attributes, 4) ? objPalette1 : objPalette0;
 
         const uint16_t tile = SPRITE_TILE_DATA + (16 * tileIndex);
-        const auto palette = buildPalette(ram_->get(paletteAddr));
 
-        for (int x = xPos; x < xPos + 8; x++)
+        const auto innerY = (yFlip) ? (spriteHeight - 1) - (ly_ - yPos) : (ly_ - yPos);
+        const auto tile1 = ram_->get(tile + (2 * innerY));
+        const auto tile2 = ram_->get(tile + (2 * innerY) + 1);
+
+        for (int x = xPos; x < xPos + 8; ++x)
         {
             if (x < 0 || x >= LCD_WIDTH)
             {
@@ -286,12 +340,8 @@ void PPU::drawSprites(uint16_t spriteHeight)
             if (xFlip)
                 innerX = 7 - innerX;
 
-            int innerY = (ly_ - yPos) % spriteHeight;
-            if (yFlip)
-                innerY = spriteHeight - innerY - 1;
-
-            const uint8_t lsb = getBit(ram_->get(tile + (2 * innerY)), 7 - innerX);
-            const uint8_t msb = getBit(ram_->get(tile + (2 * innerY) + 1), 7 - innerX);
+            const uint8_t lsb = getBit(tile1, 7 - innerX);
+            const uint8_t msb = getBit(tile2, 7 - innerX);
             const uint8_t colorId = (msb << 1) | lsb;
 
             if (colorId == 0)
