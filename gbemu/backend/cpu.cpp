@@ -17,33 +17,6 @@ CPU::CPU(const CPU &cpu)
       ram_(cpu.ram_), cycles_(cpu.cycles_), mode_(cpu.mode_)
 {}
 
-auto CPU::IME() const -> bool { return IME_; }
-
-auto CPU::PC() const -> uint16_t { return PC_; }
-auto CPU::SP() const -> uint16_t { return SP_; }
-
-auto CPU::AF() const -> uint16_t { return AF_; }
-auto CPU::BC() const -> uint16_t { return BC_; }
-auto CPU::DE() const -> uint16_t { return DE_; }
-auto CPU::HL() const -> uint16_t { return HL_; }
-
-auto CPU::A() const -> uint8_t { return upperByte(AF_); }
-auto CPU::B() const -> uint8_t { return upperByte(BC_); }
-auto CPU::C() const -> uint8_t { return lowerByte(BC_); }
-auto CPU::D() const -> uint8_t { return upperByte(DE_); }
-auto CPU::E() const -> uint8_t { return lowerByte(DE_); }
-auto CPU::H() const -> uint8_t { return upperByte(HL_); }
-auto CPU::L() const -> uint8_t { return lowerByte(HL_); }
-
-auto CPU::FlagZ() const -> uint8_t { return getBit(AF_, FLAG_Z_BIT); }
-auto CPU::FlagN() const -> uint8_t { return getBit(AF_, FLAG_N_BIT); }
-auto CPU::FlagH() const -> uint8_t { return getBit(AF_, FLAG_H_BIT); }
-auto CPU::FlagC() const -> uint8_t { return getBit(AF_, FLAG_C_BIT); }
-
-auto CPU::ram() const -> RAM * { return ram_; }
-
-auto CPU::cycles() const -> uint64_t { return cycles_; }
-auto CPU::mode() const -> CPU::Mode { return mode_; }
 void CPU::setMode(Mode mode) { mode_ = mode; }
 
 void CPU::setIME(bool newIME) { IME_ = newIME; }
@@ -78,31 +51,6 @@ void CPU::setFlags(uint8_t newZ, uint8_t newN, uint8_t newH, uint8_t newC)
 
 void CPU::advancePC(uint16_t inc) { PC_ += inc; }
 void CPU::offsetSP(int32_t offset) { SP_ += offset; }
-
-auto CPU::getRegister(Register reg) const -> uint8_t
-{
-    switch (reg)
-    {
-    case Register::A: return A();
-    case Register::B: return B();
-    case Register::C: return C();
-    case Register::D: return D();
-    case Register::E: return E();
-    case Register::H: return H();
-    case Register::L: return L();
-    }
-}
-
-auto CPU::getFullRegister(FullRegister reg) const -> uint16_t
-{
-    switch (reg)
-    {
-    case FullRegister::BC: return BC();
-    case FullRegister::DE: return DE();
-    case FullRegister::HL: return HL();
-    case FullRegister::AF: return AF();
-    }
-}
 
 void CPU::setRegister(Register reg, uint8_t newRegVal)
 {
