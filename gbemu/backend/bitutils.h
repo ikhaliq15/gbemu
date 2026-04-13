@@ -45,7 +45,9 @@ inline std::string toHexString(uint8_t n, bool prefixed = true)
 
     std::string out;
     if (prefixed)
+    {
         out += "0x";
+    }
 
     out += hex[(n >> 4) & 0xF];
     out += hex[n & 0xF];
@@ -59,7 +61,9 @@ inline std::string toHexString(uint16_t n, bool prefixed = true)
 
     std::string out;
     if (prefixed)
+    {
         out += "0x";
+    }
 
     out += hex[(n >> 12) & 0xF];
     out += hex[(n >> 8) & 0xF];

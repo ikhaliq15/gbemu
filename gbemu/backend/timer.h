@@ -67,7 +67,9 @@ class Timer : public RAM::Owner
         void trigger() override
         {
             if (!enabled())
+            {
                 return;
+            }
 
             if (*tima_ == 0xff)
             {

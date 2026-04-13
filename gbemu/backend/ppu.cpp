@@ -338,7 +338,9 @@ void PPU::drawSprites(uint16_t spriteHeight)
 
             int innerX = (x - xPos) % 8;
             if (xFlip)
+            {
                 innerX = 7 - innerX;
+            }
 
             const uint8_t lsb = getBit(tile1, 7 - innerX);
             const uint8_t msb = getBit(tile2, 7 - innerX);

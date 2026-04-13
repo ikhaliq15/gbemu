@@ -370,7 +370,9 @@ void CPU::DAA(uint16_t pc, const OPCode *opcode)
     uint8_t newFlagC = 0;
 
     if (FlagH() == 1 || (FlagN() != 1 && (value & 0x0f) > 0x09))
+    {
         correction |= 0x06;
+    }
 
     if (FlagC() == 1 || (FlagN() != 1 && value > 0x99))
     {
@@ -399,7 +401,9 @@ void CPU::POP(uint16_t pc, const OPCode *opcode)
 {
     auto stackValue = popFromStack();
     if (opcode->operands[0].asFullRegister() == FullRegister::AF)
+    {
         stackValue &= 0xFFF0;
+    }
     setOperand(opcode->operands[0], stackValue);
 }
 

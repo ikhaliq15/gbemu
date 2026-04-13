@@ -48,11 +48,17 @@ void Timer::update(uint64_t deltaCycles)
 void Timer::addTimerListener(IListener *listener, uint64_t cycleModulo)
 {
     if (initialized_)
+    {
         throw std::runtime_error("Cannot add timer listener after timer is initialized.");
+    }
     if (cycleModulo == 0)
+    {
         throw std::runtime_error("Cycle modulo must be positive.");
+    }
     if (timerListenerCount_ >= MAX_LISTENERS)
+    {
         throw std::runtime_error("Timer listener capacity exceeded.");
+    }
     timerListeners_[timerListenerCount_++] = {listener, cycleModulo, cycleModulo};
 }
 

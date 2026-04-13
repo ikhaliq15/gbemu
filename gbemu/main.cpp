@@ -70,7 +70,9 @@ void dumpDisplay(const gbemu::backend::Gameboy &gameboy, const std::string &path
 std::unique_ptr<gbemu::frontend::IFrontend> createFrontend(bool headless, bool logSerial)
 {
     if (headless)
+    {
         return std::make_unique<gbemu::frontend::HeadlessFrontend>(logSerial);
+    }
     return std::make_unique<gbemu::frontend::ImguiFrontend>();
 }
 

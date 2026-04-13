@@ -31,7 +31,9 @@ class CPUTest : public testing::Test
     void executeInstructions(size_t numInstructions)
     {
         for (int i = 0; i < numInstructions; i++)
+        {
             cpu_->executeInstruction();
+        }
     }
 
     void assertCPURegularRegistersAndRamEqual(const gbemu::backend::CPU &cpu1, const gbemu::backend::CPU &cpu2)
@@ -69,7 +71,9 @@ class CPUTest : public testing::Test
                 ASSERT_EQ(cpu_->IME(), expectedCPU->IME());
                 assertCPURegularRegistersAndRamEqual(*cpu_, expectedCPU.value());
                 if (includePC)
+                {
                     assertCPUPCEqual(*cpu_, expectedCPU.value());
+                }
             }
         }
     }

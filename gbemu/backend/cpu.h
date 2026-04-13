@@ -352,7 +352,9 @@ class CPU
         for (const auto &[name, handler] : kHandlers)
         {
             if (name == mnemonic)
+            {
                 return handler;
+            }
         }
         return &CPU::UNIMPLEMENTED;
     }

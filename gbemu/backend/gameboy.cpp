@@ -12,13 +12,17 @@ void Gameboy::loadCartridge(const Cartridge &cartridge)
     cartridgeLoaded_ = true;
 
     if (initialized_)
+    {
         initSubsystems();
+    }
 }
 
 void Gameboy::init()
 {
     if (initialized_)
+    {
         return;
+    }
 
     initSubsystems();
 }
@@ -26,7 +30,9 @@ void Gameboy::init()
 void Gameboy::update()
 {
     if (!cartridgeLoaded_)
+    {
         return;
+    }
 
     uint64_t deltaCycles = 1;
     if (cpu_->mode() == CPU::Mode::NORMAL)
