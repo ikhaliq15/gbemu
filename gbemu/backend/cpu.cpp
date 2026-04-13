@@ -2,6 +2,7 @@
 
 #include "gbemu/backend/bitutils.h"
 
+#include <algorithm>
 #include <iostream>
 
 namespace gbemu::backend
@@ -79,28 +80,42 @@ void CPU::setFullRegister(FullRegister reg, uint16_t newRegVal)
 
 void CPU::serviceInterrupts()
 {
-    const uint8_t pending = ram_->get(RAM::IF) & ram_->get(RAM::IE);
+    if (!IME_ && mode_ != Mode::HALT)
+    {
+        return;
+    }
 
     // Any pending interrupt wakes the CPU from HALT
-    if (pending & 0x1f)
+    const auto interruptFlags = ram_->get(RAM::IF);
+    const auto interruptEnable = ram_->get(RAM::IE);
+    const uint8_t pendingInterrupts = interruptFlags & interruptEnable & 0x1f;
+
+    if (pendingInterrupts)
+    {
         setMode(Mode::NORMAL);
+    }
 
     if (!IME_)
+    {
         return;
+    }
 
     // Service the highest-priority pending interrupt
     constexpr std::array<uint8_t, 3> INTERRUPT_BITS = {0, 1, 2}; // VBLANK, LCD_STAT, TIMER
-    for (const auto bit : INTERRUPT_BITS)
+
+    const auto pendingInterruptIt =
+        std::ranges::find_if(INTERRUPT_BITS, [&pendingInterrupts](auto bit) { return getBit(pendingInterrupts, bit); });
+    if (pendingInterruptIt == INTERRUPT_BITS.end())
     {
-        if (getBit(pending, bit))
-        {
-            IME_ = false;
-            pushToStack(PC_);
-            ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), bit, 0));
-            PC_ = 0x40 + 0x08 * bit;
-            return;
-        }
+        return;
     }
+    const auto bit = *pendingInterruptIt;
+
+    IME_ = false;
+    pushToStack(PC_);
+    ram_->set(RAM::IF, setBit(interruptFlags, bit, 0));
+    PC_ = 0x40 + 0x08 * bit;
+    return;
 }
 
 void CPU::executeInstruction(bool verbose)

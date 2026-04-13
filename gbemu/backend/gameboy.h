@@ -6,11 +6,11 @@
 #include "gbemu/backend/joypad.h"
 #include "gbemu/backend/ppu.h"
 #include "gbemu/backend/ram.h"
+#include "gbemu/backend/serial.h"
 #include "gbemu/backend/timer.h"
 
 #include <memory>
 #include <optional>
-#include <queue>
 
 namespace gbemu::backend
 {
@@ -33,7 +33,7 @@ class Gameboy
 
     [[nodiscard]] bool cartridgeLoaded() const { return cartridgeLoaded_; }
     bool consumeCompletedFrame();
-    [[nodiscard]] std::optional<uint8_t> consumeSerialByte();
+    [[nodiscard]] std::optional<uint8_t> consumeSerialByte() { return serial_->read(); };
 
     [[nodiscard]] const CPU *cpu() const { return cpu_.get(); }
     [[nodiscard]] const PPU *ppu() const { return ppu_.get(); }
@@ -46,11 +46,8 @@ class Gameboy
     void configureMemoryOwners();
     void initSubsystems();
 
-    void pollSerialPort();
-
     bool cartridgeLoaded_ = false;
     bool initialized_ = false;
-    std::queue<uint8_t> pendingSerialBytes_;
 
     std::unique_ptr<Joypad> joypad_;
     std::unique_ptr<RAM> ram_;
@@ -58,6 +55,7 @@ class Gameboy
     std::unique_ptr<CPU> cpu_;
     std::unique_ptr<PPU> ppu_;
     std::unique_ptr<Timer> timer_;
+    std::unique_ptr<Serial> serial_;
 };
 
 } // namespace gbemu::backend

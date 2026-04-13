@@ -1,7 +1,5 @@
 #include "gbemu/backend/gameboy.h"
 
-#include <utility>
-
 namespace gbemu::backend
 {
 
@@ -42,7 +40,6 @@ void Gameboy::update()
     ppu_->update();
 
     cpu_->serviceInterrupts();
-    pollSerialPort();
 }
 
 void Gameboy::done() {}
@@ -61,6 +58,7 @@ void Gameboy::createHardware()
     interruptController_ = std::make_unique<InterruptController>(ram_.get());
     ppu_ = std::make_unique<PPU>(ram_.get(), interruptController_.get());
     timer_ = std::make_unique<Timer>(interruptController_.get());
+    serial_ = std::make_unique<Serial>(ram_.get());
 
     configureMemoryOwners();
     cartridgeLoaded_ = false;
@@ -85,6 +83,9 @@ void Gameboy::configureMemoryOwners()
     ram_->addOwner(RAM::LYC, ppu_.get());
     ram_->addOwner(RAM::WY, ppu_.get());
     ram_->addOwner(RAM::WX, ppu_.get());
+
+    // Serial
+    ram_->addOwner(RAM::SC, serial_.get());
 }
 
 void Gameboy::initSubsystems()
@@ -93,29 +94,6 @@ void Gameboy::initSubsystems()
     ppu_->init();
     timer_->init();
     initialized_ = true;
-}
-
-std::optional<uint8_t> Gameboy::consumeSerialByte()
-{
-    if (pendingSerialBytes_.empty())
-    {
-        return std::nullopt;
-    }
-
-    const auto serialByte = pendingSerialBytes_.front();
-    pendingSerialBytes_.pop();
-    return serialByte;
-}
-
-void Gameboy::pollSerialPort()
-{
-    if (ram_->get(RAM::SC) != 0x81)
-    {
-        return;
-    }
-
-    pendingSerialBytes_.push(ram_->get(RAM::SB));
-    ram_->set(RAM::SC, 0x00);
 }
 
 } // namespace gbemu::backend
