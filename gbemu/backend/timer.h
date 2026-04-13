@@ -30,7 +30,7 @@ class Timer : public RAM::Owner
 
         void trigger() override { accumulator_ += 1; }
 
-        T value() const { return accumulator_; }
+        auto value() const -> T { return accumulator_; }
 
         void reset() { accumulator_ = 0; }
 
@@ -45,7 +45,7 @@ class Timer : public RAM::Owner
     void addTimerListener(IListener *listener, uint64_t cycleModulo);
 
     // RAM::Owner
-    uint8_t onReadOwnedByte(uint16_t address) override;
+    auto onReadOwnedByte(uint16_t address) -> uint8_t override;
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
   private:
@@ -83,7 +83,7 @@ class Timer : public RAM::Owner
         }
 
       private:
-        bool enabled() const { return getBit(*tac_, 2) && (*tac_ & 0b11) == tacId_; }
+        auto enabled() const -> bool { return getBit(*tac_, 2) && (*tac_ & 0b11) == tacId_; }
 
         const uint8_t tacId_;
         uint8_t *tima_;

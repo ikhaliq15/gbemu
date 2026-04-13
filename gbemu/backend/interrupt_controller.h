@@ -21,8 +21,6 @@ class InterruptController
     void requestInterrupt(InterruptType interrupt);
     void clearInterrupt(InterruptType interrupt);
 
-    [[nodiscard]] uint8_t pendingInterrupts() const;
-
   private:
     RAM *ram_;
 };

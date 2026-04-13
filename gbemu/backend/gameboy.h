@@ -24,20 +24,20 @@ class Gameboy
 
     void init();
     void update();
-    void done();
+    void done() {};
+
+    void buttonPressed(Joypad::Button button) { joypad_->buttonPressed(button); }
+    void buttonReleased(Joypad::Button button) { joypad_->buttonReleased(button); }
 
     [[nodiscard]] constexpr auto targetFPS() const -> double { return 59.7275; }
 
-    void buttonPressed(Joypad::Button button);
-    void buttonReleased(Joypad::Button button);
+    [[nodiscard]] auto cartridgeLoaded() const -> bool { return cartridgeLoaded_; }
+    [[nodiscard]] auto consumeCompletedFrame() -> bool { return ppu_->consumeCompletedFrame(); }
+    [[nodiscard]] auto consumeSerialByte() -> std::optional<uint8_t> { return serial_->read(); };
 
-    [[nodiscard]] bool cartridgeLoaded() const { return cartridgeLoaded_; }
-    bool consumeCompletedFrame();
-    [[nodiscard]] std::optional<uint8_t> consumeSerialByte() { return serial_->read(); };
-
-    [[nodiscard]] const CPU *cpu() const { return cpu_.get(); }
-    [[nodiscard]] const PPU *ppu() const { return ppu_.get(); }
-    [[nodiscard]] const RAM *ram() const { return ram_.get(); }
+    [[nodiscard]] auto cpu() const -> const CPU *const { return cpu_.get(); }
+    [[nodiscard]] auto ppu() const -> const PPU *const { return ppu_.get(); }
+    [[nodiscard]] auto ram() const -> const RAM *const { return ram_.get(); }
 
   private:
     static constexpr uint32_t RAM_SIZE = 0x10000;

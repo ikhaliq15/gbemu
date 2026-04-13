@@ -1,7 +1,5 @@
 #include "gbemu/backend/serial.h"
 
-#include "gbemu/backend/bitutils.h"
-
 namespace gbemu::backend
 {
 

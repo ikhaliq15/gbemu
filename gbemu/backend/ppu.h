@@ -23,18 +23,25 @@ class PPU : public Timer::IListener, public RAM::Owner
 
     void init();
     void update();
-    bool consumeCompletedFrame();
+    auto consumeCompletedFrame() -> bool;
 
-    [[nodiscard]] const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &getPixels() const;
+    [[nodiscard]] auto getPixels() const -> const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &;
 
     // Timer::IListener
     void trigger() override;
 
     // RAM::Owner
-    uint8_t onReadOwnedByte(uint16_t address) override;
+    auto onReadOwnedByte(uint16_t address) -> uint8_t override;
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
   private:
+    void drawScanLine();
+    void drawBackground(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap);
+    void drawWindow(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap);
+    void drawSprites(uint16_t spriteHeight);
+
+    [[nodiscard]] constexpr auto buildPalette(uint8_t paletteRegister) const -> std::array<uint32_t, 4>;
+
     // Display palette (ARGB)
     static constexpr uint32_t COLOR_WHITE = 0xFFFFFFFF;
     static constexpr uint32_t COLOR_LIGHT_GRAY = 0xFFAAAAAA;
@@ -43,13 +50,7 @@ class PPU : public Timer::IListener, public RAM::Owner
 
     static constexpr uint16_t MAX_SPRITES_PER_SCANLINE = 10;
 
-    void drawScanLine();
-    void drawBackground(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap);
-    void drawWindow(const std::array<uint32_t, 4> &palette, uint16_t tileData, uint16_t tileMap);
-    void drawSprites(uint16_t spriteHeight);
-
-    [[nodiscard]] std::array<uint32_t, 4> buildPalette(uint8_t paletteRegister) const;
-
+    // Hardware components
     InterruptController *interruptController_;
     RAM *ram_;
 
@@ -66,7 +67,6 @@ class PPU : public Timer::IListener, public RAM::Owner
     uint8_t windowLy_;
     bool lycCoincidenceCalledOnThisLy_;
     uint64_t completedFrames_ = 0;
-
     std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> pixels_;
 };
 

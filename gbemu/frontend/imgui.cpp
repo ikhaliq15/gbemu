@@ -122,7 +122,7 @@ void lockDockNode(ImGuiID node_id)
 
 } // namespace
 
-bool ImguiFrontend::init(gbemu::backend::Gameboy *gameboy)
+auto ImguiFrontend::init(gbemu::backend::Gameboy *gameboy) -> bool
 {
     gameboy_ = gameboy;
 
@@ -176,7 +176,7 @@ bool ImguiFrontend::init(gbemu::backend::Gameboy *gameboy)
     return true;
 }
 
-bool ImguiFrontend::update()
+auto ImguiFrontend::update() -> bool
 {
     if (done_)
     {
@@ -824,7 +824,7 @@ void ImguiFrontend::pollEvents()
     }
 }
 
-std::optional<std::string> ImguiFrontend::selectRomFile()
+auto ImguiFrontend::selectRomFile() -> std::optional<std::string>
 {
     NFD_Init();
 

@@ -19,7 +19,7 @@ class RAM
       public:
         ReadOwner() = default;
         virtual ~ReadOwner() = default;
-        virtual uint8_t onReadOwnedByte(uint16_t address) = 0;
+        virtual auto onReadOwnedByte(uint16_t address) -> uint8_t = 0;
     };
 
     class WriteOwner
@@ -27,7 +27,7 @@ class RAM
       public:
         WriteOwner() = default;
         virtual ~WriteOwner() = default;
-        virtual void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) = 0;
+        virtual auto onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) -> void = 0;
     };
 
     class Owner : public ReadOwner, public WriteOwner
@@ -71,9 +71,8 @@ class RAM
     explicit RAM(uint32_t ramSize, uint8_t defaultValue = 0);
     RAM(const RAM &ram) = default;
 
-    bool operator==(const RAM &rhs) const;
-
-    friend std::ostream &operator<<(std::ostream &os, const RAM &ram);
+    auto operator==(const RAM &rhs) const -> bool;
+    friend auto operator<<(std::ostream &os, const RAM &ram) -> std::ostream &;
 
     void loadCartridge(const Cartridge &cartridge);
 
@@ -87,7 +86,7 @@ class RAM
     }
     void set(uint16_t address, uint8_t value);
 
-    [[nodiscard]] uint16_t getImmediate16(uint16_t address) const;
+    [[nodiscard]] auto getImmediate16(uint16_t address) const -> uint16_t;
     void setImmediate16(uint16_t address, uint16_t value);
 
     void addReadOwner(uint16_t address, ReadOwner *owner);

@@ -122,9 +122,8 @@ class CPU
 
     void executeInstruction(bool verbose = false);
 
-    bool operator==(const CPU &rhs) const;
-
-    friend std::ostream &operator<<(std::ostream &os, const CPU &cpu);
+    auto operator==(const CPU &rhs) const -> bool;
+    friend auto operator<<(std::ostream &os, const CPU &cpu) -> std::ostream &;
 
   private:
     // TODO: find proper starting values for registers (and fix tests to be agnostic to starting values).

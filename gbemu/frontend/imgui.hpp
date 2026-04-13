@@ -24,8 +24,8 @@ namespace gbemu::frontend
 class ImguiFrontend : public IFrontend
 {
   public:
-    bool init(gbemu::backend::Gameboy *gameboy) override;
-    bool update() override;
+    auto init(gbemu::backend::Gameboy *gameboy) -> bool override;
+    auto update() -> bool override;
     void done() override;
 
   private:
@@ -53,7 +53,7 @@ class ImguiFrontend : public IFrontend
     void pollEvents();
 
   private:
-    [[nodiscard]] std::optional<std::string> selectRomFile();
+    [[nodiscard]] auto selectRomFile() -> std::optional<std::string>;
 
   private:
     bool show_cpu_window_ = true;

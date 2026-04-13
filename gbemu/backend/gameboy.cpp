@@ -48,14 +48,6 @@ void Gameboy::update()
     cpu_->serviceInterrupts();
 }
 
-void Gameboy::done() {}
-
-void Gameboy::buttonPressed(Joypad::Button button) { joypad_->buttonPressed(button); }
-
-void Gameboy::buttonReleased(Joypad::Button button) { joypad_->buttonReleased(button); }
-
-bool Gameboy::consumeCompletedFrame() { return ppu_->consumeCompletedFrame(); }
-
 void Gameboy::createHardware()
 {
     joypad_ = std::make_unique<Joypad>();

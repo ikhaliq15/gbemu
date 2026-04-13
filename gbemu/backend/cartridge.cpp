@@ -25,8 +25,4 @@ Cartridge::Cartridge(const std::string &romFileName)
 
 Cartridge::Cartridge(const std::vector<uint8_t> &cartridgeData) : cartridgeData_(cartridgeData) {}
 
-auto Cartridge::operator[](int i) const -> uint8_t { return cartridgeData_[i]; }
-
-auto Cartridge::size() const -> size_t { return cartridgeData_.size(); }
-
 } // namespace gbemu::backend
