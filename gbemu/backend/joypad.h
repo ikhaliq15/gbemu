@@ -30,7 +30,7 @@ class Joypad : public RAM::Owner
     void buttonReleased(Button key) { handleButtonEvent(key, false); }
 
     // RAM::Owner
-    uint8_t onReadOwnedByte(uint16_t address) override;
+    auto onReadOwnedByte(uint16_t address) -> uint8_t override;
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
   private:
@@ -66,7 +66,7 @@ class Joypad : public RAM::Owner
         {Button::DOWN, BIT_DOWN, true},
     }};
 
-    [[nodiscard]] uint8_t joypadRegister() const;
+    [[nodiscard]] auto joypadRegister() const -> uint8_t;
     void handleButtonEvent(Button key, bool pressed);
 
     uint8_t selectedStates_;

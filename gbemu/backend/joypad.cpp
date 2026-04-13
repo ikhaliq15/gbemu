@@ -2,6 +2,8 @@
 
 #include "gbemu/backend/bitutils.h"
 
+#include <algorithm>
+
 namespace gbemu::backend
 {
 
@@ -18,26 +20,30 @@ auto Joypad::joypadRegister() const -> uint8_t
 {
     uint8_t lowerNibble = 0x0f;
     if (!getBit(selectedStates_, DPAD_SELECT_BIT))
+    {
         lowerNibble = dpadStates_;
+    }
     if (!getBit(selectedStates_, BUTTONS_SELECT_BIT))
+    {
         lowerNibble = buttonStates_;
+    }
     return interpolateNibbles(selectedStates_, lowerNibble);
 }
 
 void Joypad::handleButtonEvent(Button key, bool pressed)
 {
-    const auto newButtonState = pressed ? 0 : 1;
-
-    for (const auto &mapping : KEY_MAPPINGS)
+    if (const auto it = std::ranges::find(KEY_MAPPINGS, key, &KeyData::key_); it != KEY_MAPPINGS.end())
     {
-        if (mapping.key_ != key)
-            continue;
-
-        if (mapping.isDpad_)
-            dpadStates_ = setBit(dpadStates_, mapping.bit_, newButtonState);
+        const auto keyData = *it;
+        const auto newButtonState = pressed ? 0 : 1;
+        if (keyData.isDpad_)
+        {
+            dpadStates_ = setBit(dpadStates_, keyData.bit_, newButtonState);
+        }
         else
-            buttonStates_ = setBit(buttonStates_, mapping.bit_, newButtonState);
-        return;
+        {
+            buttonStates_ = setBit(buttonStates_, keyData.bit_, newButtonState);
+        }
     }
 }
 
