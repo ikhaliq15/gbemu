@@ -35,6 +35,7 @@ jobs:
       - name: Build macOS app bundle
         run: |
           bazel build \
+            -c opt \
             --stamp \
             --embed_label="${VERSION}" \
             --cxxopt=-DGBEMU_VERSION=\"${VERSION}\" \
