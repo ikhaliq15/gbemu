@@ -77,9 +77,13 @@ TEST(BitUtilsTest, SetBit_DoesNotAffectOthers)
         for (uint8_t i = 0; i < 8; ++i)
         {
             if (i == bit)
+            {
                 EXPECT_TRUE(getBit(modified, i));
+            }
             else
+            {
                 EXPECT_EQ(getBit(original, i), getBit(modified, i));
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 #include "gbemu/backend/timer.h"
 
+#include <cassert>
 #include <stdexcept>
 
 namespace gbemu::backend
@@ -27,13 +28,13 @@ void Timer::init()
 
 void Timer::update(uint64_t deltaCycles)
 {
-    if (!initialized_)
-        throw std::runtime_error("Cannot increment an uninitialized timer.");
+    assert(initialized_ && "Timer must be initialized before updating.");
 
     uint64_t targetCycle = cyclesSinceLaunch_ + deltaCycles;
 
-    for (auto &info : timerListeners_)
+    for (size_t i = 0; i < timerListenerCount_; i++)
     {
+        auto &info = timerListeners_[i];
         while (info.nextTriggerCycle <= targetCycle)
         {
             info.listener->trigger();
@@ -47,10 +48,18 @@ void Timer::update(uint64_t deltaCycles)
 void Timer::addTimerListener(IListener *listener, uint64_t cycleModulo)
 {
     if (initialized_)
+    {
         throw std::runtime_error("Cannot add timer listener after timer is initialized.");
+    }
     if (cycleModulo == 0)
+    {
         throw std::runtime_error("Cycle modulo must be positive.");
-    timerListeners_.push_back({listener, cycleModulo, cycleModulo});
+    }
+    if (timerListenerCount_ >= MAX_LISTENERS)
+    {
+        throw std::runtime_error("Timer listener capacity exceeded.");
+    }
+    timerListeners_[timerListenerCount_++] = {listener, cycleModulo, cycleModulo};
 }
 
 auto Timer::onReadOwnedByte(uint16_t address) -> uint8_t

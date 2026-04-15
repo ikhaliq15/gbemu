@@ -11,11 +11,11 @@ namespace gbemu::backend
 class Cartridge
 {
   public:
-    Cartridge(const std::string &romFileName);
-    Cartridge(const std::vector<uint8_t> &cartridgeData);
+    explicit Cartridge(const std::string &romFileName);
+    explicit Cartridge(const std::vector<uint8_t> &cartridgeData);
 
-    [[nodiscard]] uint8_t operator[](int i) const;
-    [[nodiscard]] size_t size() const;
+    [[nodiscard]] auto operator[](size_t i) const -> uint8_t { return cartridgeData_[i]; };
+    [[nodiscard]] auto size() const -> size_t { return cartridgeData_.size(); };
 
   private:
     std::vector<uint8_t> cartridgeData_;

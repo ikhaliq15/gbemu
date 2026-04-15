@@ -2,6 +2,7 @@
 #define GBEMU_BACKEND_CPU_H
 
 #include "gbemu/backend/alu.h"
+#include "gbemu/backend/bitutils.h"
 #include "gbemu/backend/opcode.h"
 #include "gbemu/backend/opcode_data.h"
 #include "gbemu/backend/operand.h"
@@ -31,67 +32,95 @@ class CPU
     CPU(RAM *ram);
     CPU(const CPU &cpu);
 
-    [[nodiscard]] bool IME() const;
+    [[nodiscard]] auto IME() const -> bool { return IME_; };
 
-    [[nodiscard]] uint16_t PC() const;
-    [[nodiscard]] uint16_t SP() const;
+    [[nodiscard]] auto PC() const -> uint16_t { return PC_; };
+    [[nodiscard]] auto SP() const -> uint16_t { return SP_; };
 
-    [[nodiscard]] uint16_t AF() const; // TODO: remove?
-    [[nodiscard]] uint16_t BC() const;
-    [[nodiscard]] uint16_t DE() const;
-    [[nodiscard]] uint16_t HL() const;
+    [[nodiscard]] auto AF() const -> uint16_t { return AF_; };
+    [[nodiscard]] auto BC() const -> uint16_t { return BC_; };
+    [[nodiscard]] auto DE() const -> uint16_t { return DE_; };
+    [[nodiscard]] auto HL() const -> uint16_t { return HL_; };
 
-    [[nodiscard]] uint8_t A() const;
-    [[nodiscard]] uint8_t B() const;
-    [[nodiscard]] uint8_t C() const;
-    [[nodiscard]] uint8_t D() const;
-    [[nodiscard]] uint8_t E() const;
-    [[nodiscard]] uint8_t H() const;
-    [[nodiscard]] uint8_t L() const;
+    [[nodiscard]] auto A() const -> uint8_t { return upperByte(AF_); };
+    [[nodiscard]] auto B() const -> uint8_t { return upperByte(BC_); };
+    [[nodiscard]] auto C() const -> uint8_t { return lowerByte(BC_); };
+    [[nodiscard]] auto D() const -> uint8_t { return upperByte(DE_); };
+    [[nodiscard]] auto E() const -> uint8_t { return lowerByte(DE_); };
+    [[nodiscard]] auto H() const -> uint8_t { return upperByte(HL_); };
+    [[nodiscard]] auto L() const -> uint8_t { return lowerByte(HL_); };
 
-    [[nodiscard]] uint8_t FlagZ() const;
-    [[nodiscard]] uint8_t FlagN() const;
-    [[nodiscard]] uint8_t FlagH() const;
-    [[nodiscard]] uint8_t FlagC() const;
+    [[nodiscard]] auto FlagZ() const -> uint8_t { return getBit(AF_, FLAG_Z_BIT); };
+    [[nodiscard]] auto FlagN() const -> uint8_t { return getBit(AF_, FLAG_N_BIT); };
+    [[nodiscard]] auto FlagH() const -> uint8_t { return getBit(AF_, FLAG_H_BIT); };
+    [[nodiscard]] auto FlagC() const -> uint8_t { return getBit(AF_, FLAG_C_BIT); };
 
-    [[nodiscard]] RAM *ram() const;
+    [[nodiscard]] auto ram() const -> RAM * { return ram_; }
 
-    [[nodiscard]] uint64_t cycles() const;
-    [[nodiscard]] Mode mode() const;
-    void setMode(Mode mode);
+    [[nodiscard]] auto cycles() const -> uint64_t { return cycles_; }
+    [[nodiscard]] auto mode() const -> Mode { return mode_; }
 
-    void setIME(bool newIME);
+    void setMode(Mode mode) { mode_ = mode; };
 
-    void setPC(uint16_t newRegVal);
-    void setSP(uint16_t newRegVal);
+    void setIME(bool newIME) { IME_ = newIME; };
 
-    void setAF(uint16_t newRegVal); // TODO: remove?
-    void setBC(uint16_t newRegVal);
-    void setDE(uint16_t newRegVal);
-    void setHL(uint16_t newRegVal);
+    void setPC(uint16_t newRegVal) { PC_ = newRegVal; };
+    void setSP(uint16_t newRegVal) { SP_ = newRegVal; };
 
-    void setA(uint8_t newRegVal);
-    void setB(uint8_t newRegVal);
-    void setC(uint8_t newRegVal);
-    void setD(uint8_t newRegVal);
-    void setE(uint8_t newRegVal);
-    void setH(uint8_t newRegVal);
-    void setL(uint8_t newRegVal);
+    void setAF(uint16_t newRegVal) { AF_ = newRegVal; };
+    void setBC(uint16_t newRegVal) { BC_ = newRegVal; };
+    void setDE(uint16_t newRegVal) { DE_ = newRegVal; };
+    void setHL(uint16_t newRegVal) { HL_ = newRegVal; };
 
-    void setFlagZ(uint8_t newFlagVal);
-    void setFlagN(uint8_t newFlagVal);
-    void setFlagH(uint8_t newFlagVal);
-    void setFlagC(uint8_t newFlagVal);
-    void setFlags(uint8_t newZ, uint8_t newN, uint8_t newH, uint8_t newC);
+    void setA(uint8_t newRegVal) { AF_ = setUpperByte(AF_, newRegVal); };
+    void setB(uint8_t newRegVal) { BC_ = setUpperByte(BC_, newRegVal); };
+    void setC(uint8_t newRegVal) { BC_ = setLowerByte(BC_, newRegVal); };
+    void setD(uint8_t newRegVal) { DE_ = setUpperByte(DE_, newRegVal); };
+    void setE(uint8_t newRegVal) { DE_ = setLowerByte(DE_, newRegVal); };
+    void setH(uint8_t newRegVal) { HL_ = setUpperByte(HL_, newRegVal); };
+    void setL(uint8_t newRegVal) { HL_ = setLowerByte(HL_, newRegVal); };
 
-    void advancePC(uint16_t inc);
-    void offsetSP(int32_t offset);
+    void setFlagZ(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_Z_BIT, newFlagVal); };
+    void setFlagN(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_N_BIT, newFlagVal); };
+    void setFlagH(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_H_BIT, newFlagVal); };
+    void setFlagC(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_C_BIT, newFlagVal); };
+    void setFlags(uint8_t newZ, uint8_t newN, uint8_t newH, uint8_t newC)
+    {
+        setFlagZ(newZ);
+        setFlagN(newN);
+        setFlagH(newH);
+        setFlagC(newC);
+    }
+
+    void advancePC(uint16_t inc) { PC_ += inc; };
+    void offsetSP(int32_t offset) { SP_ += offset; };
 
     void pushToStack(uint16_t val);
-    uint16_t popFromStack();
+    auto popFromStack() -> uint16_t;
 
-    [[nodiscard]] uint8_t getRegister(Register reg) const;
-    [[nodiscard]] uint16_t getFullRegister(FullRegister reg) const;
+    [[nodiscard]] auto getRegister(Register reg) const -> uint8_t
+    {
+        switch (reg)
+        {
+        case Register::A: return A();
+        case Register::B: return B();
+        case Register::C: return C();
+        case Register::D: return D();
+        case Register::E: return E();
+        case Register::H: return H();
+        case Register::L: return L();
+        }
+    }
+    [[nodiscard]] auto getFullRegister(FullRegister reg) const -> uint16_t
+    {
+        switch (reg)
+        {
+        case FullRegister::BC: return BC();
+        case FullRegister::DE: return DE();
+        case FullRegister::HL: return HL();
+        case FullRegister::AF: return AF();
+        }
+    }
 
     void setRegister(Register reg, uint8_t newRegVal);
     void setFullRegister(FullRegister reg, uint16_t newRegVal);
@@ -100,9 +129,8 @@ class CPU
 
     void executeInstruction(bool verbose = false);
 
-    bool operator==(const CPU &rhs) const;
-
-    friend std::ostream &operator<<(std::ostream &os, const CPU &cpu);
+    auto operator==(const CPU &rhs) const -> bool;
+    friend auto operator<<(std::ostream &os, const CPU &cpu) -> std::ostream &;
 
   private:
     // TODO: find proper starting values for registers (and fix tests to be agnostic to starting values).
@@ -139,11 +167,11 @@ class CPU
     using OPCodeHandler = void (CPU::*)(uint16_t, const OPCode *);
     using OPCodeHandlerMap = std::array<OPCodeHandler, 256>;
 
-    [[nodiscard]] OperandValue getOperand(Operand operand) const;
+    [[nodiscard]] auto getOperand(Operand operand) const -> OperandValue;
     void setOperand(Operand operand, OperandValue newValue);
 
     void setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode *opcode);
-    [[nodiscard]] bool testJumpCondition(OPCode::JumpCondition jumpCondition) const;
+    [[nodiscard]] auto testJumpCondition(OPCode::JumpCondition jumpCondition) const -> bool;
 
     /*** Templated ALU dispatch — replaces 23 individual handler methods ***/
 
@@ -270,7 +298,7 @@ class CPU
     void BIT_GET(uint16_t pc, const OPCode *opcode);
     void BIT_SET(uint16_t pc, const OPCode *opcode);
 
-    static constexpr std::pair<std::string_view, OPCodeHandler> kHandlers[] = {
+    static constexpr std::pair<std::string_view, OPCodeHandler> OPCODE_HANDLERS[] = {
         // ALU: templated dispatch
         {"SUB", &CPU::alu_binary<&alu::sub<uint8_t, uint8_t>>},
         {"AND", &CPU::alu_binary<&alu::bit_and>},
@@ -325,17 +353,19 @@ class CPU
         {"RST", &CPU::RST},
     };
 
-    static constexpr OPCodeHandler lookupHandler(std::string_view mnemonic)
+    static constexpr auto lookupHandler(std::string_view mnemonic) -> OPCodeHandler
     {
-        for (const auto &[name, handler] : kHandlers)
+        for (const auto &[name, handler] : OPCODE_HANDLERS)
         {
             if (name == mnemonic)
+            {
                 return handler;
+            }
         }
         return &CPU::UNIMPLEMENTED;
     }
 
-    static constexpr OPCodeHandlerMap buildHandlerMap(const std::array<OPCode, 256> &opcodes)
+    static constexpr auto buildHandlerMap(const std::array<OPCode, 256> &opcodes) -> OPCodeHandlerMap
     {
         OPCodeHandlerMap map{};
         for (size_t i = 0; i < 256; i++)

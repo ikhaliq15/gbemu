@@ -16,25 +16,27 @@ class HeadlessFrontend : public IFrontend
   public:
     explicit HeadlessFrontend(bool logSerial = false) : logSerial_(logSerial) {}
 
-    bool init(gbemu::backend::Gameboy *gameboy) override
+    auto init(gbemu::backend::Gameboy *gameboy) -> bool override
     {
         gameboy_ = gameboy;
         SDL_Init(SDL_INIT_GAMECONTROLLER);
         return true;
     }
 
-    bool update() override
+    auto update() -> bool override
     {
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
+            {
                 return false;
+            }
         }
 
         if (logSerial_)
         {
-            if (const auto byte = gameboy_->consumeSerialByte())
+            while (const auto byte = gameboy_->consumeSerialByte())
             {
                 putc(*byte, stdout);
                 fflush(stdout);

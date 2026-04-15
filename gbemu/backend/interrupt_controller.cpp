@@ -34,6 +34,4 @@ void InterruptController::clearInterrupt(InterruptType interrupt)
     ram_->set(RAM::IF, static_cast<uint8_t>(current & ~interruptMask(interrupt)));
 }
 
-auto InterruptController::pendingInterrupts() const -> uint8_t { return ram_->get(RAM::IF); }
-
 } // namespace gbemu::backend

@@ -2,6 +2,7 @@
 
 #include "gbemu/backend/bitutils.h"
 
+#include <algorithm>
 #include <iostream>
 
 namespace gbemu::backend
@@ -16,93 +17,6 @@ CPU::CPU(const CPU &cpu)
     : IME_(cpu.IME_), PC_(cpu.PC_), SP_(cpu.SP_), AF_(cpu.AF_), BC_(cpu.BC_), DE_(cpu.DE_), HL_(cpu.HL_),
       ram_(cpu.ram_), cycles_(cpu.cycles_), mode_(cpu.mode_)
 {}
-
-auto CPU::IME() const -> bool { return IME_; }
-
-auto CPU::PC() const -> uint16_t { return PC_; }
-auto CPU::SP() const -> uint16_t { return SP_; }
-
-auto CPU::AF() const -> uint16_t { return AF_; }
-auto CPU::BC() const -> uint16_t { return BC_; }
-auto CPU::DE() const -> uint16_t { return DE_; }
-auto CPU::HL() const -> uint16_t { return HL_; }
-
-auto CPU::A() const -> uint8_t { return upperByte(AF_); }
-auto CPU::B() const -> uint8_t { return upperByte(BC_); }
-auto CPU::C() const -> uint8_t { return lowerByte(BC_); }
-auto CPU::D() const -> uint8_t { return upperByte(DE_); }
-auto CPU::E() const -> uint8_t { return lowerByte(DE_); }
-auto CPU::H() const -> uint8_t { return upperByte(HL_); }
-auto CPU::L() const -> uint8_t { return lowerByte(HL_); }
-
-auto CPU::FlagZ() const -> uint8_t { return getBit(AF_, FLAG_Z_BIT); }
-auto CPU::FlagN() const -> uint8_t { return getBit(AF_, FLAG_N_BIT); }
-auto CPU::FlagH() const -> uint8_t { return getBit(AF_, FLAG_H_BIT); }
-auto CPU::FlagC() const -> uint8_t { return getBit(AF_, FLAG_C_BIT); }
-
-auto CPU::ram() const -> RAM * { return ram_; }
-
-auto CPU::cycles() const -> uint64_t { return cycles_; }
-auto CPU::mode() const -> CPU::Mode { return mode_; }
-void CPU::setMode(Mode mode) { mode_ = mode; }
-
-void CPU::setIME(bool newIME) { IME_ = newIME; }
-
-void CPU::setPC(uint16_t newRegVal) { PC_ = newRegVal; }
-void CPU::setSP(uint16_t newRegVal) { SP_ = newRegVal; }
-
-void CPU::setAF(uint16_t newRegVal) { AF_ = newRegVal; }
-void CPU::setBC(uint16_t newRegVal) { BC_ = newRegVal; }
-void CPU::setDE(uint16_t newRegVal) { DE_ = newRegVal; }
-void CPU::setHL(uint16_t newRegVal) { HL_ = newRegVal; }
-
-void CPU::setA(uint8_t newRegVal) { AF_ = setUpperByte(AF_, newRegVal); }
-void CPU::setB(uint8_t newRegVal) { BC_ = setUpperByte(BC_, newRegVal); }
-void CPU::setC(uint8_t newRegVal) { BC_ = setLowerByte(BC_, newRegVal); }
-void CPU::setD(uint8_t newRegVal) { DE_ = setUpperByte(DE_, newRegVal); }
-void CPU::setE(uint8_t newRegVal) { DE_ = setLowerByte(DE_, newRegVal); }
-void CPU::setH(uint8_t newRegVal) { HL_ = setUpperByte(HL_, newRegVal); }
-void CPU::setL(uint8_t newRegVal) { HL_ = setLowerByte(HL_, newRegVal); }
-
-void CPU::setFlagZ(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_Z_BIT, newFlagVal); }
-void CPU::setFlagN(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_N_BIT, newFlagVal); }
-void CPU::setFlagH(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_H_BIT, newFlagVal); }
-void CPU::setFlagC(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_C_BIT, newFlagVal); }
-void CPU::setFlags(uint8_t newZ, uint8_t newN, uint8_t newH, uint8_t newC)
-{
-    setFlagZ(newZ);
-    setFlagN(newN);
-    setFlagH(newH);
-    setFlagC(newC);
-}
-
-void CPU::advancePC(uint16_t inc) { PC_ += inc; }
-void CPU::offsetSP(int32_t offset) { SP_ += offset; }
-
-auto CPU::getRegister(Register reg) const -> uint8_t
-{
-    switch (reg)
-    {
-    case Register::A: return A();
-    case Register::B: return B();
-    case Register::C: return C();
-    case Register::D: return D();
-    case Register::E: return E();
-    case Register::H: return H();
-    case Register::L: return L();
-    }
-}
-
-auto CPU::getFullRegister(FullRegister reg) const -> uint16_t
-{
-    switch (reg)
-    {
-    case FullRegister::BC: return BC();
-    case FullRegister::DE: return DE();
-    case FullRegister::HL: return HL();
-    case FullRegister::AF: return AF();
-    }
-}
 
 void CPU::setRegister(Register reg, uint8_t newRegVal)
 {
@@ -131,28 +45,42 @@ void CPU::setFullRegister(FullRegister reg, uint16_t newRegVal)
 
 void CPU::serviceInterrupts()
 {
-    const uint8_t pending = ram_->get(RAM::IF) & ram_->get(RAM::IE);
+    if (!IME_ && mode_ != Mode::HALT)
+    {
+        return;
+    }
 
     // Any pending interrupt wakes the CPU from HALT
-    if (pending & 0x1f)
+    const auto interruptFlags = ram_->get(RAM::IF);
+    const auto interruptEnable = ram_->get(RAM::IE);
+    const uint8_t pendingInterrupts = interruptFlags & interruptEnable & 0x1f;
+
+    if (pendingInterrupts)
+    {
         setMode(Mode::NORMAL);
+    }
 
     if (!IME_)
+    {
         return;
+    }
 
     // Service the highest-priority pending interrupt
     constexpr std::array<uint8_t, 3> INTERRUPT_BITS = {0, 1, 2}; // VBLANK, LCD_STAT, TIMER
-    for (const auto bit : INTERRUPT_BITS)
+
+    const auto pendingInterruptIt =
+        std::ranges::find_if(INTERRUPT_BITS, [&pendingInterrupts](auto bit) { return getBit(pendingInterrupts, bit); });
+    if (pendingInterruptIt == INTERRUPT_BITS.end())
     {
-        if (getBit(pending, bit))
-        {
-            IME_ = false;
-            pushToStack(PC_);
-            ram_->set(RAM::IF, setBit(ram_->get(RAM::IF), bit, 0));
-            PC_ = 0x40 + 0x08 * bit;
-            return;
-        }
+        return;
     }
+    const auto bit = *pendingInterruptIt;
+
+    IME_ = false;
+    pushToStack(PC_);
+    ram_->set(RAM::IF, setBit(interruptFlags, bit, 0));
+    PC_ = 0x40 + 0x08 * bit;
+    return;
 }
 
 void CPU::executeInstruction(bool verbose)
@@ -407,7 +335,9 @@ void CPU::DAA(uint16_t pc, const OPCode *opcode)
     uint8_t newFlagC = 0;
 
     if (FlagH() == 1 || (FlagN() != 1 && (value & 0x0f) > 0x09))
+    {
         correction |= 0x06;
+    }
 
     if (FlagC() == 1 || (FlagN() != 1 && value > 0x99))
     {
@@ -436,7 +366,9 @@ void CPU::POP(uint16_t pc, const OPCode *opcode)
 {
     auto stackValue = popFromStack();
     if (opcode->operands[0].asFullRegister() == FullRegister::AF)
+    {
         stackValue &= 0xFFF0;
+    }
     setOperand(opcode->operands[0], stackValue);
 }
 
