@@ -19,13 +19,13 @@ class PPU : public Timer::IListener, public RAM::Owner
     static constexpr uint64_t SCANLINE_FREQUENCY = 9352;
     static constexpr uint64_t CYCLES_PER_SCANLINE = 114;
 
-    PPU(RAM *ram, InterruptController *interruptController);
+    explicit PPU(RAM *ram, InterruptController *interruptController);
 
     void init();
     void update();
     auto consumeCompletedFrame() -> bool;
 
-    [[nodiscard]] auto getPixels() const -> const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &;
+    [[nodiscard]] auto getPixels() const -> const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> & { return pixels_; };
 
     // Timer::IListener
     void trigger() override;

@@ -59,34 +59,41 @@ class CPU
 
     [[nodiscard]] auto cycles() const -> uint64_t { return cycles_; }
     [[nodiscard]] auto mode() const -> Mode { return mode_; }
-    void setMode(Mode mode);
 
-    void setIME(bool newIME);
+    void setMode(Mode mode) { mode_ = mode; };
 
-    void setPC(uint16_t newRegVal);
-    void setSP(uint16_t newRegVal);
+    void setIME(bool newIME) { IME_ = newIME; };
 
-    void setAF(uint16_t newRegVal); // TODO: remove?
-    void setBC(uint16_t newRegVal);
-    void setDE(uint16_t newRegVal);
-    void setHL(uint16_t newRegVal);
+    void setPC(uint16_t newRegVal) { PC_ = newRegVal; };
+    void setSP(uint16_t newRegVal) { SP_ = newRegVal; };
 
-    void setA(uint8_t newRegVal);
-    void setB(uint8_t newRegVal);
-    void setC(uint8_t newRegVal);
-    void setD(uint8_t newRegVal);
-    void setE(uint8_t newRegVal);
-    void setH(uint8_t newRegVal);
-    void setL(uint8_t newRegVal);
+    void setAF(uint16_t newRegVal) { AF_ = newRegVal; };
+    void setBC(uint16_t newRegVal) { BC_ = newRegVal; };
+    void setDE(uint16_t newRegVal) { DE_ = newRegVal; };
+    void setHL(uint16_t newRegVal) { HL_ = newRegVal; };
 
-    void setFlagZ(uint8_t newFlagVal);
-    void setFlagN(uint8_t newFlagVal);
-    void setFlagH(uint8_t newFlagVal);
-    void setFlagC(uint8_t newFlagVal);
-    void setFlags(uint8_t newZ, uint8_t newN, uint8_t newH, uint8_t newC);
+    void setA(uint8_t newRegVal) { AF_ = setUpperByte(AF_, newRegVal); };
+    void setB(uint8_t newRegVal) { BC_ = setUpperByte(BC_, newRegVal); };
+    void setC(uint8_t newRegVal) { BC_ = setLowerByte(BC_, newRegVal); };
+    void setD(uint8_t newRegVal) { DE_ = setUpperByte(DE_, newRegVal); };
+    void setE(uint8_t newRegVal) { DE_ = setLowerByte(DE_, newRegVal); };
+    void setH(uint8_t newRegVal) { HL_ = setUpperByte(HL_, newRegVal); };
+    void setL(uint8_t newRegVal) { HL_ = setLowerByte(HL_, newRegVal); };
 
-    void advancePC(uint16_t inc);
-    void offsetSP(int32_t offset);
+    void setFlagZ(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_Z_BIT, newFlagVal); };
+    void setFlagN(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_N_BIT, newFlagVal); };
+    void setFlagH(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_H_BIT, newFlagVal); };
+    void setFlagC(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_C_BIT, newFlagVal); };
+    void setFlags(uint8_t newZ, uint8_t newN, uint8_t newH, uint8_t newC)
+    {
+        setFlagZ(newZ);
+        setFlagN(newN);
+        setFlagH(newH);
+        setFlagC(newC);
+    }
+
+    void advancePC(uint16_t inc) { PC_ += inc; };
+    void offsetSP(int32_t offset) { SP_ += offset; };
 
     void pushToStack(uint16_t val);
     auto popFromStack() -> uint16_t;
@@ -291,7 +298,7 @@ class CPU
     void BIT_GET(uint16_t pc, const OPCode *opcode);
     void BIT_SET(uint16_t pc, const OPCode *opcode);
 
-    static constexpr std::pair<std::string_view, OPCodeHandler> kHandlers[] = {
+    static constexpr std::pair<std::string_view, OPCodeHandler> OPCODE_HANDLERS[] = {
         // ALU: templated dispatch
         {"SUB", &CPU::alu_binary<&alu::sub<uint8_t, uint8_t>>},
         {"AND", &CPU::alu_binary<&alu::bit_and>},
@@ -348,7 +355,7 @@ class CPU
 
     static constexpr auto lookupHandler(std::string_view mnemonic) -> OPCodeHandler
     {
-        for (const auto &[name, handler] : kHandlers)
+        for (const auto &[name, handler] : OPCODE_HANDLERS)
         {
             if (name == mnemonic)
             {

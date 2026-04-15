@@ -1,7 +1,7 @@
 #ifndef GBEMU_BACKEND_SERIAL_H
 #define GBEMU_BACKEND_SERIAL_H
 
-#include "ram.h"
+#include "gbemu/backend/ram.h"
 
 #include <cstdint>
 #include <optional>

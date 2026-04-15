@@ -18,41 +18,6 @@ CPU::CPU(const CPU &cpu)
       ram_(cpu.ram_), cycles_(cpu.cycles_), mode_(cpu.mode_)
 {}
 
-void CPU::setMode(Mode mode) { mode_ = mode; }
-
-void CPU::setIME(bool newIME) { IME_ = newIME; }
-
-void CPU::setPC(uint16_t newRegVal) { PC_ = newRegVal; }
-void CPU::setSP(uint16_t newRegVal) { SP_ = newRegVal; }
-
-void CPU::setAF(uint16_t newRegVal) { AF_ = newRegVal; }
-void CPU::setBC(uint16_t newRegVal) { BC_ = newRegVal; }
-void CPU::setDE(uint16_t newRegVal) { DE_ = newRegVal; }
-void CPU::setHL(uint16_t newRegVal) { HL_ = newRegVal; }
-
-void CPU::setA(uint8_t newRegVal) { AF_ = setUpperByte(AF_, newRegVal); }
-void CPU::setB(uint8_t newRegVal) { BC_ = setUpperByte(BC_, newRegVal); }
-void CPU::setC(uint8_t newRegVal) { BC_ = setLowerByte(BC_, newRegVal); }
-void CPU::setD(uint8_t newRegVal) { DE_ = setUpperByte(DE_, newRegVal); }
-void CPU::setE(uint8_t newRegVal) { DE_ = setLowerByte(DE_, newRegVal); }
-void CPU::setH(uint8_t newRegVal) { HL_ = setUpperByte(HL_, newRegVal); }
-void CPU::setL(uint8_t newRegVal) { HL_ = setLowerByte(HL_, newRegVal); }
-
-void CPU::setFlagZ(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_Z_BIT, newFlagVal); }
-void CPU::setFlagN(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_N_BIT, newFlagVal); }
-void CPU::setFlagH(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_H_BIT, newFlagVal); }
-void CPU::setFlagC(uint8_t newFlagVal) { AF_ = setBit(AF_, FLAG_C_BIT, newFlagVal); }
-void CPU::setFlags(uint8_t newZ, uint8_t newN, uint8_t newH, uint8_t newC)
-{
-    setFlagZ(newZ);
-    setFlagN(newN);
-    setFlagH(newH);
-    setFlagC(newC);
-}
-
-void CPU::advancePC(uint16_t inc) { PC_ += inc; }
-void CPU::offsetSP(int32_t offset) { SP_ += offset; }
-
 void CPU::setRegister(Register reg, uint8_t newRegVal)
 {
     switch (reg)

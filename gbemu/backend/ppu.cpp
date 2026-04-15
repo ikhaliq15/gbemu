@@ -90,8 +90,6 @@ void PPU::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentVa
     }
 }
 
-const std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> &PPU::getPixels() const { return pixels_; }
-
 constexpr auto PPU::buildPalette(uint8_t paletteRegister) const -> std::array<uint32_t, 4>
 {
     constexpr std::array<uint32_t, 4> COLORS = {COLOR_WHITE, COLOR_LIGHT_GRAY, COLOR_DARK_GRAY, COLOR_BLACK};
