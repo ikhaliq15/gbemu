@@ -12,7 +12,11 @@ class CPUTest : public testing::Test
     void SetUp() override
     {
         ram_ = std::make_unique<gbemu::backend::RAM>(1 << 16);
-        cpu_ = std::make_unique<gbemu::backend::CPU>(ram_.get());
+        interruptController_ = std::make_unique<gbemu::backend::InterruptController>(ram_.get());
+        timer_ = std::make_unique<gbemu::backend::Timer>(interruptController_.get());
+        cpu_ = std::make_unique<gbemu::backend::CPU>(ram_.get(), timer_.get());
+
+        timer_->init();
     }
 
     void loadSimpleProgram(const Program &program)
@@ -79,6 +83,8 @@ class CPUTest : public testing::Test
     }
 
     std::unique_ptr<gbemu::backend::RAM> ram_;
+    std::unique_ptr<gbemu::backend::InterruptController> interruptController_;
+    std::unique_ptr<gbemu::backend::Timer> timer_;
     std::unique_ptr<gbemu::backend::CPU> cpu_;
 };
 
