@@ -3,7 +3,6 @@
 
 #include "gbemu/backend/ram.h"
 
-#include <array>
 #include <cstdint>
 
 namespace gbemu::backend
@@ -24,54 +23,24 @@ class Joypad : public RAM::Owner
         DOWN
     };
 
-    Joypad();
-
-    void buttonPressed(Button key) { handleButtonEvent(key, true); }
-    void buttonReleased(Button key) { handleButtonEvent(key, false); }
+    void buttonPressed(Button button) { handleButtonEvent(button, true); }
+    void buttonReleased(Button button) { handleButtonEvent(button, false); }
 
     // RAM::Owner
     auto onReadOwnedByte(uint16_t address) -> uint8_t override;
     void onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentValue) override;
 
   private:
-    // Bit positions within the button/dpad state bytes
-    static constexpr uint8_t BIT_A = 0;
-    static constexpr uint8_t BIT_B = 1;
-    static constexpr uint8_t BIT_SELECT = 2;
-    static constexpr uint8_t BIT_START = 3;
-    static constexpr uint8_t BIT_RIGHT = 0;
-    static constexpr uint8_t BIT_LEFT = 1;
-    static constexpr uint8_t BIT_UP = 2;
-    static constexpr uint8_t BIT_DOWN = 3;
-
-    // JOYP register select bits
     static constexpr uint8_t BUTTONS_SELECT_BIT = 5;
     static constexpr uint8_t DPAD_SELECT_BIT = 4;
-
-    struct KeyData final
-    {
-        Button key_;
-        uint8_t bit_;
-        bool isDpad_;
-    };
-
-    static constexpr std::array<KeyData, 8> KEY_MAPPINGS = {{
-        {Button::A, BIT_A, false},
-        {Button::B, BIT_B, false},
-        {Button::SELECT, BIT_SELECT, false},
-        {Button::START, BIT_START, false},
-        {Button::RIGHT, BIT_RIGHT, true},
-        {Button::LEFT, BIT_LEFT, true},
-        {Button::UP, BIT_UP, true},
-        {Button::DOWN, BIT_DOWN, true},
-    }};
+    static constexpr uint8_t ALL_RELEASED = 0x0f;
 
     [[nodiscard]] auto joypadRegister() const -> uint8_t;
-    void handleButtonEvent(Button key, bool pressed);
+    void handleButtonEvent(Button button, bool pressed);
 
-    uint8_t selectedStates_;
-    uint8_t buttonStates_;
-    uint8_t dpadStates_;
+    uint8_t selectBits_ = 0x30;
+    uint8_t buttonStates_ = ALL_RELEASED;
+    uint8_t dpadStates_ = ALL_RELEASED;
 };
 
 } // namespace gbemu::backend
