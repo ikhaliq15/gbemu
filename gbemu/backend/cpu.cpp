@@ -116,7 +116,14 @@ void CPU::executeInstruction(bool verbose)
     {
         expectedCycles += opcode.additionalCycles;
     }
-    timer_->update(expectedCycles);
+
+    // read()/write() already ticked the timer for each memory access.
+    // Tick the remaining internal cycles.
+    const uint8_t remainingCycles = expectedCycles - ticksThisInstruction_;
+    if (remainingCycles > 0)
+    {
+        timer_->update(remainingCycles);
+    }
 
     if (enableInterruptsAfterInstruction)
     {

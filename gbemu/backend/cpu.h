@@ -170,11 +170,13 @@ class CPU
 
     auto read(uint16_t address) -> uint8_t
     {
+        timer_->update(1);
         ++ticksThisInstruction_;
         return ram_->get(address);
     }
     void write(uint16_t address, uint8_t value)
     {
+        timer_->update(1);
         ++ticksThisInstruction_;
         ram_->set(address, value);
     }
