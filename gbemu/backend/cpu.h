@@ -285,6 +285,7 @@ class CPU
                                                  : alu::sub(val.as16(), static_cast<uint16_t>(1));
             setOperand(operand, r.result);
             setFlagsFromResult(r.flags, opcode);
+            tick();
         }
     }
 
