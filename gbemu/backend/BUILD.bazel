@@ -37,6 +37,7 @@ cc_library(
         ":interrupt_controller",
         ":opcode",
         ":ram",
+        ":timer",
     ],
 )
 

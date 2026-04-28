@@ -3,19 +3,20 @@
 #include "gbemu/backend/bitutils.h"
 
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 
 namespace gbemu::backend
 {
 
-CPU::CPU(RAM *ram)
+CPU::CPU(RAM *ram, Timer *timer)
     : IME_(false), PC_(STARTING_PC), SP_(STARTING_SP), AF_(STARTING_AF), BC_(STARTING_BC), DE_(STARTING_DE),
-      HL_(STARTING_HL), ram_(ram), cycles_(0ul), mode_(Mode::NORMAL)
+      HL_(STARTING_HL), ram_(ram), timer_(timer), mode_(Mode::NORMAL)
 {}
 
 CPU::CPU(const CPU &cpu)
     : IME_(cpu.IME_), PC_(cpu.PC_), SP_(cpu.SP_), AF_(cpu.AF_), BC_(cpu.BC_), DE_(cpu.DE_), HL_(cpu.HL_),
-      ram_(cpu.ram_), cycles_(cpu.cycles_), mode_(cpu.mode_)
+      ram_(cpu.ram_), timer_(cpu.timer_), mode_(cpu.mode_)
 {}
 
 void CPU::setRegister(Register reg, uint8_t newRegVal)
@@ -80,7 +81,6 @@ void CPU::serviceInterrupts()
     pushToStack(PC_);
     ram_->set(RAM::IF, setBit(interruptFlags, bit, 0));
     PC_ = 0x40 + 0x08 * bit;
-    return;
 }
 
 void CPU::executeInstruction(bool verbose)
@@ -92,9 +92,10 @@ void CPU::executeInstruction(bool verbose)
 
     const auto enableInterruptsAfterInstruction = interruptsEnabledQueued_;
 
-    const auto firstByte = ram_->get(PC());
+    ticksThisInstruction_ = 0;
+    const auto firstByte = read(PC());
     const auto prefixed = firstByte == OPCode::PREFIX_OPCODE;
-    const auto opcodeValue = prefixed ? ram_->get(PC() + 1) : firstByte;
+    const auto opcodeValue = prefixed ? read(PC() + 1) : firstByte;
     const auto &opcodeTable = prefixed ? PREFIXED_OPCODES : OPCODES;
     const auto &handlerTable = prefixed ? prefixedOpcodeFunctions_ : opcodeFunctions_;
 
@@ -110,7 +111,14 @@ void CPU::executeInstruction(bool verbose)
 
     advancePC(opcode.bytes);
     (this->*opcodeHandler)(oldPC, &opcode);
-    cycles_ += opcode.cycles;
+
+    uint8_t expectedCycles = opcode.cycles;
+    if (opcode.additionalCycles > 0 && testJumpCondition(opcode.jumpCondition))
+    {
+        expectedCycles += opcode.additionalCycles;
+    }
+
+    assert(ticksThisInstruction_ == expectedCycles && "Tick count mismatch — handler must account for all M-cycles");
 
     if (enableInterruptsAfterInstruction)
     {
@@ -122,7 +130,7 @@ void CPU::executeInstruction(bool verbose)
 auto CPU::operator==(const CPU &rhs) const -> bool
 {
     return PC_ == rhs.PC_ && SP_ == rhs.SP_ && AF_ == rhs.AF_ && BC_ == rhs.BC_ && DE_ == rhs.DE_ && HL_ == rhs.HL_ &&
-           cycles_ == rhs.cycles_ && IME_ == rhs.IME_ && (*ram_ == *(rhs.ram_));
+           IME_ == rhs.IME_ && (*ram_ == *(rhs.ram_));
 }
 
 auto operator<<(std::ostream &os, const CPU &cpu) -> std::ostream &
@@ -147,31 +155,31 @@ auto operator<<(std::ostream &os, const CPU &cpu) -> std::ostream &
 void CPU::pushToStack(uint16_t val)
 {
     offsetSP(-1);
-    ram_->set(SP(), upperByte(val));
+    write(SP(), upperByte(val));
 
     offsetSP(-1);
-    ram_->set(SP(), lowerByte(val));
+    write(SP(), lowerByte(val));
 }
 
 auto CPU::popFromStack() -> uint16_t
 {
-    const auto lower = ram_->get(SP());
+    const auto lower = read(SP());
     offsetSP(1);
 
-    const auto upper = ram_->get(SP());
+    const auto upper = read(SP());
     offsetSP(1);
 
     return concatBytes(upper, lower);
 }
 
-auto CPU::getOperand(Operand operand) const -> OperandValue
+auto CPU::getOperand(Operand operand) -> OperandValue
 {
     switch (operand.kind)
     {
     case Operand::Kind::REG: return getRegister(operand.asRegister());
     case Operand::Kind::FULL_REG: return getFullRegister(operand.asFullRegister());
     case Operand::Kind::SPECIAL_REG: return SP();
-    case Operand::Kind::DEREF_FULL_REG: return ram_->get(getFullRegister(operand.asDereferencedFullRegister()));
+    case Operand::Kind::DEREF_FULL_REG: return read(getFullRegister(operand.asDereferencedFullRegister()));
     case Operand::Kind::NONE: throw std::runtime_error("Cannot get value of NONE operand.");
     }
 }
@@ -184,7 +192,7 @@ void CPU::setOperand(Operand operand, OperandValue newValue)
     case Operand::Kind::FULL_REG: setFullRegister(operand.asFullRegister(), newValue.as16()); return;
     case Operand::Kind::SPECIAL_REG: setSP(newValue.as16()); return;
     case Operand::Kind::DEREF_FULL_REG:
-        ram_->set(getFullRegister(operand.asDereferencedFullRegister()), newValue.as8());
+        write(getFullRegister(operand.asDereferencedFullRegister()), newValue.as8());
         return;
     case Operand::Kind::NONE: throw std::runtime_error("Cannot set value of NONE operand.");
     }
@@ -257,25 +265,30 @@ void CPU::LD(uint16_t pc, const OPCode *opcode)
         const auto dest = opcode->operands[0];
         if (dest.isRegister() || dest.isDereferencedFullRegister())
         {
-            setOperand(dest, ram_->get(pc + 1));
+            setOperand(dest, read(pc + 1));
             return;
         }
         else if (dest.isFullRegister() || dest.isSpecialRegister())
         {
-            setOperand(dest, ram_->getImmediate16(pc + 1));
+            setOperand(dest, readImmediate16(pc + 1));
             return;
         }
     }
     else if (opcode->numOperands == 2)
     {
         setOperand(opcode->operands[0], getOperand(opcode->operands[1]));
+        // LD SP,HL: 2 M-cycles (fetch + 1 internal for 16-bit transfer)
+        if (opcode->operands[0].isSpecialRegister())
+        {
+            tick();
+        }
         return;
     }
 
     throw std::runtime_error("load not implemented for opcode " + toHexString(opcode->opcode));
 }
 
-void CPU::LD_SP(uint16_t pc, const OPCode *opcode) { ram_->setImmediate16(ram_->getImmediate16(pc + 1), SP()); }
+void CPU::LD_SP(uint16_t pc, const OPCode *opcode) { writeImmediate16(readImmediate16(pc + 1), SP()); }
 
 void CPU::ADD(uint16_t pc, const OPCode *opcode)
 {
@@ -286,17 +299,20 @@ void CPU::ADD(uint16_t pc, const OPCode *opcode)
 
         if (first.is8bit())
         {
-            const auto result = alu::add(first.as8(), ram_->get(pc + 1));
+            const auto result = alu::add(first.as8(), read(pc + 1));
             setOperand(dest, result.result);
             setFlagsFromResult(result.flags, opcode);
         }
         else
         {
+            // ADD SP,e8: 4 M-cycles (fetch + read imm + 2 internal)
             const auto firstValue = first.as16();
-            const auto offset = static_cast<int8_t>(ram_->get(pc + 1));
+            const auto offset = static_cast<int8_t>(read(pc + 1));
             const auto result = alu::add(static_cast<uint8_t>(0x00FF & firstValue), static_cast<uint8_t>(offset));
             setOperand(dest, static_cast<uint16_t>(firstValue + offset));
             setFlagsFromResult(result.flags, opcode);
+            tick();
+            tick();
         }
     }
     else if (opcode->numOperands == 2)
@@ -313,9 +329,11 @@ void CPU::ADD(uint16_t pc, const OPCode *opcode)
         }
         else if (first.is16bit() && second.is16bit())
         {
+            // ADD HL,rr: 2 M-cycles (fetch + 1 internal)
             const auto result = alu::add(first.as16(), second.as16());
             setOperand(dest, result.result);
             setFlagsFromResult(result.flags, opcode);
+            tick();
         }
         else
         {
@@ -355,10 +373,14 @@ void CPU::HALT(uint16_t pc, const OPCode *opcode) { mode_ = Mode::HALT; }
 
 void CPU::RET(uint16_t pc, const OPCode *opcode)
 {
+    if (opcode->jumpCondition != OPCode::JumpCondition::ALWAYS)
+    {
+        tick(); // internal: evaluate condition
+    }
     if (testJumpCondition(opcode->jumpCondition))
     {
         setPC(popFromStack());
-        cycles_ += opcode->additionalCycles;
+        tick(); // internal: load PC
     }
 }
 
@@ -374,82 +396,90 @@ void CPU::POP(uint16_t pc, const OPCode *opcode)
 
 void CPU::JP(uint16_t pc, const OPCode *opcode)
 {
-    if (testJumpCondition(opcode->jumpCondition))
+    if (opcode->numOperands == 0)
     {
-        const auto newAddress =
-            opcode->numOperands == 0 ? ram_->getImmediate16(pc + 1) : getOperand(opcode->operands[0]).as16();
-        setPC(newAddress);
-        cycles_ += opcode->additionalCycles;
+        const auto newAddress = readImmediate16(pc + 1);
+        if (testJumpCondition(opcode->jumpCondition))
+        {
+            setPC(newAddress);
+            tick();
+        }
+    }
+    else
+    {
+        // JP HL: 1 M-cycle, no immediate read, no internal tick
+        setPC(getOperand(opcode->operands[0]).as16());
     }
 }
 
 void CPU::JR(uint16_t pc, const OPCode *opcode)
 {
+    const auto offset = static_cast<int8_t>(read(pc + 1));
     if (testJumpCondition(opcode->jumpCondition))
     {
-        setPC(PC() + static_cast<int8_t>(ram_->get(pc + 1)));
-        cycles_ += opcode->additionalCycles;
+        setPC(PC() + offset);
+        tick();
     }
 }
 
 void CPU::CALL(uint16_t pc, const OPCode *opcode)
 {
+    const auto immediate = readImmediate16(pc + 1);
     if (testJumpCondition(opcode->jumpCondition))
     {
-        const auto immediate = ram_->getImmediate16(pc + 1);
+        tick();
         pushToStack(PC());
         setPC(immediate);
-        cycles_ += opcode->additionalCycles;
     }
 }
 
-void CPU::PUSH(uint16_t pc, const OPCode *opcode) { pushToStack(getOperand(opcode->operands[0]).as16()); }
+void CPU::PUSH(uint16_t pc, const OPCode *opcode)
+{
+    tick();
+    pushToStack(getOperand(opcode->operands[0]).as16());
+}
 
 void CPU::RST(uint16_t pc, const OPCode *opcode)
 {
+    tick();
     pushToStack(PC());
     setPC(concatBytes(0x00, opcode->auxiliaryArguments[0] << 3));
 }
 
 void CPU::RETI(uint16_t pc, const OPCode *opcode)
 {
-    if (testJumpCondition(opcode->jumpCondition))
-    {
-        setPC(popFromStack());
-        IME_ = true;
-        cycles_ += opcode->additionalCycles;
-    }
+    setPC(popFromStack());
+    IME_ = true;
+    tick();
 }
 
 void CPU::LDff8(uint16_t pc, const OPCode *opcode)
 {
-    const auto lowerByte = opcode->numOperands == 2 ? getOperand(opcode->operands[0]).as8() : ram_->get(pc + 1);
-    ram_->set(concatBytes(0xff, lowerByte), getOperand(opcode->operands[opcode->numOperands - 1]).as8());
+    const auto lowerByte = opcode->numOperands == 2 ? getOperand(opcode->operands[0]).as8() : read(pc + 1);
+    write(concatBytes(0xff, lowerByte), getOperand(opcode->operands[opcode->numOperands - 1]).as8());
 }
 
 void CPU::LDa16(uint16_t pc, const OPCode *opcode)
 {
-    ram_->set(ram_->getImmediate16(pc + 1), getOperand(opcode->operands[0]).as8());
+    write(readImmediate16(pc + 1), getOperand(opcode->operands[0]).as8());
 }
 
 void CPU::LDaff8(uint16_t pc, const OPCode *opcode)
 {
-    const auto lowerByte = opcode->numOperands == 2 ? getOperand(opcode->operands[1]).as8() : ram_->get(pc + 1);
-    setOperand(opcode->operands[0], ram_->get(concatBytes(0xff, lowerByte)));
+    const auto lowerByte = opcode->numOperands == 2 ? getOperand(opcode->operands[1]).as8() : read(pc + 1);
+    setOperand(opcode->operands[0], read(concatBytes(0xff, lowerByte)));
 }
 
-void CPU::LDaff16(uint16_t pc, const OPCode *opcode)
-{
-    setOperand(opcode->operands[0], ram_->get(ram_->getImmediate16(pc + 1)));
-}
+void CPU::LDaff16(uint16_t pc, const OPCode *opcode) { setOperand(opcode->operands[0], read(readImmediate16(pc + 1))); }
 
 void CPU::LDs8(uint16_t pc, const OPCode *opcode)
 {
     const auto srcValue = getOperand(opcode->operands[1]).as16();
-    const auto offset = static_cast<int8_t>(ram_->get(pc + 1));
+    const auto offset = static_cast<int8_t>(read(pc + 1));
     const auto result = alu::add(static_cast<uint8_t>(0x00FF & srcValue), static_cast<uint8_t>(offset));
     setOperand(opcode->operands[0], static_cast<uint16_t>(srcValue + offset));
     setFlagsFromResult(result.flags, opcode);
+    tick();
 }
 
 void CPU::DI(uint16_t pc, const OPCode *opcode) { IME_ = false; }

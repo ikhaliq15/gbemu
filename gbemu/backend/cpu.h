@@ -7,6 +7,7 @@
 #include "gbemu/backend/opcode_data.h"
 #include "gbemu/backend/operand.h"
 #include "gbemu/backend/ram.h"
+#include "gbemu/backend/timer.h"
 
 #include <cstdint>
 
@@ -29,7 +30,7 @@ class CPU
         HALT,
     };
 
-    CPU(RAM *ram);
+    CPU(RAM *ram, Timer *timer);
     CPU(const CPU &cpu);
 
     [[nodiscard]] auto IME() const -> bool { return IME_; };
@@ -57,7 +58,6 @@ class CPU
 
     [[nodiscard]] auto ram() const -> RAM * { return ram_; }
 
-    [[nodiscard]] auto cycles() const -> uint64_t { return cycles_; }
     [[nodiscard]] auto mode() const -> Mode { return mode_; }
 
     void setMode(Mode mode) { mode_ = mode; };
@@ -159,15 +159,45 @@ class CPU
     uint16_t HL_;
 
     RAM *ram_;
+    Timer *timer_;
 
-    uint64_t cycles_;
     Mode mode_;
+    uint8_t ticksThisInstruction_ = 0;
 
     /*** Constexpr handler dispatch ***/
     using OPCodeHandler = void (CPU::*)(uint16_t, const OPCode *);
     using OPCodeHandlerMap = std::array<OPCodeHandler, 256>;
 
-    [[nodiscard]] auto getOperand(Operand operand) const -> OperandValue;
+    auto read(uint16_t address) -> uint8_t
+    {
+        timer_->update(1);
+        ++ticksThisInstruction_;
+        return ram_->get(address);
+    }
+    void write(uint16_t address, uint8_t value)
+    {
+        timer_->update(1);
+        ++ticksThisInstruction_;
+        ram_->set(address, value);
+    }
+    auto readImmediate16(uint16_t address) -> uint16_t
+    {
+        const auto lo = read(address);
+        const auto hi = read(address + 1);
+        return concatBytes(hi, lo);
+    }
+    void writeImmediate16(uint16_t address, uint16_t value)
+    {
+        write(address, lowerByte(value));
+        write(address + 1, upperByte(value));
+    }
+    void tick()
+    {
+        timer_->update(1);
+        ++ticksThisInstruction_;
+    }
+
+    [[nodiscard]] auto getOperand(Operand operand) -> OperandValue;
     void setOperand(Operand operand, OperandValue newValue);
 
     void setFlagsFromResult(const alu::AluFlagResult &flagResult, const OPCode *opcode);
@@ -198,7 +228,7 @@ class CPU
     {
         const auto dest = opcode->operands[0];
         const auto a = getOperand(dest).as8();
-        const auto b = opcode->numOperands == 2 ? getOperand(opcode->operands[1]).as8() : ram_->get(pc + 1);
+        const auto b = opcode->numOperands == 2 ? getOperand(opcode->operands[1]).as8() : read(pc + 1);
         const auto result = Operation(a, b);
         if constexpr (StoreResult)
             setOperand(dest, result.result);
@@ -210,7 +240,7 @@ class CPU
     {
         const auto dest = opcode->operands[0];
         const auto a = getOperand(dest).as8();
-        const auto b = opcode->numOperands == 2 ? getOperand(opcode->operands[1]).as8() : ram_->get(pc + 1);
+        const auto b = opcode->numOperands == 2 ? getOperand(opcode->operands[1]).as8() : read(pc + 1);
         const auto result = Operation(a, b, FlagC());
         setOperand(dest, result.result);
         setFlagsFromResult(result.flags, opcode);
@@ -255,6 +285,7 @@ class CPU
                                                  : alu::sub(val.as16(), static_cast<uint16_t>(1));
             setOperand(operand, r.result);
             setFlagsFromResult(r.flags, opcode);
+            tick();
         }
     }
 

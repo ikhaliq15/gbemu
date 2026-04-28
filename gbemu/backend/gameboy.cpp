@@ -34,15 +34,16 @@ void Gameboy::update()
         return;
     }
 
-    uint64_t deltaCycles = 1;
     if (cpu_->mode() == CPU::Mode::NORMAL)
     {
-        const auto before = cpu_->cycles();
         cpu_->executeInstruction(false);
-        deltaCycles = cpu_->cycles() - before;
+    }
+    else
+    {
+        // Timer must still advance during HALT so interrupts can wake the CPU
+        timer_->update(1);
     }
 
-    timer_->update(deltaCycles);
     ppu_->update();
 
     cpu_->serviceInterrupts();
@@ -52,10 +53,10 @@ void Gameboy::createHardware()
 {
     joypad_ = std::make_unique<Joypad>();
     ram_ = std::make_unique<RAM>(RAM_SIZE);
-    cpu_ = std::make_unique<CPU>(ram_.get());
     interruptController_ = std::make_unique<InterruptController>(ram_.get());
-    ppu_ = std::make_unique<PPU>(ram_.get(), interruptController_.get());
     timer_ = std::make_unique<Timer>(interruptController_.get());
+    cpu_ = std::make_unique<CPU>(ram_.get(), timer_.get());
+    ppu_ = std::make_unique<PPU>(ram_.get(), interruptController_.get());
     serial_ = std::make_unique<Serial>(ram_.get());
 
     configureMemoryOwners();

@@ -484,7 +484,6 @@ void ImguiFrontend::renderCpuWindow()
     ImGui::Text("PC: %s  %s %s %s %s", hex16(cpu->PC()).c_str(), hex8(ram->get(cpu->PC())).c_str(),
                 hex8(ram->get(cpu->PC() + 1)).c_str(), hex8(ram->get(cpu->PC() + 2)).c_str(),
                 hex8(ram->get(cpu->PC() + 3)).c_str());
-    ImGui::Text("Cycles: %llu", static_cast<unsigned long long>(cpu->cycles()));
 
     ImGui::SeparatorText("Hardware");
     if (ImGui::BeginTable("cpu_hw", 2, ImGuiTableFlags_SizingStretchSame))
@@ -651,7 +650,6 @@ void ImguiFrontend::renderPerformanceWindow()
         std::snprintf(frame_time_buffer, sizeof(frame_time_buffer), "%.2f ms", frame_time_ms);
         renderRegisterRow("Frame Time", sample_count > 0 ? std::string(frame_time_buffer) : std::string("--"));
         renderRegisterRow("FPS", sample_count > 0 ? std::to_string((int)io.Framerate) : std::string("--"));
-        renderRegisterRow("CPU Cycles", std::to_string(static_cast<unsigned long long>(cpu->cycles())));
         renderRegisterRow("DIV", hex8(ram->get(backend::RAM::DIV)));
         ImGui::EndTable();
     }
