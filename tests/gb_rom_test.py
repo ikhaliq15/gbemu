@@ -106,8 +106,26 @@ def _run_serial_mode(args: argparse.Namespace, gbemu: str, rom: str) -> int:
     return 0
 
 
+def _quantize_by_luminance(image: "Image.Image") -> tuple[list[int], int]:
+    """Map each pixel to a shade index ordered by luminance.
+
+    DMG output has at most four shades, but the displayed RGB depends on the
+    LCD palette an author chose for the reference (grayscale, classic green,
+    etc.). Comparing by luminance-ordered index lets palette-different
+    references match the same emulator output, while still catching real
+    differences (wrong shade per pixel, or a different number of distinct
+    shades).
+    """
+    pixels = list(image.getdata())
+    unique = sorted(
+        set(pixels), key=lambda c: 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+    )
+    color_to_index = {c: i for i, c in enumerate(unique)}
+    return [color_to_index[p] for p in pixels], len(unique)
+
+
 def _run_image_mode(args: argparse.Namespace, gbemu: str, rom: str) -> int:
-    from PIL import Image, ImageChops
+    from PIL import Image
 
     runfiles = Runfiles.Create()
     reference_png = _resolve_runfile(runfiles, args.reference_image)
@@ -137,10 +155,21 @@ def _run_image_mode(args: argparse.Namespace, gbemu: str, rom: str) -> int:
 
     actual = Image.open(out_png).convert("RGB")
     expected = Image.open(reference_png).convert("RGB")
-    if ImageChops.difference(actual, expected).getbbox() is not None:
+    if actual.size != expected.size:
+        print(
+            f"[gb_rom_test] FAIL: framebuffer size {actual.size} does not "
+            f"match reference size {expected.size}",
+            file=sys.stderr,
+        )
+        return 1
+
+    actual_idx, actual_n = _quantize_by_luminance(actual)
+    expected_idx, expected_n = _quantize_by_luminance(expected)
+    if actual_n != expected_n or actual_idx != expected_idx:
         print(
             f"[gb_rom_test] FAIL: framebuffer at {out_png} does not match "
-            f"reference {reference_png}",
+            f"reference {reference_png} (palette-tolerant compare: actual "
+            f"shades={actual_n}, expected shades={expected_n})",
             file=sys.stderr,
         )
         return 1
