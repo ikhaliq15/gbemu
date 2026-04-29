@@ -1,0 +1,10 @@
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
+
+gb_rom_test(
+    name = "lycscy",
+    size = "small",
+    mode = "image",
+    reference_image = "@scribbltests_roms//:lycscy/screenshots/expected.png",
+    rom = "@scribbltests_roms//:lycscy/lycscy.gb",
+    rom_timeout_seconds = 10,
+)

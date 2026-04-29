@@ -97,3 +97,23 @@ http_file(
     integrity = "sha256-Rk4Ut9Quf+6gt+3kK+cHHciJE/dbn/pEQplCS2PR3/E=",
     url = "https://github.com/mattcurrie/dmg-acid2/releases/download/v1.0/dmg-acid2.gb",
 )
+
+### Scribblenauts test ROMs ###
+
+http_archive(
+    name = "scribbltests_roms",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+exports_files(glob([
+    "lycscx/lycscx.gb",
+    "lycscx/screenshots/expected.png",
+    "lycscy/lycscy.gb",
+    "lycscy/screenshots/expected.png",
+    "palettely/palettely.gb",
+    "palettely/screenshots/expected.png",
+]))
+""",
+    integrity = "sha256-ukecqJsU4TdJsIsKgJ0Gxsm3/CcTU8L31AHK7e+jgdI=",
+    strip_prefix = "scribbltests-96dd2f14bc8cce1fd5df25427056e059a175e9f7",
+    url = "https://github.com/Ashiepaws/scribbltests/archive/96dd2f14bc8cce1fd5df25427056e059a175e9f7.zip",
+)

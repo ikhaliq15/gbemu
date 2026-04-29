@@ -1,0 +1,10 @@
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
+
+gb_rom_test(
+    name = "lycscx",
+    size = "small",
+    mode = "image",
+    reference_image = "@scribbltests_roms//:lycscx/screenshots/expected.png",
+    rom = "@scribbltests_roms//:lycscx/lycscx.gb",
+    rom_timeout_seconds = 10,
+)
