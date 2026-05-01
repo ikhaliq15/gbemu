@@ -147,3 +147,30 @@ exports_files(glob([
     integrity = "sha256-uanXoQdao1o9B8B8NJdASGcthSDcqeB6UBePWGDDgyw=",
     url = "https://github.com/c-sp/game-boy-test-roms/releases/download/v7.0/game-boy-test-roms-v7.0.zip",
 )
+
+### MealyBug Tearoom test ROMs ###
+
+http_archive(
+    name = "mealybug_expected",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+exports_files(glob([
+    "expected/DMG-blob/*.png",
+]))
+""",
+    integrity = "sha256-vRMgAavlFUe3bmoStPehK9juylUa/bMv3p2WQJoPd3M=",
+    strip_prefix = "mealybug-tearoom-tests-70e88fb90b59d19dfbb9c3ac36c64105202bb1f4",
+    url = "https://github.com/mattcurrie/mealybug-tearoom-tests/archive/70e88fb90b59d19dfbb9c3ac36c64105202bb1f4.zip",
+)
+
+http_archive(
+    name = "mealybug_roms",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+exports_files(glob([
+    "*.gb",
+]))
+""",
+    integrity = "sha256-4vpsqWrUi9ZNcpf9oELbBMFRF6cw2ju9WQ8TnomxUL0=",
+    url = "https://github.com/mattcurrie/mealybug-tearoom-tests/raw/70e88fb90b59d19dfbb9c3ac36c64105202bb1f4/mealybug-tearoom-tests.zip",
+)
