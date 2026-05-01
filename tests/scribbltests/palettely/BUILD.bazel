@@ -1,0 +1,10 @@
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
+
+gb_rom_test(
+    name = "palettely",
+    size = "small",
+    mode = "image",
+    reference_image = "@scribbltests_roms//:palettely/screenshots/expected.png",
+    rom = "@scribbltests_roms//:palettely/palettely.gb",
+    rom_timeout_seconds = 10,
+)
