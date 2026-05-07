@@ -1,0 +1,1 @@
+BLARGG_PASS_TEST_MARKER = "Passed"

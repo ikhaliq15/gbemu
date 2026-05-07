@@ -1,7 +1,9 @@
 load("//tests:gb_rom_test.bzl", "gb_rom_test")
+load("//tests:blargg/defs.bzl", "BLARGG_PASS_TEST_MARKER")
 
 gb_rom_test(
     name = "instr_timing",
     rom = "@blargg_test_roms//:instr_timing/instr_timing.gb",
-    mode = "serial",
+    mode = "serial_ascii",
+    pass_text = BLARGG_PASS_TEST_MARKER,
 )

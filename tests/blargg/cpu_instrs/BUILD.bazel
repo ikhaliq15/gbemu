@@ -1,10 +1,12 @@
 load("//tests:gb_rom_test.bzl", "gb_rom_test")
+load("//tests:blargg/defs.bzl", "BLARGG_PASS_TEST_MARKER")
 
 [
     gb_rom_test(
         name = test.replace(" ", "-").replace(",", "-").replace(".", "-"),
         rom = "@blargg_test_roms//:cpu_instrs/individual/{}.gb".format(test),
-        mode = "serial",
+        mode = "serial_ascii",
+        pass_text = BLARGG_PASS_TEST_MARKER,
     )
     for test in [
         "01-special",
