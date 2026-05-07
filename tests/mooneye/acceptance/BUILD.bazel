@@ -1,0 +1,32 @@
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
+load("//tests:mooneye/defs.bzl", "MOONEYE_PASS_TEST_BYTES")
+
+[
+    gb_rom_test(
+        name = test.replace(" ", "-").replace(",", "-").replace(".", "-"),
+        mode = "serial_binary",
+        pass_bytes = MOONEYE_PASS_TEST_BYTES,
+        rom = "@mooneye_test_roms//:acceptance/{}.gb".format(test),
+        rom_timeout_seconds = 5,
+    )
+    for test in [
+        "add_sp_e_timing",
+        "boot_regs-dmgABC",
+        "call_cc_timing",
+        "call_cc_timing2",
+        "call_timing",
+        "call_timing2",
+        "halt_ime0_ei",
+        "halt_ime1_timing",
+        "jp_cc_timing",
+        "jp_timing",
+        "ld_hl_sp_e_timing",
+        "oam_dma_restart",
+        "oam_dma_timing",
+        "push_timing",
+        "ret_cc_timing",
+        "ret_timing",
+        "reti_timing",
+        "rst_timing",
+    ]
+]

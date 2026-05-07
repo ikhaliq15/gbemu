@@ -1,0 +1,14 @@
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
+load("//tests:mooneye/defs.bzl", "MOONEYE_PASS_TEST_BYTES")
+
+[
+    gb_rom_test(
+        name = test.replace(" ", "-").replace(",", "-").replace(".", "-"),
+        mode = "serial_binary",
+        pass_bytes = MOONEYE_PASS_TEST_BYTES,
+        rom = "@mooneye_test_roms//:acceptance/instr/{}.gb".format(test),
+    )
+    for test in [
+        "daa",
+    ]
+]
