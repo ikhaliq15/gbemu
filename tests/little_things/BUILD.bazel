@@ -1,0 +1,10 @@
+load("//tests:gb_rom_test.bzl", "gb_rom_test")
+
+gb_rom_test(
+    name = "firstwhite",
+    size = "small",
+    mode = "image",
+    reference_image = "@little_things_gb_test_roms//:little-things-gb/firstwhite-dmg-cgb.png",
+    rom = "@little_things_gb_test_roms//:little-things-gb/firstwhite.gb",
+    rom_timeout_seconds = 10,
+)

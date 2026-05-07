@@ -10,8 +10,8 @@ namespace gbemu::backend
 {
 
 PPU::PPU(RAM *ram, InterruptController *interruptController)
-    : interruptController_(interruptController), ram_(ram), scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00), wy_(0x00),
-      wx_(0x00), lcdStatus_(0x00), windowLy_(0x00), lycCoincidenceCalledOnThisLy_(false)
+    : interruptController_(interruptController), ram_(ram), lcdc_(0x00), scy_(0x00), scx_(0x00), ly_(0x00), lyc_(0x00),
+      wy_(0x00), wx_(0x00), lcdStatus_(0x00), windowLy_(0x00), lycCoincidenceCalledOnThisLy_(false)
 {}
 
 void PPU::init() { std::ranges::fill(pixels_, 0x00000000); }
@@ -58,6 +58,7 @@ void PPU::trigger()
     {
         ly_ = 0;
         windowLy_ = 0;
+        blankFrameAfterEnable_ = false;
     }
 }
 
@@ -65,6 +66,7 @@ auto PPU::onReadOwnedByte(uint16_t address) -> uint8_t
 {
     switch (address)
     {
+    case RAM::LCDC: return lcdc_;
     case RAM::SCY: return scy_;
     case RAM::SCX: return scx_;
     case RAM::LY: return ly_;
@@ -80,6 +82,15 @@ void PPU::onWriteOwnedByte(uint16_t address, uint8_t newValue, uint8_t currentVa
 {
     switch (address)
     {
+    case RAM::LCDC:
+        if (!getBit(lcdc_, 7) && getBit(newValue, 7))
+        {
+            blankFrameAfterEnable_ = true;
+            ly_ = 0;
+            windowLy_ = 0;
+        }
+        lcdc_ = newValue;
+        break;
     case RAM::SCY: scy_ = newValue; break;
     case RAM::SCX: scx_ = newValue; break;
     case RAM::LY: break; // read-only
@@ -105,17 +116,21 @@ constexpr auto PPU::buildPalette(uint8_t paletteRegister) const -> std::array<ui
 
 void PPU::drawScanLine()
 {
-    const auto lcdc = ram_->get(RAM::LCDC);
-
-    const auto lcdEnabled = getBit(lcdc, 7);
-    const uint16_t windowTileMap = getBit(lcdc, 6) ? 0x9C00 : 0x9800;
-    const auto windowEnabled = getBit(lcdc, 5);
-    const uint16_t tileData = getBit(lcdc, 4) ? 0x8000 : 0x9000;
-    const uint16_t bgTileMap = getBit(lcdc, 3) ? 0x9C00 : 0x9800;
-    const auto spriteEightByEight = !getBit(lcdc, 2);
+    const auto lcdEnabled = getBit(lcdc_, 7);
+    const uint16_t windowTileMap = getBit(lcdc_, 6) ? 0x9C00 : 0x9800;
+    const auto windowEnabled = getBit(lcdc_, 5);
+    const uint16_t tileData = getBit(lcdc_, 4) ? 0x8000 : 0x9000;
+    const uint16_t bgTileMap = getBit(lcdc_, 3) ? 0x9C00 : 0x9800;
+    const auto spriteEightByEight = !getBit(lcdc_, 2);
     const uint16_t spriteHeight = spriteEightByEight ? 8 : 16;
-    const auto spriteEnabled = getBit(lcdc, 1);
-    const auto bgEnabled = getBit(lcdc, 0); // TODO: is bit 0 actually bg enable?
+    const auto spriteEnabled = getBit(lcdc_, 1);
+    const auto bgEnabled = getBit(lcdc_, 0); // TODO: is bit 0 actually bg enable?
+
+    if (blankFrameAfterEnable_)
+    {
+        std::fill_n(&pixels_[ly_ * LCD_WIDTH], LCD_WIDTH, 0xffffffff);
+        return;
+    }
 
     if (!lcdEnabled)
     {

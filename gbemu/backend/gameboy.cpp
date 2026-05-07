@@ -76,6 +76,7 @@ void Gameboy::configureMemoryOwners()
     ram_->addOwner(RAM::TAC, timer_.get());
 
     // PPU
+    ram_->addOwner(RAM::LCDC, ppu_.get());
     ram_->addOwner(RAM::STAT, ppu_.get());
     ram_->addOwner(RAM::SCY, ppu_.get());
     ram_->addOwner(RAM::SCX, ppu_.get());
