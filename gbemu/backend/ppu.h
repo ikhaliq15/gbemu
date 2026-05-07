@@ -55,6 +55,7 @@ class PPU : public Timer::IListener, public RAM::Owner
     RAM *ram_;
 
     // LCD registers
+    uint8_t lcdc_;
     uint8_t scy_;
     uint8_t scx_;
     uint8_t ly_;
@@ -66,6 +67,7 @@ class PPU : public Timer::IListener, public RAM::Owner
     // Internal state
     uint8_t windowLy_;
     bool lycCoincidenceCalledOnThisLy_;
+    bool blankFrameAfterEnable_ = false;
     uint64_t completedFrames_ = 0;
     std::array<uint32_t, LCD_WIDTH * LCD_HEIGHT> pixels_;
 };
