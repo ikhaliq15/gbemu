@@ -57,16 +57,6 @@ void RAM::set(uint16_t address, uint8_t value)
         return;
     }
 
-    // TODO: OAM DMA transfer (should make rest of RAM inaccessible and take ~160 microseconds)
-    if (address == RAM::DMA)
-    {
-        const uint16_t startAddress = concatBytes(value, 0x00);
-        for (int i = 0; i < 160; i++)
-        {
-            set(RAM::OAM + i, get(startAddress + i));
-        }
-    }
-
     if (const auto writeOwner = writeOwners_[address]; writeOwner != nullptr)
     {
         writeOwner->onWriteOwnedByte(address, value, get(address));
@@ -106,6 +96,14 @@ void RAM::addOwner(uint16_t address, Owner *owner)
 {
     addReadOwner(address, owner);
     addWriteOwner(address, owner);
+}
+
+void RAM::addOwner(uint16_t startAddress, uint16_t endAddress, Owner *owner)
+{
+    for (uint16_t addr = startAddress; addr < endAddress; addr++)
+    {
+        addOwner(addr, owner);
+    }
 }
 
 } // namespace gbemu::backend

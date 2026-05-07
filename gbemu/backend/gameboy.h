@@ -4,6 +4,7 @@
 #include "gbemu/backend/cartridge.h"
 #include "gbemu/backend/cpu.h"
 #include "gbemu/backend/joypad.h"
+#include "gbemu/backend/oam.h"
 #include "gbemu/backend/ppu.h"
 #include "gbemu/backend/ram.h"
 #include "gbemu/backend/serial.h"
@@ -56,6 +57,7 @@ class Gameboy
     std::unique_ptr<PPU> ppu_;
     std::unique_ptr<Timer> timer_;
     std::unique_ptr<Serial> serial_;
+    std::unique_ptr<OAM> oam_;
 };
 
 } // namespace gbemu::backend
