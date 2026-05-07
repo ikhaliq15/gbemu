@@ -92,6 +92,7 @@ class RAM
     void addReadOwner(uint16_t address, ReadOwner *owner);
     void addWriteOwner(uint16_t address, WriteOwner *owner);
     void addOwner(uint16_t address, Owner *owner);
+    void addOwner(uint16_t startAddress, uint16_t endAddress, Owner *owner);
 
   private:
     std::vector<uint8_t> memory_;

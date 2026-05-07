@@ -58,6 +58,7 @@ void Gameboy::createHardware()
     cpu_ = std::make_unique<CPU>(ram_.get(), timer_.get());
     ppu_ = std::make_unique<PPU>(ram_.get(), interruptController_.get());
     serial_ = std::make_unique<Serial>(ram_.get());
+    oam_ = std::make_unique<OAM>(ram_.get());
 
     configureMemoryOwners();
     cartridgeLoaded_ = false;
@@ -85,10 +86,15 @@ void Gameboy::configureMemoryOwners()
 
     // Serial
     ram_->addOwner(RAM::SC, serial_.get());
+
+    // OAM
+    ram_->addOwner(RAM::DMA, oam_.get());
+    ram_->addOwner(RAM::OAM, RAM::OAM + OAM::OAM_SIZE, oam_.get());
 }
 
 void Gameboy::initSubsystems()
 {
+    timer_->addTimerListener(oam_.get(), 1);
     timer_->addTimerListener(ppu_.get(), PPU::CYCLES_PER_SCANLINE);
     ppu_->init();
     timer_->init();
