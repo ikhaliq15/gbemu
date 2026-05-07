@@ -10,13 +10,16 @@ load("@rules_python//python:defs.bzl", "py_test")
 _GBEMU_BINARY = "//gbemu:gbemu_exe"
 _HARNESS_SRC = "//tests:gb_rom_test.py"
 
+_VALID_MODES = ("serial_ascii", "serial_binary", "image")
+
 def gb_rom_test(
         name,
         rom,
-        mode = "serial",
+        mode = None,
         reference_image = None,
         rom_timeout_seconds = 120,
-        pass_marker = "Passed",
+        pass_text = None,
+        pass_bytes = None,
         size = "medium",
         tags = None):
     """Declare a GBEmu ROM integration test.
@@ -24,18 +27,49 @@ def gb_rom_test(
     Args:
       name: Bazel target name.
       rom: Label of the .gb ROM file to run.
-      mode: "serial" (Blargg-style serial marker) or "image" (framebuffer
-        compare).
+      mode: One of:
+        - "serial_ascii": look for an ASCII serial marker such as "Passed"
+        - "serial_binary": look for a binary serial byte sequence such as
+          [3, 5, 8, 13, 21, 34]
+        - "image": compare the dumped framebuffer against a reference image
       reference_image: Required when mode="image"; label of the golden PNG.
       rom_timeout_seconds: Wall-clock budget for the emulator to run.
-      pass_marker: Serial-mode success string.
+      pass_text: Required when mode="serial_ascii"; ASCII success marker.
+      pass_bytes: Required when mode="serial_binary"; list of byte values
+        in the range 0..255.
       size: Bazel test size.
       tags: Extra Bazel tags.
     """
-    if mode not in ("serial", "image"):
-        fail("gb_rom_test: mode must be 'serial' or 'image', got " + mode)
-    if mode == "image" and reference_image == None:
-        fail("gb_rom_test: reference_image is required when mode='image'")
+    if mode == None:
+        fail("gb_rom_test: mode is required (one of {})".format(_VALID_MODES))
+    if mode not in _VALID_MODES:
+        fail("gb_rom_test: mode must be one of {}, got {}".format(_VALID_MODES, mode))
+
+    if mode != "image" and reference_image != None:
+        fail("gb_rom_test: reference_image is only valid when mode='image'")
+    if mode != "serial_ascii" and pass_text != None:
+        fail("gb_rom_test: pass_text is only valid when mode='serial_ascii'")
+    if mode != "serial_binary" and pass_bytes != None:
+        fail("gb_rom_test: pass_bytes is only valid when mode='serial_binary'")
+
+    if mode == "image":
+        if reference_image == None:
+            fail("gb_rom_test: reference_image is required when mode='image'")
+    elif mode == "serial_ascii":
+        if pass_text == None:
+            fail("gb_rom_test: pass_text is required when mode='serial_ascii'")
+    elif mode == "serial_binary":
+        if pass_bytes == None:
+            fail("gb_rom_test: pass_bytes is required when mode='serial_binary'")
+        if type(pass_bytes) != "list":
+            fail("gb_rom_test: pass_bytes must be a list of integers")
+        if len(pass_bytes) == 0:
+            fail("gb_rom_test: pass_bytes must not be empty")
+        for byte in pass_bytes:
+            if type(byte) != "int":
+                fail("gb_rom_test: pass_bytes must contain only integers")
+            if byte < 0 or byte > 255:
+                fail("gb_rom_test: pass_bytes values must be in the range 0..255")
 
     # Wrap the ROM (and reference image) in local aliases with paren-free
     # names. Some upstream ROM filenames — and therefore some test target
@@ -51,12 +85,16 @@ def gb_rom_test(
         "--rom=$(rlocationpath :{})".format(rom_alias),
         "--mode=" + mode,
         "--rom-timeout={}".format(rom_timeout_seconds),
-        "--pass-marker=" + pass_marker,
     ]
     data = [_GBEMU_BINARY, ":" + rom_alias]
     deps = [
         "@rules_python//python/runfiles",
     ]
+
+    if mode == "serial_ascii":
+        args.append("--pass-text=" + pass_text)
+    elif mode == "serial_binary":
+        args.append("--pass-bytes=" + ",".join([str(byte) for byte in pass_bytes]))
 
     if mode == "image":
         ref_alias = sanitized + "_reference"
