@@ -1,21 +1,28 @@
-#include "gbemu/frontend/imgui.hpp"
+#include "gbemu/frontend/imgui/frontend.h"
 
 #include "gbemu/backend/cartridge.h"
+#include "gbemu/backend/gameboy.h"
 #include "gbemu/backend/ppu.h"
-#include "gbemu/backend/ram.h"
 #include "gbemu/config/version.h"
+#include "gbemu/frontend/frontend.h"
+#include "gbemu/frontend/imgui/about.h"
+#include "gbemu/frontend/imgui/cpu.h"
+#include "gbemu/frontend/imgui/debugger.h"
+#include "gbemu/frontend/imgui/memory.h"
+#include "gbemu/frontend/imgui/performance.h"
+#include "gbemu/frontend/imgui/util.h"
 
-#include "imgui.h"
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_sdlrenderer2.h"
-#include "imgui_internal.h"
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdlrenderer2.h>
+#include <imgui_internal.h>
 
+#include <memory>
 #include <nfd.h>
 
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
@@ -27,52 +34,6 @@ namespace
 {
 
 constexpr ImVec4 kClearColor = ImVec4(0.05f, 0.07f, 0.09f, 1.00f);
-constexpr size_t kFrameHistorySize = 180;
-constexpr uint16_t kMemoryRows = 16;
-constexpr uint16_t kMemoryColumns = 16;
-
-#ifdef __APPLE__
-constexpr const char *kOpenShortcut = "Cmd+O";
-constexpr const char *kQuitShortcut = "Cmd+Q";
-constexpr SDL_Keymod kPrimaryShortcutModifier = KMOD_GUI;
-#else
-constexpr const char *kOpenShortcut = "Ctrl+O";
-constexpr const char *kQuitShortcut = "Ctrl+Q";
-constexpr SDL_Keymod kPrimaryShortcutModifier = KMOD_CTRL;
-#endif
-
-auto hex8(uint8_t value) -> std::string
-{
-    char buffer[3];
-    std::snprintf(buffer, sizeof(buffer), "%02X", value);
-    return buffer;
-}
-
-auto hex16(uint16_t value) -> std::string
-{
-    char buffer[5];
-    std::snprintf(buffer, sizeof(buffer), "%04X", value);
-    return buffer;
-}
-
-void renderBadge(const char *label, const ImVec4 &color)
-{
-    ImGui::PushStyleColor(ImGuiCol_Button, color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.98f, 0.99f, 0.99f, 1.00f));
-    ImGui::Button(label);
-    ImGui::PopStyleColor(4);
-}
-
-void renderRegisterRow(const char *name, const std::string &value)
-{
-    ImGui::TableNextRow();
-    ImGui::TableNextColumn();
-    ImGui::TextDisabled("%s", name);
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", value.c_str());
-}
 
 auto fileDisplayName(const std::string &path) -> std::string
 {
@@ -122,9 +83,22 @@ void lockDockNode(ImGuiID node_id)
 
 } // namespace
 
+ImguiFrontend::ImguiFrontend()
+    : cpuWindow_(std::make_unique<ImguiCpuWindow>()), performanceWindow_(std::make_unique<ImguiPerformanceWindow>()),
+      memoryWindow_(std::make_unique<ImguiMemoryWindow>()), debugger_(std::make_unique<ImguiDebugger>()),
+      aboutWindow_(std::make_unique<ImguiAboutWindow>())
+{}
+
+ImguiFrontend::~ImguiFrontend() = default;
+
 auto ImguiFrontend::init(gbemu::backend::Gameboy *gameboy) -> bool
 {
     gameboy_ = gameboy;
+
+    cpuWindow_->init(gameboy);
+    performanceWindow_->init(gameboy);
+    memoryWindow_->init(gameboy);
+    debugger_->init(gameboy);
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER);
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
@@ -142,7 +116,6 @@ auto ImguiFrontend::init(gbemu::backend::Gameboy *gameboy) -> bool
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    (void)io;
 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -158,17 +131,18 @@ auto ImguiFrontend::init(gbemu::backend::Gameboy *gameboy) -> bool
     ImGui_ImplSDL2_InitForSDLRenderer(window_, renderer_);
     ImGui_ImplSDLRenderer2_Init(renderer_);
 
-    show_cpu_window_ = true;
-    show_memory_window_ = true;
-    show_performance_window_ = true;
-    show_about_window_ = false;
+    cpuWindow_->setVisible(true);
+    memoryWindow_->setVisible(true);
+    debugger_->setVisible(true);
+    performanceWindow_->setVisible(true);
+    aboutWindow_->setVisible(false);
     dockspace_initialized_ = false;
     done_ = false;
 
     if (gameboy_->cartridgeLoaded())
     {
         status_text_ = "Cartridge ready. Open another ROM at any time from the File menu.";
-        setMemoryViewBase(0x0100);
+        memoryWindow_->setMemoryViewBase(0x0100);
     }
 
     updateWindowTitle();
@@ -176,11 +150,11 @@ auto ImguiFrontend::init(gbemu::backend::Gameboy *gameboy) -> bool
     return true;
 }
 
-auto ImguiFrontend::update() -> bool
+auto ImguiFrontend::update() -> FrontEndMode
 {
     if (done_)
     {
-        return false;
+        return FrontEndMode::EXIT;
     }
 
     pollEvents();
@@ -192,31 +166,21 @@ auto ImguiFrontend::update() -> bool
     const ImGuiIO &io = ImGui::GetIO();
     if (io.Framerate > 0.0f)
     {
-        pushFrameTimeSample(1000.0f / io.Framerate);
+        performanceWindow_->pushFrameTimeSample(1000.0f / io.Framerate);
     }
 
     renderScreen();
 
-    if (show_cpu_window_)
-    {
-        renderCpuWindow();
-    }
-    if (show_memory_window_)
-    {
-        renderMemoryWindow();
-    }
-    if (show_performance_window_)
-    {
-        renderPerformanceWindow();
-    }
-    if (show_about_window_)
-    {
-        renderAboutWindow();
-    }
+    cpuWindow_->render();
+    memoryWindow_->render();
+    debugger_->render();
+    performanceWindow_->render();
+
+    aboutWindow_->render();
 
     finishRender();
 
-    return true;
+    return debugger_->inDebuggerMode() ? FrontEndMode::DEBUGGER : FrontEndMode::NORMAL;
 }
 
 void ImguiFrontend::startRender()
@@ -322,14 +286,18 @@ void ImguiFrontend::setupDockspace()
         ImGuiID dock_main = dockspace_id;
         ImGuiID dock_right = 0;
         ImGuiID dock_bottom = 0;
+        ImGuiID dock_bottom_left = 0;
+        ImGuiID dock_bottom_right = 0;
         ImGuiID dock_right_bottom = 0;
 
         ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Right, 0.29f, &dock_right, &dock_main);
         ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Down, 0.32f, &dock_bottom, &dock_main);
+        ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Right, 0.5f, &dock_bottom_right, &dock_bottom_left);
         ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Down, 0.40f, &dock_right_bottom, &dock_right);
 
         ImGui::DockBuilderDockWindow("Screen", dock_main);
-        ImGui::DockBuilderDockWindow("Memory", dock_bottom);
+        ImGui::DockBuilderDockWindow("Memory", dock_bottom_left);
+        ImGui::DockBuilderDockWindow("Debugger", dock_bottom_right);
         ImGui::DockBuilderDockWindow("CPU", dock_right);
         ImGui::DockBuilderDockWindow("Performance", dock_right_bottom);
         ImGui::DockBuilderFinish(dockspace_id);
@@ -347,12 +315,12 @@ void ImguiFrontend::renderMenuBar()
 
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem("Open ROM...", kOpenShortcut))
+        if (ImGui::MenuItem("Open ROM...", util::OPEN_SHORTCUT))
         {
             openRom();
         }
         ImGui::Separator();
-        if (ImGui::MenuItem("Quit", kQuitShortcut))
+        if (ImGui::MenuItem("Quit", util::QUIT_SHORTCUT))
         {
             done_ = true;
         }
@@ -361,9 +329,10 @@ void ImguiFrontend::renderMenuBar()
 
     if (ImGui::BeginMenu("View"))
     {
-        ImGui::MenuItem("CPU", nullptr, &show_cpu_window_);
-        ImGui::MenuItem("Memory", nullptr, &show_memory_window_);
-        ImGui::MenuItem("Performance", nullptr, &show_performance_window_);
+        cpuWindow_->renderMenuItem();
+        memoryWindow_->renderMenuItem();
+        debugger_->renderMenuItem();
+        performanceWindow_->renderMenuItem();
         ImGui::Separator();
         if (ImGui::MenuItem("Restore Default Layout"))
         {
@@ -374,7 +343,7 @@ void ImguiFrontend::renderMenuBar()
 
     if (ImGui::BeginMenu("Help"))
     {
-        ImGui::MenuItem("About GBEmu", nullptr, &show_about_window_);
+        aboutWindow_->renderMenuItem();
         ImGui::EndMenu();
     }
 
@@ -440,255 +409,6 @@ void ImguiFrontend::renderScreen()
     ImGui::End();
 }
 
-void ImguiFrontend::renderCpuWindow()
-{
-    const auto *cpu = gameboy_->cpu();
-    const auto *ram = gameboy_->ram();
-
-    ImGui::Begin("CPU", &show_cpu_window_, ImGuiWindowFlags_NoCollapse);
-
-    ImGui::TextDisabled("Execution");
-    renderBadge(cpu->mode() == backend::CPU::Mode::NORMAL ? "RUNNING" : "HALTED",
-                cpu->mode() == backend::CPU::Mode::NORMAL ? ImVec4(0.17f, 0.45f, 0.30f, 1.0f)
-                                                          : ImVec4(0.43f, 0.22f, 0.15f, 1.0f));
-    ImGui::SameLine();
-    renderBadge(cpu->IME() ? "IME ON" : "IME OFF",
-                cpu->IME() ? ImVec4(0.20f, 0.38f, 0.52f, 1.0f) : ImVec4(0.22f, 0.23f, 0.27f, 1.0f));
-
-    ImGui::SeparatorText("Registers");
-    if (ImGui::BeginTable("cpu_registers", 2, ImGuiTableFlags_SizingStretchSame))
-    {
-        renderRegisterRow("PC", hex16(cpu->PC()));
-        renderRegisterRow("SP", hex16(cpu->SP()));
-        renderRegisterRow("AF", hex16(cpu->AF()));
-        renderRegisterRow("BC", hex16(cpu->BC()));
-        renderRegisterRow("DE", hex16(cpu->DE()));
-        renderRegisterRow("HL", hex16(cpu->HL()));
-        ImGui::EndTable();
-    }
-
-    ImGui::SeparatorText("Flags");
-    renderBadge(cpu->FlagZ() ? "Z" : "z",
-                cpu->FlagZ() ? ImVec4(0.24f, 0.42f, 0.56f, 1.0f) : ImVec4(0.17f, 0.19f, 0.22f, 1.0f));
-    ImGui::SameLine();
-    renderBadge(cpu->FlagN() ? "N" : "n",
-                cpu->FlagN() ? ImVec4(0.56f, 0.34f, 0.21f, 1.0f) : ImVec4(0.17f, 0.19f, 0.22f, 1.0f));
-    ImGui::SameLine();
-    renderBadge(cpu->FlagH() ? "H" : "h",
-                cpu->FlagH() ? ImVec4(0.46f, 0.37f, 0.17f, 1.0f) : ImVec4(0.17f, 0.19f, 0.22f, 1.0f));
-    ImGui::SameLine();
-    renderBadge(cpu->FlagC() ? "C" : "c",
-                cpu->FlagC() ? ImVec4(0.19f, 0.46f, 0.41f, 1.0f) : ImVec4(0.17f, 0.19f, 0.22f, 1.0f));
-
-    ImGui::SeparatorText("Next Bytes");
-    ImGui::Text("PC: %s  %s %s %s %s", hex16(cpu->PC()).c_str(), hex8(ram->get(cpu->PC())).c_str(),
-                hex8(ram->get(cpu->PC() + 1)).c_str(), hex8(ram->get(cpu->PC() + 2)).c_str(),
-                hex8(ram->get(cpu->PC() + 3)).c_str());
-
-    ImGui::SeparatorText("Hardware");
-    if (ImGui::BeginTable("cpu_hw", 2, ImGuiTableFlags_SizingStretchSame))
-    {
-        renderRegisterRow("LY", hex8(ram->get(backend::RAM::LY)));
-        renderRegisterRow("SCX", hex8(ram->get(backend::RAM::SCX)));
-        renderRegisterRow("SCY", hex8(ram->get(backend::RAM::SCY)));
-        renderRegisterRow("STAT", hex8(ram->get(backend::RAM::STAT)));
-        renderRegisterRow("IF", hex8(ram->get(backend::RAM::IF)));
-        renderRegisterRow("IE", hex8(ram->get(backend::RAM::IE)));
-        ImGui::EndTable();
-    }
-
-    ImGui::End();
-}
-
-void ImguiFrontend::renderMemoryWindow()
-{
-    const auto *ram = gameboy_->ram();
-    const uint16_t base = static_cast<uint16_t>(memory_view_base_ & 0xfff0);
-    const uint16_t pc = gameboy_->cpu()->PC();
-    const uint16_t sp = gameboy_->cpu()->SP();
-
-    ImGui::Begin("Memory", &show_memory_window_, ImGuiWindowFlags_NoCollapse);
-
-    if (ImGui::InputText("Base", memory_address_buffer_, IM_ARRAYSIZE(memory_address_buffer_),
-                         ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase |
-                             ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        const unsigned long address = std::strtoul(memory_address_buffer_, nullptr, 16);
-        setMemoryViewBase(static_cast<uint16_t>(address));
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Go"))
-    {
-        const unsigned long address = std::strtoul(memory_address_buffer_, nullptr, 16);
-        setMemoryViewBase(static_cast<uint16_t>(address));
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("-0x100"))
-    {
-        setMemoryViewBase(static_cast<uint16_t>(base - 0x0100));
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("+0x100"))
-    {
-        setMemoryViewBase(static_cast<uint16_t>(base + 0x0100));
-    }
-
-    if (ImGui::Button("Follow PC"))
-    {
-        setMemoryViewBase(pc);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Follow SP"))
-    {
-        setMemoryViewBase(sp);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("IO"))
-    {
-        setMemoryViewBase(0xff00);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("VRAM"))
-    {
-        setMemoryViewBase(0x8000);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("OAM"))
-    {
-        setMemoryViewBase(backend::RAM::OAM);
-    }
-
-    ImGui::Separator();
-
-    const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
-                                  ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoSavedSettings;
-    if (ImGui::BeginTable("memory_table", 18, flags, ImVec2(0.0f, 0.0f)))
-    {
-        ImGui::TableSetupColumn("Addr");
-        for (uint16_t column = 0; column < kMemoryColumns; ++column)
-        {
-            const std::string label = hex8(static_cast<uint8_t>(column));
-            ImGui::TableSetupColumn(label.c_str());
-        }
-        ImGui::TableSetupColumn("ASCII");
-        ImGui::TableHeadersRow();
-
-        for (uint16_t row = 0; row < kMemoryRows; ++row)
-        {
-            const uint16_t row_address = static_cast<uint16_t>(base + row * kMemoryColumns);
-            std::string ascii;
-            ascii.reserve(kMemoryColumns);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextDisabled("%s", hex16(row_address).c_str());
-
-            for (uint16_t column = 0; column < kMemoryColumns; ++column)
-            {
-                const uint16_t address = static_cast<uint16_t>(row_address + column);
-                const uint8_t value = ram->get(address);
-                const bool is_pc = address == pc;
-                const bool is_sp = address == sp;
-                ascii.push_back((value >= 32 && value <= 126) ? static_cast<char>(value) : '.');
-
-                ImGui::TableNextColumn();
-                if (is_pc)
-                {
-                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(44, 112, 150, 90));
-                }
-                else if (is_sp)
-                {
-                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(52, 148, 119, 90));
-                }
-
-                ImGui::Text("%s", hex8(value).c_str());
-            }
-
-            ImGui::TableNextColumn();
-            ImGui::TextDisabled("%s", ascii.c_str());
-        }
-
-        ImGui::EndTable();
-    }
-
-    ImGui::End();
-}
-
-void ImguiFrontend::renderPerformanceWindow()
-{
-    const ImGuiIO &io = ImGui::GetIO();
-    const auto *cpu = gameboy_->cpu();
-    const auto *ram = gameboy_->ram();
-
-    std::array<float, kFrameHistorySize> plot_values{};
-    size_t sample_count = frame_time_history_full_ ? frame_time_history_.size() : frame_time_history_offset_;
-    if (frame_time_history_full_)
-    {
-        for (size_t i = 0; i < frame_time_history_.size(); ++i)
-        {
-            plot_values[i] = frame_time_history_[(frame_time_history_offset_ + i) % frame_time_history_.size()];
-        }
-    }
-    else
-    {
-        std::copy(frame_time_history_.begin(), frame_time_history_.begin() + sample_count, plot_values.begin());
-    }
-
-    float max_frame_time = 16.0f;
-    for (size_t i = 0; i < sample_count; ++i)
-    {
-        max_frame_time = std::max(max_frame_time, plot_values[i]);
-    }
-
-    ImGui::Begin("Performance", &show_performance_window_, ImGuiWindowFlags_NoCollapse);
-
-    ImGui::SeparatorText("Realtime");
-    if (ImGui::BeginTable("perf_metrics", 2, ImGuiTableFlags_SizingStretchSame))
-    {
-        const float frame_time_ms = (io.Framerate > 0.0f) ? (1000.0f / io.Framerate) : 0.0f;
-        char frame_time_buffer[16];
-        std::snprintf(frame_time_buffer, sizeof(frame_time_buffer), "%.2f ms", frame_time_ms);
-        renderRegisterRow("Frame Time", sample_count > 0 ? std::string(frame_time_buffer) : std::string("--"));
-        renderRegisterRow("FPS", sample_count > 0 ? std::to_string((int)io.Framerate) : std::string("--"));
-        renderRegisterRow("DIV", hex8(ram->get(backend::RAM::DIV)));
-        ImGui::EndTable();
-    }
-
-    ImGui::SeparatorText("Frame History");
-    if (sample_count > 0)
-    {
-        ImGui::PlotLines("##frame_history", plot_values.data(), (int)sample_count, 0, nullptr, 0.0f, max_frame_time,
-                         ImVec2(-1.0f, 90.0f));
-    }
-    else
-    {
-        ImGui::TextDisabled("Frame timing will appear once the renderer has accumulated a few frames.");
-    }
-
-    ImGui::SeparatorText("Notes");
-    ImGui::TextWrapped("VSync is enabled, and the display panel scales the LCD output to fit without distorting the "
-                       "Game Boy aspect ratio.");
-
-    ImGui::End();
-}
-
-void ImguiFrontend::renderAboutWindow()
-{
-    ImGui::SetNextWindowSize(ImVec2(430.0f, 0.0f), ImGuiCond_FirstUseEver);
-    ImGui::Begin("About GBEmu", &show_about_window_, ImGuiWindowFlags_NoCollapse);
-
-    ImGui::TextUnformatted(gbemu::config::kAppName);
-    ImGui::Text("Version %s", gbemu::config::kVersion);
-
-    ImGui::SeparatorText("Controls");
-    ImGui::BulletText("Open ROM: %s", kOpenShortcut);
-    ImGui::BulletText("D-pad: Arrow keys");
-    ImGui::BulletText("A / B: A and B keys");
-    ImGui::BulletText("Start / Select: Enter and Space");
-
-    ImGui::End();
-}
-
 void ImguiFrontend::renderWelcomeState(const ImVec2 &canvasMin, const ImVec2 &canvasMax)
 {
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
@@ -716,19 +436,6 @@ void ImguiFrontend::renderWelcomeState(const ImVec2 &canvasMin, const ImVec2 &ca
     }
 }
 
-void ImguiFrontend::pushFrameTimeSample(float frameTimeMs)
-{
-    frame_time_history_[frame_time_history_offset_] = frameTimeMs;
-    frame_time_history_offset_ = (frame_time_history_offset_ + 1) % frame_time_history_.size();
-    frame_time_history_full_ = frame_time_history_full_ || frame_time_history_offset_ == 0;
-}
-
-void ImguiFrontend::setMemoryViewBase(uint16_t address)
-{
-    memory_view_base_ = static_cast<uint16_t>(address & 0xfff0);
-    std::snprintf(memory_address_buffer_, sizeof(memory_address_buffer_), "%04X", memory_view_base_);
-}
-
 void ImguiFrontend::updateWindowTitle()
 {
     std::string title = gbemu::config::kDisplayName;
@@ -754,7 +461,7 @@ void ImguiFrontend::openRom()
         gameboy_->loadCartridge(backend::Cartridge(*rom_file));
         loaded_rom_path_ = *rom_file;
         status_text_ = "Loaded " + fileDisplayName(loaded_rom_path_) + ".";
-        setMemoryViewBase(0x0100);
+        memoryWindow_->setMemoryViewBase(0x0100);
         updateWindowTitle();
     }
     catch (const std::exception &)
@@ -762,8 +469,6 @@ void ImguiFrontend::openRom()
         status_text_ = "Failed to load the selected ROM.";
     }
 }
-
-void ImguiFrontend::renderStatusBar() {}
 
 void ImguiFrontend::pollEvents()
 {
@@ -789,16 +494,17 @@ void ImguiFrontend::pollEvents()
 
         if (event.type == SDL_KEYDOWN)
         {
-            const bool has_primary_shortcut = (event.key.keysym.mod & kPrimaryShortcutModifier) != 0;
+            const bool has_primary_shortcut = (event.key.keysym.mod & util::PRIMARY_SHORTCUT_MODIFIER) != 0;
             if (has_primary_shortcut && event.key.repeat == 0)
             {
                 switch (event.key.keysym.sym)
                 {
                 case SDLK_o: openRom(); continue;
                 case SDLK_q: done_ = true; continue;
-                case SDLK_1: show_cpu_window_ = !show_cpu_window_; continue;
-                case SDLK_2: show_memory_window_ = !show_memory_window_; continue;
-                case SDLK_3: show_performance_window_ = !show_performance_window_; continue;
+                case SDLK_1: cpuWindow_->toggleVisibility(); continue;
+                case SDLK_2: memoryWindow_->toggleVisibility(); continue;
+                case SDLK_3: debugger_->toggleVisibility(); continue;
+                case SDLK_4: performanceWindow_->toggleVisibility(); continue;
                 default: break;
                 }
             }

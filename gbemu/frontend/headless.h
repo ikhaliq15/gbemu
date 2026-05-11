@@ -2,7 +2,7 @@
 #define GBEMU_FRONTEND_HEADLESS_H
 
 #include "gbemu/backend/gameboy.h"
-#include "gbemu/frontend/frontend.hpp"
+#include "gbemu/frontend/frontend.h"
 
 #include <SDL2/SDL.h>
 
@@ -23,14 +23,14 @@ class HeadlessFrontend : public IFrontend
         return true;
     }
 
-    auto update() -> bool override
+    auto update() -> FrontEndMode override
     {
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
             {
-                return false;
+                return FrontEndMode::EXIT;
             }
         }
 
@@ -43,7 +43,7 @@ class HeadlessFrontend : public IFrontend
             }
         }
 
-        return true;
+        return FrontEndMode::NORMAL;
     }
 
     void done() override { SDL_Quit(); }

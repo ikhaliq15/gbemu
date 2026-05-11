@@ -5,6 +5,7 @@ DEPS = [
     "//gbemu/config",
     "//gbemu/frontend",
     "//gbemu/frontend:fps_regulator",
+    "//gbemu/frontend/imgui",
     "@argparse",
     "@stb//:stb_image_write",
 ]
