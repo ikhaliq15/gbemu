@@ -3,8 +3,9 @@
 #include "gbemu/backend/ppu.h"
 #include "gbemu/config/version.h"
 #include "gbemu/frontend/fps_regulator.h"
-#include "gbemu/frontend/headless.hpp"
-#include "gbemu/frontend/imgui.hpp"
+#include "gbemu/frontend/frontend.h"
+#include "gbemu/frontend/headless.h"
+#include "gbemu/frontend/imgui/frontend.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -25,10 +26,10 @@ void runEmulationLoop(gbemu::backend::Gameboy &gameboy, gbemu::frontend::IFronte
     gameboy.init();
     frontend.init(&gameboy);
 
-    bool running = true;
-    while (running)
+    gbemu::frontend::FrontEndMode frontendMode = gbemu::frontend::FrontEndMode::NORMAL;
+    while (frontendMode != gbemu::frontend::FrontEndMode::EXIT)
     {
-        if (gameboy.cartridgeLoaded())
+        if (gameboy.cartridgeLoaded() && frontendMode == gbemu::frontend::FrontEndMode::NORMAL)
         {
             while (!gameboy.consumeCompletedFrame())
             {
@@ -36,7 +37,7 @@ void runEmulationLoop(gbemu::backend::Gameboy &gameboy, gbemu::frontend::IFronte
             }
         }
 
-        running = frontend.update();
+        frontendMode = frontend.update();
 
         fpsRegulator.waitForNextFrame();
     }

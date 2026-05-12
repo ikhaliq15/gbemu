@@ -1,13 +1,11 @@
-#ifndef GBEMU_FRONTEND_IMGUI_H
-#define GBEMU_FRONTEND_IMGUI_H
+#ifndef GBEMU_FRONTEND_IMGUI_FRONTEND_H
+#define GBEMU_FRONTEND_IMGUI_FRONTEND_H
 
-#include "gbemu/frontend/frontend.hpp"
-
-#include "gbemu/backend/gameboy.h"
+#include "gbemu/frontend/frontend.h"
 
 #include <SDL2/SDL.h>
 
-#include <array>
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -21,11 +19,20 @@ class Gameboy;
 namespace gbemu::frontend
 {
 
+class ImguiAboutWindow;
+class ImguiCpuWindow;
+class ImguiDebugger;
+class ImguiMemoryWindow;
+class ImguiPerformanceWindow;
+
 class ImguiFrontend : public IFrontend
 {
   public:
+    ImguiFrontend();
+    ~ImguiFrontend() override;
+
     auto init(gbemu::backend::Gameboy *gameboy) -> bool override;
-    auto update() -> bool override;
+    auto update() -> FrontEndMode override;
     void done() override;
 
   private:
@@ -35,56 +42,36 @@ class ImguiFrontend : public IFrontend
     void applyTheme();
     void setupDockspace();
     void renderMenuBar();
-    void renderStatusBar();
 
     void renderScreen();
-    void renderCpuWindow();
-    void renderMemoryWindow();
-    void renderPerformanceWindow();
-    void renderAboutWindow();
     void renderWelcomeState(const ImVec2 &canvasMin, const ImVec2 &canvasMax);
 
-    void pushFrameTimeSample(float frameTimeMs);
-    void setMemoryViewBase(uint16_t address);
     void updateWindowTitle();
     void openRom();
 
-  private:
     void pollEvents();
 
-  private:
     [[nodiscard]] auto selectRomFile() -> std::optional<std::string>;
 
-  private:
-    bool show_cpu_window_ = true;
-    bool show_memory_window_ = true;
-    bool show_performance_window_ = true;
-    bool show_about_window_ = false;
     bool dockspace_initialized_ = false;
-
     bool done_ = false;
 
-  private:
+    std::unique_ptr<gbemu::frontend::ImguiCpuWindow> cpuWindow_;
+    std::unique_ptr<gbemu::frontend::ImguiPerformanceWindow> performanceWindow_;
+    std::unique_ptr<gbemu::frontend::ImguiMemoryWindow> memoryWindow_;
+    std::unique_ptr<gbemu::frontend::ImguiDebugger> debugger_;
+    std::unique_ptr<gbemu::frontend::ImguiAboutWindow> aboutWindow_;
+
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
     SDL_Texture *texture_ = nullptr;
 
-  private:
-    std::array<float, 180> frame_time_history_{};
-
-    size_t frame_time_history_offset_ = 0;
-    bool frame_time_history_full_ = false;
-
-    uint16_t memory_view_base_ = 0xff00;
-    char memory_address_buffer_[5] = "FF00";
-
     std::string loaded_rom_path_;
     std::string status_text_ = "Open a Game Boy ROM to start emulation.";
 
-  private:
-    gbemu::backend::Gameboy *gameboy_;
+    gbemu::backend::Gameboy *gameboy_ = nullptr;
 };
 
 } // namespace gbemu::frontend
 
-#endif // GBEMU_FRONTEND_IMGUI_H
+#endif // GBEMU_FRONTEND_IMGUI_FRONTEND_H
